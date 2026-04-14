@@ -99,13 +99,45 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| *(Updated during roadmap creation)* | | |
+| DATA-01 | Phase 1: Foundation & Data Pipeline | Pending |
+| DATA-02 | Phase 1: Foundation & Data Pipeline | Pending |
+| DATA-03 | Phase 1: Foundation & Data Pipeline | Pending |
+| DATA-04 | Phase 1: Foundation & Data Pipeline | Pending |
+| DATA-05 | Phase 1: Foundation & Data Pipeline | Pending |
+| TECH-01 | Phase 2: Technical & Fundamental Analysis | Pending |
+| TECH-02 | Phase 2: Technical & Fundamental Analysis | Pending |
+| TECH-03 | Phase 2: Technical & Fundamental Analysis | Pending |
+| TECH-04 | Phase 2: Technical & Fundamental Analysis | Pending |
+| FUND-01 | Phase 2: Technical & Fundamental Analysis | Pending |
+| FUND-02 | Phase 2: Technical & Fundamental Analysis | Pending |
+| FUND-03 | Phase 2: Technical & Fundamental Analysis | Pending |
+| SENT-01 | Phase 3: Sentiment Analysis & Scoring Engine | Pending |
+| SENT-02 | Phase 3: Sentiment Analysis & Scoring Engine | Pending |
+| SENT-03 | Phase 3: Sentiment Analysis & Scoring Engine | Pending |
+| SCOR-01 | Phase 3: Sentiment Analysis & Scoring Engine | Pending |
+| SCOR-02 | Phase 3: Sentiment Analysis & Scoring Engine | Pending |
+| SCOR-03 | Phase 3: Sentiment Analysis & Scoring Engine | Pending |
+| REPT-01 | Phase 4: AI Reports, Macro Context & T+3 | Pending |
+| REPT-02 | Phase 4: AI Reports, Macro Context & T+3 | Pending |
+| MACR-01 | Phase 4: AI Reports, Macro Context & T+3 | Pending |
+| MACR-02 | Phase 4: AI Reports, Macro Context & T+3 | Pending |
+| T3-01 | Phase 4: AI Reports, Macro Context & T+3 | Pending |
+| T3-02 | Phase 4: AI Reports, Macro Context & T+3 | Pending |
+| AUTO-01 | Phase 5: Automation & Notifications | Pending |
+| AUTO-02 | Phase 5: Automation & Notifications | Pending |
+| NOTI-01 | Phase 5: Automation & Notifications | Pending |
+| NOTI-02 | Phase 5: Automation & Notifications | Pending |
+| SCOR-04 | Phase 5: Automation & Notifications | Pending |
+| SCOR-05 | Phase 5: Automation & Notifications | Pending |
+| DASH-01 | Phase 6: Web Dashboard | Pending |
+| DASH-02 | Phase 6: Web Dashboard | Pending |
+| DASH-03 | Phase 6: Web Dashboard | Pending |
 
 **Coverage:**
 - v1 requirements: 33 total
-- Mapped to phases: 0
-- Unmapped: 33 ⚠️
+- Mapped to phases: 33 ✓
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-14*
-*Last updated: 2026-04-14 after initial definition*
+*Last updated: 2026-04-14 after roadmap creation*
