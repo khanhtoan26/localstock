@@ -7,11 +7,11 @@
 
 ### Data Acquisition
 
-- [ ] **DATA-01**: Agent crawl được dữ liệu giá/khối lượng OHLCV hàng ngày cho ~400 mã HOSE
-- [ ] **DATA-02**: Agent lưu trữ dữ liệu lịch sử ≥2 năm trong database local
-- [ ] **DATA-03**: Agent thu thập báo cáo tài chính (BCTC) theo quý và năm (bảng cân đối, kết quả kinh doanh, lưu chuyển tiền tệ)
-- [ ] **DATA-04**: Agent lưu thông tin công ty (ngành, vốn hóa, số lượng cổ phiếu lưu hành)
-- [ ] **DATA-05**: Agent xử lý điều chỉnh giá khi có sự kiện chia tách/phát hành thêm (corporate actions)
+- [x] **DATA-01**: Agent crawl được dữ liệu giá/khối lượng OHLCV hàng ngày cho ~400 mã HOSE
+- [x] **DATA-02**: Agent lưu trữ dữ liệu lịch sử ≥2 năm trong database local
+- [x] **DATA-03**: Agent thu thập báo cáo tài chính (BCTC) theo quý và năm (bảng cân đối, kết quả kinh doanh, lưu chuyển tiền tệ)
+- [x] **DATA-04**: Agent lưu thông tin công ty (ngành, vốn hóa, số lượng cổ phiếu lưu hành)
+- [x] **DATA-05**: Agent xử lý điều chỉnh giá khi có sự kiện chia tách/phát hành thêm (corporate actions)
 
 ### Technical Analysis
 
@@ -99,11 +99,11 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DATA-01 | Phase 1: Foundation & Data Pipeline | Pending |
-| DATA-02 | Phase 1: Foundation & Data Pipeline | Pending |
-| DATA-03 | Phase 1: Foundation & Data Pipeline | Pending |
-| DATA-04 | Phase 1: Foundation & Data Pipeline | Pending |
-| DATA-05 | Phase 1: Foundation & Data Pipeline | Pending |
+| DATA-01 | Phase 1: Foundation & Data Pipeline | Complete |
+| DATA-02 | Phase 1: Foundation & Data Pipeline | Complete |
+| DATA-03 | Phase 1: Foundation & Data Pipeline | Complete |
+| DATA-04 | Phase 1: Foundation & Data Pipeline | Complete |
+| DATA-05 | Phase 1: Foundation & Data Pipeline | Complete |
 | TECH-01 | Phase 2: Technical & Fundamental Analysis | Pending |
 | TECH-02 | Phase 2: Technical & Fundamental Analysis | Pending |
 | TECH-03 | Phase 2: Technical & Fundamental Analysis | Pending |
