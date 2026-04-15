@@ -31,7 +31,13 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Quarterly and annual financial statements (income statement, balance sheet, cash flow) are stored for each company
   4. Company profiles (industry sector, market cap, shares outstanding) are queryable from the database
   5. Historical price data is correctly adjusted for corporate actions (stock splits, stock dividends) — no false signals from unadjusted prices
-**Plans**: TBD
+**Plans:** 4 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Project scaffold, DB models, Alembic migrations, base crawler, test infrastructure
+- [ ] 01-02-PLAN.md — Stock listing fetcher, OHLCV price crawler, stock & price repositories
+- [ ] 01-03-PLAN.md — Financial statement crawler, company profile crawler, financial repository
+- [ ] 01-04-PLAN.md — Corporate event crawler, price adjustment service, pipeline orchestrator, health check
 
 ### Phase 2: Technical & Fundamental Analysis
 **Goal**: Computed technical indicators and financial ratios for all HOSE stocks — the first two scoring dimensions
