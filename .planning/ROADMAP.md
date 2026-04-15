@@ -67,7 +67,13 @@ Plans:
   3. Composite score (0-100) is calculated for each stock combining available analysis dimensions (technical, fundamental, sentiment)
   4. Scoring weights are configurable via config (default: technical 30%, fundamental 30%, sentiment 20%, macro 20%)
   5. User can view a ranked top 10-20 list of recommended stocks with scores and clear buy reasoning via CLI
-**Plans**: TBD
+**Plans:** 4 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — Foundation: dependencies, config, DB models, migration, repositories
+- [ ] 03-02-PLAN.md — News crawler (RSS), Ollama AI client, sentiment analysis module
+- [ ] 03-03-PLAN.md — Scoring normalizers and composite scoring engine (TDD)
+- [ ] 03-04-PLAN.md — Service orchestrators, API endpoints, full pipeline integration
 
 ### Phase 4: AI Reports, Macro Context & T+3 Awareness
 **Goal**: Rich Vietnamese-language analysis reports that explain WHY stocks score high/low, enriched with macro-economic context and T+3 trading awareness
