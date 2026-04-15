@@ -990,7 +990,7 @@ async def extract_ratios_from_statements(
 | A4 | DB read/write overhead ~50-100ms per stock | Batch Processing | Network latency to Supabase could be higher; total batch time may vary |
 | A5 | The `financial_statements.data` JSONB stores data with original VCI field names (pe, pb, eps, etc.) | Code Examples | If finance_crawler translates column names before storing, field names will be different |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **JSONB field name format in stored financial data**
    - What we know: Phase 1's `_store_financials` calls `row.to_dict()` on vnstock DataFrame output
