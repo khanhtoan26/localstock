@@ -71,7 +71,7 @@ Plans:
 
 Plans:
 - [x] 03-01-PLAN.md — Foundation: dependencies, config, DB models, migration, repositories
-- [ ] 03-02-PLAN.md — News crawler (RSS), Ollama AI client, sentiment analysis module
+- [x] 03-02-PLAN.md — News crawler (RSS), Ollama AI client, sentiment analysis module
 - [ ] 03-03-PLAN.md — Scoring normalizers and composite scoring engine (TDD)
 - [ ] 03-04-PLAN.md — Service orchestrators, API endpoints, full pipeline integration
 
