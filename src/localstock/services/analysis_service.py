@@ -39,6 +39,30 @@ from localstock.db.repositories.ratio_repo import RatioRepository
 from localstock.db.repositories.stock_repo import StockRepository
 
 
+def _normalize_income(raw: dict) -> dict:
+    """Map VCI income statement keys to simplified keys (values in Bn VND)."""
+    to_bn = 1e9
+    return {
+        "revenue": (raw.get("Revenue (Bn. VND)") or raw.get("Net Sales") or 0) / to_bn,
+        "net_profit": (raw.get("Net Profit For the Year") or 0) / to_bn,
+        "share_holder_income": (
+            raw.get("Attributable to parent company")
+            or raw.get("Attribute to parent company (Bn. VND)")
+            or 0
+        ) / to_bn,
+    }
+
+
+def _normalize_balance(raw: dict) -> dict:
+    """Map VCI balance sheet keys to simplified keys (values in Bn VND)."""
+    to_bn = 1e9
+    return {
+        "asset": (raw.get("TOTAL ASSETS (Bn. VND)") or 0) / to_bn,
+        "debt": (raw.get("LIABILITIES (Bn. VND)") or 0) / to_bn,
+        "equity": (raw.get("OWNER'S EQUITY(Bn.VND)") or 0) / to_bn,
+    }
+
+
 class AnalysisService:
     """Orchestrates the full analysis pipeline for HOSE stocks.
 
@@ -341,10 +365,18 @@ class AnalysisService:
             return
         current_price = prices[-1].close
 
-        # Get shares outstanding
-        stmt = select(Stock.issue_shares).where(Stock.symbol == symbol)
+        # Get shares outstanding (fallback: derive from charter_capital / 10,000 VND par)
+        stmt = select(Stock.issue_shares, Stock.charter_capital).where(
+            Stock.symbol == symbol
+        )
         result = await self.session.execute(stmt)
-        shares = result.scalar_one_or_none()
+        row_stock = result.one_or_none()
+        if not row_stock:
+            logger.debug(f"Stock {symbol} not found, skipping fundamental")
+            return
+        shares = row_stock[0] or (
+            row_stock[1] / 10_000 if row_stock[1] else None
+        )
         if not shares:
             logger.debug(f"No issue_shares for {symbol}, skipping fundamental")
             return
@@ -397,12 +429,12 @@ class AnalysisService:
             symbol=symbol,
             year=latest_income.year,
             period=latest_income.period,
-            income_data=latest_income.data,
-            balance_data=balance_stmt.data,
+            income_data=_normalize_income(latest_income.data),
+            balance_data=_normalize_balance(balance_stmt.data),
             current_price=current_price,
             shares_outstanding=shares,
-            prev_income=prev_income,
-            yoy_income=yoy_income,
+            prev_income=_normalize_income(prev_income) if prev_income else None,
+            yoy_income=_normalize_income(yoy_income) if yoy_income else None,
         )
         if row:
             await self.ratio_repo.bulk_upsert([row])

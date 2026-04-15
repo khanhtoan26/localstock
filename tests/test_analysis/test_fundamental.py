@@ -35,7 +35,7 @@ class TestComputeRatios:
         result = analyzer.compute_ratios(
             income_data=income_data,
             balance_data=balance_data,
-            current_price=85000.0,  # VND per share
+            current_price=85.0,  # VND per share
             shares_outstanding=3_880_000_000,
         )
         for key in ["pe_ratio", "pb_ratio", "eps", "roe", "roa", "de_ratio"]:
@@ -46,12 +46,12 @@ class TestComputeRatios:
         result = analyzer.compute_ratios(
             income_data=income_data,
             balance_data=balance_data,
-            current_price=85000.0,
+            current_price=85.0,
             shares_outstanding=3_880_000_000,
         )
-        # market_cap = 85000 * 3.88B = 329,800B VND = 329,800 billion VND
+        # market_cap = 85.0 * 1000 * 3.88B / 1e9 = 329,800 billion VND
         # P/E = market_cap_billion / share_holder_income = 329800 / 4200 ≈ 78.52
-        expected_pe = (85000.0 * 3_880_000_000 / 1e9) / 4200.0
+        expected_pe = (85.0 * 1000 * 3_880_000_000 / 1e9) / 4200.0
         assert result["pe_ratio"] == pytest.approx(expected_pe, rel=0.01)
 
     def test_pb_ratio(self, analyzer, income_data, balance_data):
@@ -59,10 +59,10 @@ class TestComputeRatios:
         result = analyzer.compute_ratios(
             income_data=income_data,
             balance_data=balance_data,
-            current_price=85000.0,
+            current_price=85.0,
             shares_outstanding=3_880_000_000,
         )
-        market_cap = 85000.0 * 3_880_000_000 / 1e9
+        market_cap = 85.0 * 1000 * 3_880_000_000 / 1e9
         expected_pb = market_cap / 60000.0
         assert result["pb_ratio"] == pytest.approx(expected_pb, rel=0.01)
 
@@ -71,7 +71,7 @@ class TestComputeRatios:
         result = analyzer.compute_ratios(
             income_data=income_data,
             balance_data=balance_data,
-            current_price=85000.0,
+            current_price=85.0,
             shares_outstanding=3_880_000_000,
         )
         expected_eps = 4200.0 * 1e9 / 3_880_000_000
@@ -82,7 +82,7 @@ class TestComputeRatios:
         result = analyzer.compute_ratios(
             income_data=income_data,
             balance_data=balance_data,
-            current_price=85000.0,
+            current_price=85.0,
             shares_outstanding=3_880_000_000,
         )
         expected_roe = 4200.0 / 60000.0 * 100
@@ -93,7 +93,7 @@ class TestComputeRatios:
         result = analyzer.compute_ratios(
             income_data=income_data,
             balance_data=balance_data,
-            current_price=85000.0,
+            current_price=85.0,
             shares_outstanding=3_880_000_000,
         )
         expected_roa = 4200.0 / 700000.0 * 100
@@ -104,7 +104,7 @@ class TestComputeRatios:
         result = analyzer.compute_ratios(
             income_data=income_data,
             balance_data=balance_data,
-            current_price=85000.0,
+            current_price=85.0,
             shares_outstanding=3_880_000_000,
         )
         expected_de = 640000.0 / 60000.0
@@ -116,7 +116,7 @@ class TestComputeRatios:
         result = analyzer.compute_ratios(
             income_data=income_data,
             balance_data=bad_balance,
-            current_price=85000.0,
+            current_price=85.0,
             shares_outstanding=3_880_000_000,
         )
         assert result["de_ratio"] is None
@@ -127,7 +127,7 @@ class TestComputeRatios:
         result = analyzer.compute_ratios(
             income_data=zero_income,
             balance_data=balance_data,
-            current_price=85000.0,
+            current_price=85.0,
             shares_outstanding=3_880_000_000,
         )
         assert result["pe_ratio"] is None

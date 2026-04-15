@@ -51,8 +51,12 @@ class FundamentalAnalyzer:
         total_debt = balance_data.get("debt", 0.0) or 0.0
         equity = balance_data.get("equity", 0.0) or 0.0
 
-        # Market cap in billion VND
-        market_cap = current_price * shares_outstanding / 1e9 if shares_outstanding else None
+        # Market cap in billion VND (price from vnstock is in 1000 VND)
+        market_cap = (
+            current_price * 1000 * shares_outstanding / 1e9
+            if shares_outstanding
+            else None
+        )
 
         # P/E = market_cap / share_holder_income
         pe_ratio = None

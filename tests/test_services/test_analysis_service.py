@@ -85,7 +85,7 @@ class TestAnalyzeFundamentalSingle:
             period="Q3",
             income_data=income,
             balance_data=balance,
-            current_price=85000.0,
+            current_price=85.0,
             shares_outstanding=3_880_000_000,
         )
         assert row["symbol"] == "ACB"
