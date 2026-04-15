@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-01-PLAN.md
-last_updated: "2026-04-15T03:24:47.006Z"
+stopped_at: Completed 01-02-PLAN.md
+last_updated: "2026-04-15T03:31:01.401Z"
 last_activity: 2026-04-15
 progress:
   total_phases: 6
   completed_phases: 0
   total_plans: 4
-  completed_plans: 1
-  percent: 25
+  completed_plans: 2
+  percent: 50
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 ## Current Position
 
 Phase: 01 (foundation-data-pipeline) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Ready to execute
 Last activity: 2026-04-15
 
@@ -53,6 +53,7 @@ Progress: [░░░░░░░░░░] 0%
 
 *Updated after each plan completion*
 | Phase 01 P01 | 7min | 2 tasks | 22 files |
+| Phase 01 P02 | 3min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -66,6 +67,9 @@ Recent decisions affecting current work:
 - [Roadmap]: MACR-01/MACR-02 placed in Phase 4 (Reports) — macro context enriches AI reports, and macro data is hardest to source so it comes after core pipeline works
 - [Phase 01]: BigInteger for StockPrice.volume — Vietnamese stock volumes can exceed 2B
 - [Phase 01]: pytest-timeout added as dev dependency for timeout=30 config support
+- [Phase 01]: datetime.now(UTC) over deprecated utcnow() for Python 3.12+ timezone-aware timestamps
+- [Phase 01]: Repository pattern with pg_insert().on_conflict_do_update() for idempotent writes
+- [Phase 01]: run_in_executor bridge pattern for wrapping sync vnstock in async crawlers
 
 ### Pending Todos
 
@@ -79,6 +83,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-15T03:24:47.003Z
-Stopped at: Completed 01-01-PLAN.md
+Last session: 2026-04-15T03:31:01.397Z
+Stopped at: Completed 01-02-PLAN.md
 Resume file: None

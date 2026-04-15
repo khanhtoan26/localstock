@@ -35,7 +35,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 Plans:
 - [x] 01-01-PLAN.md — Project scaffold, DB models, Alembic migrations, base crawler, test infrastructure
-- [ ] 01-02-PLAN.md — Stock listing fetcher, OHLCV price crawler, stock & price repositories
+- [x] 01-02-PLAN.md — Stock listing fetcher, OHLCV price crawler, stock & price repositories
 - [ ] 01-03-PLAN.md — Financial statement crawler, company profile crawler, financial repository
 - [ ] 01-04-PLAN.md — Corporate event crawler, price adjustment service, pipeline orchestrator, health check
 
