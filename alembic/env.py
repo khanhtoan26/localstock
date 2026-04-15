@@ -50,6 +50,9 @@ async def run_async_migrations() -> None:
     """Run migrations in async mode against Supabase."""
     settings = get_settings()
     url = settings.database_url_migration or settings.database_url
+    # Ensure URL uses asyncpg driver for async engine
+    if url.startswith("postgresql://"):
+        url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
     configuration = config.get_section(config.config_ini_section, {})
     configuration["sqlalchemy.url"] = url
     connectable = async_engine_from_config(

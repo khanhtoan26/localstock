@@ -1,6 +1,6 @@
 """SQLAlchemy ORM models for LocalStock database."""
 
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 
 from sqlalchemy import (
     BigInteger,
@@ -35,7 +35,9 @@ class Stock(Base):
     industry_icb4: Mapped[str | None] = mapped_column(String(200))
     issue_shares: Mapped[float | None] = mapped_column(Float)
     charter_capital: Mapped[float | None] = mapped_column(Float)  # in billion VND
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )
 
 
 class StockPrice(Base):
@@ -99,7 +101,9 @@ class FinancialStatement(Base):
     data: Mapped[dict] = mapped_column(JSON)  # full report stored as JSON for schema flexibility
     unit: Mapped[str] = mapped_column(String(20), default="billion_vnd")  # normalized unit
     source: Mapped[str] = mapped_column(String(10))  # 'VCI' or 'KBS'
-    fetched_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    fetched_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )
 
     __table_args__ = (
         UniqueConstraint("symbol", "year", "period", "report_type", name="uq_financial_stmt"),
@@ -112,8 +116,8 @@ class PipelineRun(Base):
     __tablename__ = "pipeline_runs"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    started_at: Mapped[datetime] = mapped_column(DateTime)
-    completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     status: Mapped[str] = mapped_column(String(20))  # 'running', 'completed', 'failed'
     run_type: Mapped[str] = mapped_column(String(20))  # 'backfill', 'daily', 'manual'
     symbols_total: Mapped[int] = mapped_column(Integer, default=0)

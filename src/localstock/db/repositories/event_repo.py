@@ -94,7 +94,17 @@ class EventRepository:
         if not rows:
             return 0
 
-        stmt = pg_insert(CorporateEvent).values(rows)
+        # Deduplicate rows by constraint key (symbol, exright_date, event_type)
+        # to avoid "ON CONFLICT DO UPDATE cannot affect row a second time"
+        seen = set()
+        unique_rows = []
+        for row in rows:
+            key = (row["symbol"], row["exright_date"], row["event_type"])
+            if key not in seen:
+                seen.add(key)
+                unique_rows.append(row)
+
+        stmt = pg_insert(CorporateEvent).values(unique_rows)
         stmt = stmt.on_conflict_do_update(
             constraint="uq_corporate_event",
             set_={

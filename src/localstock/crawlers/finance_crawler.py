@@ -92,9 +92,9 @@ class FinanceCrawler(BaseCrawler):
             stock = client.stock(symbol=symbol, source=source)
             fin = stock.finance
             return {
-                "balance_sheet": fin.balance_sheet(period=period, lang="en"),
-                "income_statement": fin.income_statement(period=period, lang="en"),
-                "cash_flow": fin.cash_flow(period=period, lang="en"),
+                "balance_sheet": fin.balance_sheet(period=period),
+                "income_statement": fin.income_statement(period=period),
+                "cash_flow": fin.cash_flow(period=period),
             }
 
         loop = asyncio.get_event_loop()

@@ -81,10 +81,30 @@ class Pipeline:
                 symbols
             )
 
+            # Step 4b: Store financial statements in DB
+            for symbol, reports in fin_results.items():
+                await self._store_financials(symbol, reports)
+
             # Step 5: Crawl company profiles
             company_results, company_failed = (
                 await self.company_crawler.fetch_batch(symbols)
             )
+
+            # Step 5b: Store company profiles in DB
+            for symbol, overview_df in company_results.items():
+                try:
+                    stock_dict = self.company_crawler.overview_to_stock_dict(
+                        overview_df
+                    )
+                    import pandas as pd
+
+                    await self.stock_repo.upsert_stocks(
+                        pd.DataFrame([stock_dict])
+                    )
+                except Exception as e:
+                    logger.warning(
+                        f"Failed to store company profile for {symbol}: {e}"
+                    )
 
             # Step 6: Crawl corporate events
             event_results, event_failed = (
@@ -127,6 +147,44 @@ class Pipeline:
 
         await self.session.commit()
         return run
+
+    async def _store_financials(
+        self, symbol: str, reports: dict
+    ) -> None:
+        """Store financial statement DataFrames to the database.
+
+        Parses vnstock Finance DataFrames to extract year, period,
+        and converts rows to dicts for upsert.
+
+        Args:
+            symbol: Stock ticker.
+            reports: Dict mapping report_type to DataFrame.
+        """
+        import pandas as pd
+
+        for report_type, df in reports.items():
+            if df is None or (isinstance(df, pd.DataFrame) and df.empty):
+                continue
+            try:
+                for _, row in df.iterrows():
+                    year = int(row.get("yearReport", 0))
+                    length = row.get("lengthReport", "")
+                    period = (
+                        f"Q{length}" if str(length).isdigit() else str(length)
+                    )
+                    data = row.to_dict()
+                    await self.financial_repo.upsert_statement(
+                        symbol=symbol,
+                        year=year,
+                        period=period,
+                        report_type=report_type,
+                        data=data,
+                        source="VCI",
+                    )
+            except Exception as e:
+                logger.warning(
+                    f"Failed to store {report_type} for {symbol}: {e}"
+                )
 
     async def _crawl_prices(
         self, symbols: list[str]
@@ -259,6 +317,7 @@ class Pipeline:
         try:
             # Financials
             fin_data = await self.finance_crawler.fetch(symbol)
+            await self._store_financials(symbol, fin_data)
             summary["financials"] = (
                 len(fin_data) if isinstance(fin_data, dict) else 0
             )
@@ -268,6 +327,10 @@ class Pipeline:
         try:
             # Company
             company_df = await self.company_crawler.fetch(symbol)
+            import pandas as pd
+
+            stock_dict = self.company_crawler.overview_to_stock_dict(company_df)
+            await self.stock_repo.upsert_stocks(pd.DataFrame([stock_dict]))
             summary["company"] = not company_df.empty
         except Exception as e:
             summary["errors"].append(f"company: {e}")
@@ -275,6 +338,7 @@ class Pipeline:
         try:
             # Events
             events_df = await self.event_crawler.fetch(symbol)
+            await self.event_repo.upsert_events(symbol, events_df)
             summary["events"] = len(events_df)
         except Exception as e:
             summary["errors"].append(f"events: {e}")
