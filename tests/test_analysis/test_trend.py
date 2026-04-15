@@ -73,11 +73,12 @@ class TestComputePivotPoints:
         """PP = (H + L + C) / 3, S1 = 2*PP - H, etc."""
         result = compute_pivot_points(high=105.0, low=95.0, close=102.0)
         expected_pp = (105.0 + 95.0 + 102.0) / 3
-        assert result["pivot_point"] == pytest.approx(expected_pp)
-        assert result["support_1"] == pytest.approx(2 * expected_pp - 105.0)
-        assert result["support_2"] == pytest.approx(expected_pp - (105.0 - 95.0))
-        assert result["resistance_1"] == pytest.approx(2 * expected_pp - 95.0)
-        assert result["resistance_2"] == pytest.approx(expected_pp + (105.0 - 95.0))
+        # Use abs=0.01 tolerance — implementation rounds to 2 decimal places for prices
+        assert result["pivot_point"] == pytest.approx(expected_pp, abs=0.01)
+        assert result["support_1"] == pytest.approx(2 * expected_pp - 105.0, abs=0.01)
+        assert result["support_2"] == pytest.approx(expected_pp - (105.0 - 95.0), abs=0.01)
+        assert result["resistance_1"] == pytest.approx(2 * expected_pp - 95.0, abs=0.01)
+        assert result["resistance_2"] == pytest.approx(expected_pp + (105.0 - 95.0), abs=0.01)
 
 
 class TestFindPeaksManual:
