@@ -52,7 +52,7 @@ def detect_trend(latest: pd.Series) -> dict:
     if _is_valid(macd_h):
         if macd_h > 0:
             signals += 1
-        else:
+        elif macd_h < 0:
             signals -= 1
 
     # Signal 4: ADX for trend strength

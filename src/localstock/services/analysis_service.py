@@ -435,8 +435,12 @@ class AnalysisService:
             if not group_ratios:
                 continue
 
-            # Use year/period from first ratio with data
-            first_ratio = await self.ratio_repo.get_latest(symbols[0])
+            # Find year/period from the first symbol that actually has ratio data
+            first_ratio = None
+            for sym in symbols:
+                first_ratio = await self.ratio_repo.get_latest(sym)
+                if first_ratio:
+                    break
             if not first_ratio:
                 continue
 
