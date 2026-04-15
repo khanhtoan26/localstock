@@ -28,9 +28,9 @@
 
 ### Sentiment Analysis
 
-- [ ] **SENT-01**: Agent crawl tin tức tài chính từ các nguồn Việt Nam (CafeF, VnExpress, Thanh Niên...)
-- [ ] **SENT-02**: Agent sử dụng LLM local để phân loại sentiment tin tức (tích cực/tiêu cực/trung tính) cho từng mã
-- [ ] **SENT-03**: Agent tổng hợp điểm sentiment từ nhiều bài viết thành score cho từng mã
+- [x] **SENT-01**: Agent crawl tin tức tài chính từ các nguồn Việt Nam (CafeF, VnExpress, Thanh Niên...)
+- [x] **SENT-02**: Agent sử dụng LLM local để phân loại sentiment tin tức (tích cực/tiêu cực/trung tính) cho từng mã
+- [x] **SENT-03**: Agent tổng hợp điểm sentiment từ nhiều bài viết thành score cho từng mã
 
 ### Macro Analysis
 
@@ -39,8 +39,8 @@
 
 ### Scoring & Ranking
 
-- [ ] **SCOR-01**: Agent chấm điểm tổng hợp cho từng mã (thang 0-100) kết hợp 4 chiều: kỹ thuật + cơ bản + sentiment + vĩ mô
-- [ ] **SCOR-02**: Agent cho phép tùy chỉnh trọng số chấm điểm (mặc định: kỹ thuật 30%, cơ bản 30%, sentiment 20%, vĩ mô 20%)
+- [x] **SCOR-01**: Agent chấm điểm tổng hợp cho từng mã (thang 0-100) kết hợp 4 chiều: kỹ thuật + cơ bản + sentiment + vĩ mô
+- [x] **SCOR-02**: Agent cho phép tùy chỉnh trọng số chấm điểm (mặc định: kỹ thuật 30%, cơ bản 30%, sentiment 20%, vĩ mô 20%)
 - [ ] **SCOR-03**: Agent xếp hạng và đưa ra danh sách top 10-20 mã đáng mua kèm lý do
 - [ ] **SCOR-04**: Agent phát hiện và cảnh báo khi điểm thay đổi đáng kể (>15 điểm) so với phiên trước
 - [ ] **SCOR-05**: Agent phân tích sector rotation — theo dõi dòng tiền chảy giữa các ngành
@@ -111,11 +111,11 @@
 | FUND-01 | Phase 2: Technical & Fundamental Analysis | Complete |
 | FUND-02 | Phase 2: Technical & Fundamental Analysis | Complete |
 | FUND-03 | Phase 2: Technical & Fundamental Analysis | Complete |
-| SENT-01 | Phase 3: Sentiment Analysis & Scoring Engine | Pending |
-| SENT-02 | Phase 3: Sentiment Analysis & Scoring Engine | Pending |
-| SENT-03 | Phase 3: Sentiment Analysis & Scoring Engine | Pending |
-| SCOR-01 | Phase 3: Sentiment Analysis & Scoring Engine | Pending |
-| SCOR-02 | Phase 3: Sentiment Analysis & Scoring Engine | Pending |
+| SENT-01 | Phase 3: Sentiment Analysis & Scoring Engine | Complete |
+| SENT-02 | Phase 3: Sentiment Analysis & Scoring Engine | Complete |
+| SENT-03 | Phase 3: Sentiment Analysis & Scoring Engine | Complete |
+| SCOR-01 | Phase 3: Sentiment Analysis & Scoring Engine | Complete |
+| SCOR-02 | Phase 3: Sentiment Analysis & Scoring Engine | Complete |
 | SCOR-03 | Phase 3: Sentiment Analysis & Scoring Engine | Pending |
 | REPT-01 | Phase 4: AI Reports, Macro Context & T+3 | Pending |
 | REPT-02 | Phase 4: AI Reports, Macro Context & T+3 | Pending |

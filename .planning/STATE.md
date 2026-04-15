@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: verifying
-stopped_at: Completed 02-04-PLAN.md
-last_updated: "2026-04-15T10:23:57.689Z"
+status: executing
+stopped_at: Completed 03-01-PLAN.md
+last_updated: "2026-04-15T11:36:59.512Z"
 last_activity: 2026-04-15
 progress:
   total_phases: 6
   completed_phases: 2
-  total_plans: 8
-  completed_plans: 8
-  percent: 100
+  total_plans: 12
+  completed_plans: 9
+  percent: 75
 ---
 
 # Project State
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-14)
 
 **Core value:** Agent tự động phân tích và xếp hạng cổ phiếu HOSE — cho tôi danh sách gợi ý đáng mua kèm lý do rõ ràng, cập nhật hàng ngày, không tốn phí API.
-**Current focus:** Phase 02 — technical-fundamental-analysis
+**Current focus:** Phase 03 — sentiment-analysis-scoring-engine
 
 ## Current Position
 
-Phase: 03
-Plan: Not started
-Status: Phase complete — ready for verification
+Phase: 03 (sentiment-analysis-scoring-engine) — EXECUTING
+Plan: 2 of 4
+Status: Ready to execute
 Last activity: 2026-04-15
 
 Progress: [░░░░░░░░░░] 0%
@@ -60,6 +60,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 02 P02 | 4min | 2 tasks | 4 files |
 | Phase 02 P03 | 3min | 2 tasks | 4 files |
 | Phase 02 P04 | 3min | 2 tasks | 4 files |
+| Phase 03 P01 | 3min | 2 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -92,6 +93,9 @@ Recent decisions affecting current work:
 - [Phase 02]: AnalysisService follows Pipeline pattern — session-based orchestrator with per-symbol error isolation
 - [Phase 02]: API endpoints return flat JSON dicts (no Pydantic response models) — consistent with health.py pattern
 - [Phase 02]: POST /api/analysis/run is synchronous — acceptable for single-user tool per T-02-07
+- [Phase 03]: URL as dedup key for NewsArticle (unique constraint on url column)
+- [Phase 03]: Scoring weights default to 0.35/0.35/0.30/0.0 — macro_score weight 0.0 until Phase 4
+- [Phase 03]: score_to_grade in scoring/__init__.py shared by Plan 02 and 03
 
 ### Pending Todos
 
@@ -105,6 +109,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-15T08:20:57.499Z
-Stopped at: Completed 02-04-PLAN.md
+Last session: 2026-04-15T11:36:59.510Z
+Stopped at: Completed 03-01-PLAN.md
 Resume file: None
