@@ -53,7 +53,7 @@ Plans:
 
 Plans:
 - [x] 02-01-PLAN.md — Database models, repositories, Alembic migration for analysis tables
-- [ ] 02-02-PLAN.md — Technical analysis engine (indicators, volume, trend, S/R)
+- [x] 02-02-PLAN.md — Technical analysis engine (indicators, volume, trend, S/R)
 - [ ] 02-03-PLAN.md — Fundamental analysis (ratios, growth, VN industry groups)
 - [ ] 02-04-PLAN.md — Analysis service orchestrator and API endpoints
 
