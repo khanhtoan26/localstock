@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed 01-03-PLAN.md
-last_updated: "2026-04-15T03:37:21.588Z"
+status: verifying
+stopped_at: Completed 01-04-PLAN.md
+last_updated: "2026-04-15T03:44:52.548Z"
 last_activity: 2026-04-15
 progress:
   total_phases: 6
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 4
-  completed_plans: 3
-  percent: 75
+  completed_plans: 4
+  percent: 100
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 
 Phase: 01 (foundation-data-pipeline) — EXECUTING
 Plan: 4 of 4
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-15
 
 Progress: [░░░░░░░░░░] 0%
@@ -55,6 +55,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 01 P01 | 7min | 2 tasks | 22 files |
 | Phase 01 P02 | 3min | 2 tasks | 6 files |
 | Phase 01 P03 | 3min | 2 tasks | 5 files |
+| Phase 01 P04 | 4min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -74,6 +75,9 @@ Recent decisions affecting current work:
 - [Phase 01]: KBS source first for financials (more stable per research issue #218), VCI as fallback
 - [Phase 01]: VCI source for company profiles (richer data via GraphQL endpoint with ICB classification)
 - [Phase 01]: Unit normalization to billion_vnd at ingestion time (prevents Pitfall 4)
+- [Phase 01]: Backward price adjustment: divide prices by ratio before ex_date, multiply volumes by ratio (DATA-05)
+- [Phase 01]: Only split and stock_dividend types trigger price adjustment; unknown types stored but not applied (T-01-11)
+- [Phase 01]: FastAPI app factory pattern: create_app() returns configured instance with modular routers
 
 ### Pending Todos
 
@@ -87,6 +91,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-15T03:37:21.586Z
-Stopped at: Completed 01-03-PLAN.md
+Last session: 2026-04-15T03:44:52.546Z
+Stopped at: Completed 01-04-PLAN.md
 Resume file: None

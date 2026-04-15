@@ -37,7 +37,7 @@ Plans:
 - [x] 01-01-PLAN.md — Project scaffold, DB models, Alembic migrations, base crawler, test infrastructure
 - [x] 01-02-PLAN.md — Stock listing fetcher, OHLCV price crawler, stock & price repositories
 - [x] 01-03-PLAN.md — Financial statement crawler, company profile crawler, financial repository
-- [ ] 01-04-PLAN.md — Corporate event crawler, price adjustment service, pipeline orchestrator, health check
+- [x] 01-04-PLAN.md — Corporate event crawler, price adjustment service, pipeline orchestrator, health check
 
 ### Phase 2: Technical & Fundamental Analysis
 **Goal**: Computed technical indicators and financial ratios for all HOSE stocks — the first two scoring dimensions
