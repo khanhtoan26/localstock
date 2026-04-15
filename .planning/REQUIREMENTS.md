@@ -15,16 +15,16 @@
 
 ### Technical Analysis
 
-- [ ] **TECH-01**: Agent tính toán các chỉ báo kỹ thuật cơ bản: SMA(20,50,200), EMA(12,26), RSI(14), MACD(12,26,9), Bollinger Bands(20,2)
-- [ ] **TECH-02**: Agent phân tích khối lượng giao dịch (average volume, relative volume, xu hướng volume)
-- [ ] **TECH-03**: Agent nhận diện xu hướng giá (uptrend/downtrend/sideways) từ MA crossovers và price action
-- [ ] **TECH-04**: Agent xác định vùng hỗ trợ/kháng cự từ pivot points và đỉnh/đáy gần nhất
+- [x] **TECH-01**: Agent tính toán các chỉ báo kỹ thuật cơ bản: SMA(20,50,200), EMA(12,26), RSI(14), MACD(12,26,9), Bollinger Bands(20,2)
+- [x] **TECH-02**: Agent phân tích khối lượng giao dịch (average volume, relative volume, xu hướng volume)
+- [x] **TECH-03**: Agent nhận diện xu hướng giá (uptrend/downtrend/sideways) từ MA crossovers và price action
+- [x] **TECH-04**: Agent xác định vùng hỗ trợ/kháng cự từ pivot points và đỉnh/đáy gần nhất
 
 ### Fundamental Analysis
 
-- [ ] **FUND-01**: Agent tính toán các chỉ số tài chính cơ bản: P/E, P/B, EPS, ROE, ROA, D/E
-- [ ] **FUND-02**: Agent đánh giá tăng trưởng doanh thu và lợi nhuận theo QoQ và YoY
-- [ ] **FUND-03**: Agent so sánh chỉ số tài chính với trung bình ngành (theo phân ngành ICB)
+- [x] **FUND-01**: Agent tính toán các chỉ số tài chính cơ bản: P/E, P/B, EPS, ROE, ROA, D/E
+- [x] **FUND-02**: Agent đánh giá tăng trưởng doanh thu và lợi nhuận theo QoQ và YoY
+- [x] **FUND-03**: Agent so sánh chỉ số tài chính với trung bình ngành (theo phân ngành ICB)
 
 ### Sentiment Analysis
 
@@ -104,13 +104,13 @@
 | DATA-03 | Phase 1: Foundation & Data Pipeline | Complete |
 | DATA-04 | Phase 1: Foundation & Data Pipeline | Complete |
 | DATA-05 | Phase 1: Foundation & Data Pipeline | Complete |
-| TECH-01 | Phase 2: Technical & Fundamental Analysis | Pending |
-| TECH-02 | Phase 2: Technical & Fundamental Analysis | Pending |
-| TECH-03 | Phase 2: Technical & Fundamental Analysis | Pending |
-| TECH-04 | Phase 2: Technical & Fundamental Analysis | Pending |
-| FUND-01 | Phase 2: Technical & Fundamental Analysis | Pending |
-| FUND-02 | Phase 2: Technical & Fundamental Analysis | Pending |
-| FUND-03 | Phase 2: Technical & Fundamental Analysis | Pending |
+| TECH-01 | Phase 2: Technical & Fundamental Analysis | Complete |
+| TECH-02 | Phase 2: Technical & Fundamental Analysis | Complete |
+| TECH-03 | Phase 2: Technical & Fundamental Analysis | Complete |
+| TECH-04 | Phase 2: Technical & Fundamental Analysis | Complete |
+| FUND-01 | Phase 2: Technical & Fundamental Analysis | Complete |
+| FUND-02 | Phase 2: Technical & Fundamental Analysis | Complete |
+| FUND-03 | Phase 2: Technical & Fundamental Analysis | Complete |
 | SENT-01 | Phase 3: Sentiment Analysis & Scoring Engine | Pending |
 | SENT-02 | Phase 3: Sentiment Analysis & Scoring Engine | Pending |
 | SENT-03 | Phase 3: Sentiment Analysis & Scoring Engine | Pending |
