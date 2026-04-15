@@ -277,3 +277,73 @@ class IndustryAverage(Base):
     __table_args__ = (
         UniqueConstraint("group_code", "year", "period", name="uq_industry_average"),
     )
+
+
+class NewsArticle(Base):
+    """Crawled financial news articles."""
+
+    __tablename__ = "news_articles"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    url: Mapped[str] = mapped_column(String(500), unique=True)  # dedup key
+    title: Mapped[str] = mapped_column(String(500))
+    summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+    content: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source: Mapped[str] = mapped_column(String(20))  # 'cafef', 'vnexpress'
+    source_feed: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    published_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    fetched_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )
+
+    __table_args__ = (
+        Index("ix_news_articles_published", "published_at"),
+        Index("ix_news_articles_source", "source"),
+    )
+
+
+class SentimentScore(Base):
+    """LLM-classified sentiment per article-ticker pair."""
+
+    __tablename__ = "sentiment_scores"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    article_id: Mapped[int] = mapped_column(Integer, index=True)
+    symbol: Mapped[str] = mapped_column(String(10), index=True)
+    sentiment: Mapped[str] = mapped_column(String(10))  # 'positive', 'negative', 'neutral'
+    score: Mapped[float] = mapped_column(Float)  # 0.0 to 1.0
+    reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    model_used: Mapped[str] = mapped_column(String(50))
+    computed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )
+
+    __table_args__ = (
+        UniqueConstraint("article_id", "symbol", name="uq_sentiment_score"),
+    )
+
+
+class CompositeScore(Base):
+    """Aggregated multi-dimensional score per stock."""
+
+    __tablename__ = "composite_scores"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    symbol: Mapped[str] = mapped_column(String(10), index=True)
+    date: Mapped[date] = mapped_column(Date, index=True)
+    technical_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    fundamental_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    sentiment_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    macro_score: Mapped[float | None] = mapped_column(Float, nullable=True)  # Phase 4
+    total_score: Mapped[float] = mapped_column(Float)  # 0-100 weighted
+    grade: Mapped[str] = mapped_column(String(2))  # A, B, C, D, F
+    rank: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    dimensions_used: Mapped[int] = mapped_column(Integer, default=2)
+    weights_json: Mapped[dict] = mapped_column(JSON)
+    computed_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )
+
+    __table_args__ = (
+        UniqueConstraint("symbol", "date", name="uq_composite_score"),
+    )
