@@ -1,0 +1,110 @@
+"""Stock repository — CRUD operations for the stocks table."""
+
+from datetime import UTC, datetime
+
+import pandas as pd
+from loguru import logger
+from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from localstock.db.models import Stock
+
+
+class StockRepository:
+    """Repository for Stock model operations.
+
+    Provides upsert semantics for stock listings and
+    query methods for HOSE ticker symbols.
+    """
+
+    def __init__(self, session: AsyncSession):
+        self.session = session
+
+    async def upsert_stocks(self, stocks_df: pd.DataFrame) -> int:
+        """Upsert stock listings from a DataFrame.
+
+        Expected columns from vnstock Listing.all_symbols():
+            symbol, organ_name (or name), exchange, icb_name3, icb_name4,
+            issue_share, charter_capital.
+
+        Uses PostgreSQL INSERT ... ON CONFLICT DO UPDATE for idempotent upserts.
+
+        Returns:
+            Count of upserted rows.
+        """
+        if stocks_df.empty:
+            return 0
+
+        # Map DataFrame columns to model columns
+        # vnstock uses 'organ_name' for company name
+        name_col = "organ_name" if "organ_name" in stocks_df.columns else "name"
+
+        rows = []
+        for _, row in stocks_df.iterrows():
+            rows.append(
+                {
+                    "symbol": str(row["symbol"]).strip(),
+                    "name": str(row.get(name_col, "")).strip(),
+                    "exchange": str(row.get("exchange", "")).strip(),
+                    "industry_icb3": str(row.get("icb_name3", "")) if pd.notna(row.get("icb_name3")) else None,
+                    "industry_icb4": str(row.get("icb_name4", "")) if pd.notna(row.get("icb_name4")) else None,
+                    "issue_shares": float(row["issue_share"]) if pd.notna(row.get("issue_share")) else None,
+                    "charter_capital": float(row["charter_capital"]) if pd.notna(row.get("charter_capital")) else None,
+                    "updated_at": datetime.now(UTC),
+                }
+            )
+
+        stmt = pg_insert(Stock).values(rows)
+        stmt = stmt.on_conflict_do_update(
+            index_elements=["symbol"],
+            set_={
+                "name": stmt.excluded.name,
+                "exchange": stmt.excluded.exchange,
+                "industry_icb3": stmt.excluded.industry_icb3,
+                "industry_icb4": stmt.excluded.industry_icb4,
+                "issue_shares": stmt.excluded.issue_shares,
+                "charter_capital": stmt.excluded.charter_capital,
+                "updated_at": datetime.now(UTC),
+            },
+        )
+        await self.session.execute(stmt)
+        await self.session.commit()
+
+        logger.info(f"Upserted {len(rows)} stock listings")
+        return len(rows)
+
+    async def get_all_hose_symbols(self) -> list[str]:
+        """Return all symbols where exchange='HOSE', ordered alphabetically."""
+        stmt = select(Stock.symbol).where(Stock.exchange == "HOSE").order_by(Stock.symbol)
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def fetch_and_store_listings(self, source: str = "VCI") -> int:
+        """Fetch all symbols from vnstock and store HOSE listings in DB.
+
+        Uses vnstock: Vnstock(source=source).stock().listing.all_symbols()
+        Filters to HOSE exchange, upserts into stocks table.
+
+        Args:
+            source: vnstock data source ('VCI' or 'KBS').
+
+        Returns:
+            Count of HOSE stocks stored.
+        """
+        from vnstock import Vnstock
+
+        client = Vnstock(source=source)
+        listing = client.stock().listing
+        all_symbols_df = listing.all_symbols()
+
+        # Filter to HOSE exchange
+        hose_df = all_symbols_df[all_symbols_df["exchange"] == "HOSE"].copy()
+
+        if hose_df.empty:
+            logger.warning("No HOSE symbols found from vnstock listing")
+            return 0
+
+        count = await self.upsert_stocks(hose_df)
+        logger.info(f"Fetched and stored {count} HOSE listings from vnstock ({source})")
+        return count
