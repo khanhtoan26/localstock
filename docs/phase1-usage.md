@@ -1,7 +1,7 @@
-# Phase 1: Foundation & Data Pipeline — Hướng dẫn sử dụng
+# LocalStock — Hướng dẫn sử dụng (Phase 1 & 2)
 
-> Tài liệu này mô tả tất cả những gì có thể chạy sau khi hoàn thành Phase 1.
-> Cập nhật: 2026-04-15
+> Tài liệu tổng hợp tất cả những gì có thể chạy sau khi hoàn thành Phase 1 (Data Pipeline) và Phase 2 (Technical & Fundamental Analysis).
+> Cập nhật: 2025-07-16
 
 ---
 
@@ -13,10 +13,11 @@
 4. [API Server](#4-api-server)
 5. [Chạy pipeline thu thập dữ liệu](#5-chạy-pipeline-thu-thập-dữ-liệu)
 6. [Crawlers riêng lẻ](#6-crawlers-riêng-lẻ)
-7. [Truy vấn dữ liệu](#7-truy-vấn-dữ-liệu)
-8. [Kiểm thử](#8-kiểm-thử)
-9. [Công cụ chất lượng code](#9-công-cụ-chất-lượng-code)
-10. [Bảng tổng hợp](#10-bảng-tổng-hợp)
+7. [Phân tích kỹ thuật & cơ bản (Phase 2)](#7-phân-tích-kỹ-thuật--cơ-bản-phase-2)
+8. [Truy vấn dữ liệu](#8-truy-vấn-dữ-liệu)
+9. [Kiểm thử](#9-kiểm-thử)
+10. [Công cụ chất lượng code](#10-công-cụ-chất-lượng-code)
+11. [Bảng tổng hợp](#11-bảng-tổng-hợp)
 
 ---
 
@@ -91,11 +92,13 @@ LOG_LEVEL=INFO              # INFO, DEBUG, WARNING, ERROR
 ### Tạo schema (lần đầu)
 
 ```bash
-# Áp dụng migration — tạo 5 bảng trong Supabase
+# Áp dụng migration — tạo 10 bảng trong Supabase (Phase 1 + Phase 2)
 uv run alembic upgrade head
 ```
 
 Các bảng được tạo:
+
+**Phase 1 — Data Pipeline:**
 
 | Bảng | Mô tả | Khóa chính |
 |------|--------|------------|
@@ -104,6 +107,16 @@ Các bảng được tạo:
 | `financial_statements` | Báo cáo tài chính (JSON linh hoạt) | `id`, unique `(symbol, year, period, report_type)` |
 | `corporate_events` | Sự kiện doanh nghiệp (chia tách, cổ tức) | `id`, unique `(symbol, exright_date, event_type)` |
 | `pipeline_runs` | Lịch sử chạy pipeline | `id` |
+
+**Phase 2 — Analysis:**
+
+| Bảng | Mô tả | Khóa chính |
+|------|--------|------------|
+| `technical_indicators` | SMA, EMA, RSI, MACD, BB, volume, trend, S/R | `id`, unique `(symbol, date)` |
+| `financial_ratios` | P/E, P/B, EPS, ROE, ROA, D/E, growth rates | `id`, unique `(symbol, year, period)` |
+| `industry_groups` | 20 nhóm ngành VN (code, name_vi, name_en) | `code` |
+| `stock_industry_mapping` | Mapping mã CK → nhóm ngành (từ ICB Level 3) | `symbol` |
+| `industry_averages` | Trung bình ngành theo kỳ (avg_pe, avg_roe, ...) | `id`, unique `(group_code, year, period)` |
 
 ### Các lệnh Alembic hữu ích
 
@@ -167,6 +180,29 @@ Kết quả trả về:
 #### `GET /docs` — Swagger UI (tự động từ FastAPI)
 
 Truy cập `http://localhost:8000/docs` để xem API documentation tương tác.
+
+#### Phase 2 — API phân tích
+
+| Method | Endpoint | Mô tả |
+|--------|----------|-------|
+| `GET` | `/api/analysis/{symbol}/technical` | Chỉ số kỹ thuật mới nhất |
+| `GET` | `/api/analysis/{symbol}/fundamental` | Tỷ số tài chính mới nhất |
+| `GET` | `/api/analysis/{symbol}/trend` | Xu hướng + hỗ trợ/kháng cự |
+| `POST` | `/api/analysis/run` | Chạy phân tích toàn bộ HOSE |
+| `GET` | `/api/industry/groups` | Danh sách 20 nhóm ngành VN |
+| `GET` | `/api/industry/{group_code}/averages` | Trung bình ngành (P/E, ROE, ...) |
+
+```bash
+# Ví dụ gọi API phân tích
+curl http://localhost:8000/api/analysis/VNM/technical
+curl http://localhost:8000/api/analysis/VNM/fundamental
+curl http://localhost:8000/api/analysis/VNM/trend
+curl http://localhost:8000/api/industry/groups
+curl http://localhost:8000/api/industry/BANKING/averages
+
+# Chạy phân tích toàn bộ (~3-4 phút)
+curl -X POST http://localhost:8000/api/analysis/run
+```
 
 ---
 
@@ -354,9 +390,154 @@ asyncio.run(main())
 
 ---
 
-## 7. Truy vấn dữ liệu
+## 7. Phân tích kỹ thuật & cơ bản (Phase 2)
 
-### 7.1. Qua Repository (trong code Python)
+Phase 2 xây dựng engine phân tích cho ~400 cổ phiếu HOSE:
+- **Technical Analysis**: SMA, EMA, RSI, MACD, Bollinger Bands, Stochastic, ADX, OBV, volume analysis, trend detection, support/resistance
+- **Fundamental Analysis**: P/E, P/B, EPS, ROE, ROA, D/E, growth rates (QoQ, YoY), TTM
+- **Industry Analysis**: 20 nhóm ngành VN, mapping ICB Level 3, industry averages
+
+### 7.1. Chạy phân tích toàn bộ HOSE
+
+```bash
+# Qua API (yêu cầu server đang chạy)
+curl -X POST http://localhost:8000/api/analysis/run
+```
+
+**Response mẫu:**
+```json
+{
+  "technical_success": 398,
+  "technical_errors": 2,
+  "fundamental_success": 395,
+  "fundamental_errors": 5,
+  "industry_groups_seeded": 20,
+  "stocks_mapped": 398
+}
+```
+
+### 7.2. Chạy phân tích qua Python
+
+```python
+# file: run_analysis.py
+import asyncio
+from localstock.db.database import get_engine, get_session_factory
+from localstock.services.analysis_service import AnalysisService
+
+async def main():
+    engine = get_engine()
+    factory = get_session_factory(engine)
+    async with factory() as session:
+        service = AnalysisService(session)
+
+        # Phân tích toàn bộ HOSE
+        result = await service.run_full()
+        print(f"Technical: {result['technical_success']} thành công")
+        print(f"Fundamental: {result['fundamental_success']} thành công")
+
+        # Hoặc phân tích 1 mã
+        single = await service.run_single("VNM")
+        print(f"VNM technical: {single.get('technical', {})}")
+        print(f"VNM fundamental: {single.get('fundamental', {})}")
+
+    await engine.dispose()
+
+asyncio.run(main())
+```
+
+### 7.3. Xem kết quả phân tích
+
+```bash
+# Technical indicators cho 1 mã
+curl http://localhost:8000/api/analysis/VNM/technical
+```
+
+**Response mẫu:**
+```json
+{
+  "symbol": "VNM",
+  "date": "2025-01-15",
+  "sma_20": 72.5, "sma_50": 71.2, "sma_200": 68.9,
+  "ema_12": 73.1, "ema_26": 72.0,
+  "rsi_14": 55.3,
+  "macd": 1.1, "macd_signal": 0.8, "macd_histogram": 0.3,
+  "bb_upper": 76.2, "bb_middle": 72.5, "bb_lower": 68.8,
+  "stoch_k": 62.1, "stoch_d": 58.7,
+  "adx": 25.4, "obv": 15234567,
+  "avg_volume_20": 1250000, "relative_volume": 1.12,
+  "volume_trend": "increasing"
+}
+```
+
+```bash
+# Trend + Support/Resistance
+curl http://localhost:8000/api/analysis/VNM/trend
+```
+
+**Response mẫu:**
+```json
+{
+  "symbol": "VNM",
+  "trend_direction": "bullish",
+  "trend_strength": 25.4,
+  "pivot_point": 72.0,
+  "support_1": 70.5, "support_2": 69.0,
+  "resistance_1": 73.5, "resistance_2": 75.0,
+  "nearest_support": 70.5, "nearest_resistance": 73.5
+}
+```
+
+```bash
+# Financial ratios
+curl http://localhost:8000/api/analysis/VNM/fundamental
+```
+
+```bash
+# 20 nhóm ngành VN
+curl http://localhost:8000/api/industry/groups
+
+# Trung bình ngành (VD: ngân hàng)
+curl http://localhost:8000/api/industry/BANKING/averages
+```
+
+### 7.4. 20 nhóm ngành Việt Nam
+
+| Code | Tên Việt | Tên Anh |
+|------|----------|---------|
+| BANKING | Ngân hàng | Banking |
+| REAL_ESTATE | Bất động sản | Real Estate |
+| SECURITIES | Chứng khoán | Securities |
+| INSURANCE | Bảo hiểm | Insurance |
+| STEEL | Thép | Steel |
+| CONSTRUCTION | Xây dựng | Construction |
+| RETAIL | Bán lẻ | Retail |
+| FOOD_BEVERAGE | Thực phẩm & Đồ uống | Food & Beverage |
+| SEAFOOD | Thủy sản | Seafood |
+| TEXTILE | Dệt may | Textile & Garment |
+| TECHNOLOGY | Công nghệ | Technology |
+| POWER | Điện | Power & Utilities |
+| OIL_GAS | Dầu khí | Oil & Gas |
+| CHEMICALS | Hóa chất | Chemicals |
+| LOGISTICS | Vận tải & Logistics | Logistics |
+| AVIATION | Hàng không | Aviation |
+| PHARMA | Dược phẩm | Pharmaceuticals |
+| RUBBER | Cao su | Rubber |
+| PLASTICS | Nhựa & Bao bì | Plastics & Packaging |
+| OTHER | Khác | Other |
+
+### 7.5. Lưu ý về dữ liệu vnstock
+
+> **Giá cổ phiếu:** vnstock trả giá theo đơn vị **1000 VND** (ví dụ: 61.6 = 61,600 VND). Hệ thống đã tự chuyển đổi khi tính market cap.
+>
+> **BCTC từ VCI:** Tên cột gốc dạng verbose (`"Revenue (Bn. VND)"`, `"TOTAL ASSETS (Bn. VND)"`). Hệ thống tự normalize về keys đơn giản (`revenue`, `total_assets`).
+>
+> **Shares outstanding:** Nếu `issue_shares` là null, hệ thống dùng fallback: `charter_capital / 10,000` (mệnh giá cổ phiếu VN = 10,000 VND).
+
+---
+
+## 8. Truy vấn dữ liệu
+
+### 8.1. Qua Repository (trong code Python)
 
 ```python
 import asyncio
@@ -395,12 +576,35 @@ async def main():
         events = await event_repo.get_unprocessed_events("VNM")
         print(f"Sự kiện chưa xử lý: {len(events)}")
 
+        # --- Phase 2: Analysis repositories ---
+        from localstock.db.repositories.indicator_repo import IndicatorRepository
+        from localstock.db.repositories.ratio_repo import RatioRepository
+        from localstock.db.repositories.industry_repo import IndustryRepository
+
+        ind_repo = IndicatorRepository(session)
+        ratio_repo = RatioRepository(session)
+        industry_repo = IndustryRepository(session)
+
+        # Lấy chỉ số kỹ thuật mới nhất
+        indicator = await ind_repo.get_latest("VNM")
+        if indicator:
+            print(f"RSI: {indicator.rsi_14}, SMA20: {indicator.sma_20}")
+
+        # Lấy tỷ số tài chính
+        ratio = await ratio_repo.get_latest("VNM")
+        if ratio:
+            print(f"P/E: {ratio.pe_ratio}, ROE: {ratio.roe}")
+
+        # Lấy danh sách nhóm ngành
+        groups = await industry_repo.get_all_groups()
+        print(f"Số nhóm ngành: {len(groups)}")
+
     await engine.dispose()
 
 asyncio.run(main())
 ```
 
-### 7.2. Qua SQL trực tiếp (Supabase Dashboard hoặc psql)
+### 8.2. Qua SQL trực tiếp (Supabase Dashboard hoặc psql)
 
 ```sql
 -- Top 10 mã theo volume trung bình 30 ngày
@@ -427,20 +631,51 @@ SELECT symbol, event_type, exright_date, ratio, processed
 FROM corporate_events
 WHERE event_type IN ('split', 'stock_dividend')
 ORDER BY exright_date DESC;
+
+-- [Phase 2] Top 10 mã theo RSI (quá bán: RSI < 30)
+SELECT symbol, date, rsi_14, sma_20, trend_direction
+FROM technical_indicators
+WHERE rsi_14 < 30
+ORDER BY rsi_14 ASC
+LIMIT 10;
+
+-- [Phase 2] Top 10 mã theo P/E thấp nhất (undervalued)
+SELECT symbol, year, period, pe_ratio, pb_ratio, roe, eps
+FROM financial_ratios
+WHERE pe_ratio > 0
+ORDER BY pe_ratio ASC
+LIMIT 10;
+
+-- [Phase 2] So sánh P/E công ty vs trung bình ngành
+SELECT fr.symbol, fr.pe_ratio, ia.avg_pe, sim.group_code,
+       ROUND((fr.pe_ratio / NULLIF(ia.avg_pe, 0) - 1) * 100, 1) as "% vs ngành"
+FROM financial_ratios fr
+JOIN stock_industry_mapping sim ON fr.symbol = sim.symbol
+JOIN industry_averages ia ON sim.group_code = ia.group_code
+  AND fr.year = ia.year AND fr.period = ia.period
+WHERE fr.pe_ratio IS NOT NULL
+ORDER BY fr.pe_ratio ASC
+LIMIT 20;
 ```
 
 ---
 
-## 8. Kiểm thử
+## 9. Kiểm thử
 
 ### Chạy tests
 
 ```bash
-# Tất cả tests (53 tests)
+# Tất cả tests (98 tests — Phase 1 + Phase 2)
 uv run pytest
 
 # Với output chi tiết
 uv run pytest -v
+
+# Chỉ Phase 1 tests (53 tests)
+uv run pytest tests/test_crawlers/ tests/test_db/ tests/test_services/test_pipeline.py tests/test_services/test_price_adjuster.py -v
+
+# Chỉ Phase 2 tests (45 tests)
+uv run pytest tests/test_analysis/ tests/test_services/test_analysis_service.py -v
 
 # Chỉ chạy 1 file
 uv run pytest tests/test_services/test_pipeline.py -v
@@ -454,11 +689,23 @@ uv run pytest --cov=src/localstock tests/
 
 ### Phân loại tests
 
+**Phase 1 (53 tests):**
+
 | Nhóm | Số lượng | Thư mục | Nội dung |
 |------|----------|---------|----------|
 | Crawlers | 23 | `tests/test_crawlers/` | PriceCrawler, FinanceCrawler, CompanyCrawler, EventCrawler |
 | Database | 14 | `tests/test_db/` | StockRepository, PriceRepository (upsert, query) |
 | Services | 16 | `tests/test_services/` | Pipeline orchestration, PriceAdjuster (splits, dividends) |
+
+**Phase 2 (45 tests):**
+
+| Nhóm | Số lượng | Thư mục | Nội dung |
+|------|----------|---------|----------|
+| Technical | 8 | `tests/test_analysis/test_technical.py` | TechnicalAnalyzer (pandas-ta indicators) |
+| Trend | 9 | `tests/test_analysis/test_trend.py` | Trend detection, pivot points, S/R |
+| Fundamental | 13 | `tests/test_analysis/test_fundamental.py` | FundamentalAnalyzer (ratios, growth, TTM) |
+| Industry | 12 | `tests/test_analysis/test_industry.py` | IndustryAnalyzer (20 VN groups, ICB mapping) |
+| Service | 3 | `tests/test_services/test_analysis_service.py` | AnalysisService orchestrator |
 
 ### Cấu hình test (pyproject.toml)
 
@@ -473,7 +720,7 @@ timeout = 30                  # Timeout 30 giây/test
 
 ---
 
-## 9. Công cụ chất lượng code
+## 10. Công cụ chất lượng code
 
 ### Ruff — Linting & Formatting
 
@@ -496,23 +743,28 @@ uv run mypy src/localstock/
 
 ---
 
-## 10. Bảng tổng hợp
+## 11. Bảng tổng hợp
 
 | Chức năng | Lệnh | Yêu cầu | Kết quả |
 |-----------|-------|----------|---------|
 | **Cài đặt** | `uv sync` | Python ≥ 3.12 | Dependencies installed |
-| **Migration** | `uv run alembic upgrade head` | `.env` configured | 5 bảng trong Supabase |
+| **Migration** | `uv run alembic upgrade head` | `.env` configured | 10 bảng trong Supabase |
 | **API Server** | `uv run uvicorn localstock.api.app:app --port 8000` | Migration done | FastAPI tại `:8000` |
 | **Health Check** | `curl localhost:8000/health` | API running | JSON stats |
 | **Pipeline Full** | `uv run python run_pipeline.py` | DB connected | Crawl ~400 mã HOSE |
 | **Pipeline Single** | `uv run python run_single.py` | DB connected | Crawl 1 mã cụ thể |
-| **Tests** | `uv run pytest -v` | Dev deps | 53 tests |
+| **Phân tích Full** | `curl -X POST localhost:8000/api/analysis/run` | Data đã crawl | Phân tích ~400 mã |
+| **Technical** | `curl localhost:8000/api/analysis/VNM/technical` | Phân tích xong | Chỉ số kỹ thuật |
+| **Fundamental** | `curl localhost:8000/api/analysis/VNM/fundamental` | Phân tích xong | Tỷ số tài chính |
+| **Trend** | `curl localhost:8000/api/analysis/VNM/trend` | Phân tích xong | Xu hướng + S/R |
+| **Industry** | `curl localhost:8000/api/industry/groups` | Phân tích xong | 20 nhóm ngành VN |
+| **Tests** | `uv run pytest -v` | Dev deps | 98 tests |
 | **Lint** | `uv run ruff check src/` | ruff installed | Code issues |
 | **Type Check** | `uv run mypy src/` | mypy installed | Type errors |
 
 ---
 
-## Kiến trúc Phase 1
+## Kiến trúc LocalStock (Phase 1 + Phase 2)
 
 ```
 localstock/
@@ -520,27 +772,44 @@ localstock/
 │   ├── api/
 │   │   ├── app.py              # FastAPI app factory
 │   │   └── routes/
-│   │       └── health.py       # GET /health
+│   │       ├── health.py       # GET /health
+│   │       └── analysis.py     # 6 API phân tích (Phase 2)
 │   ├── config.py               # Pydantic Settings (.env loading)
-│   ├── crawlers/
+│   ├── crawlers/               # Phase 1
 │   │   ├── base.py             # BaseCrawler (fetch, fetch_batch)
 │   │   ├── price_crawler.py    # OHLCV từ vnstock Quote API
 │   │   ├── finance_crawler.py  # BCTC từ vnstock Finance API
 │   │   ├── company_crawler.py  # Profile từ vnstock Company API
 │   │   └── event_crawler.py    # Sự kiện từ vnstock Company.events()
+│   ├── analysis/               # Phase 2
+│   │   ├── technical.py        # TechnicalAnalyzer (pandas-ta)
+│   │   ├── trend.py            # detect_trend(), pivot_points(), S/R
+│   │   ├── fundamental.py      # FundamentalAnalyzer (ratios, growth, TTM)
+│   │   └── industry.py         # IndustryAnalyzer (20 VN groups, ICB mapping)
 │   ├── db/
 │   │   ├── database.py         # Engine, session factory, dependency
-│   │   ├── models.py           # 5 ORM models (Stock, StockPrice, ...)
+│   │   ├── models.py           # 10 ORM models (5 Phase 1 + 5 Phase 2)
 │   │   └── repositories/
 │   │       ├── stock_repo.py   # CRUD cho stocks
 │   │       ├── price_repo.py   # Upsert giá, get_latest_date
 │   │       ├── financial_repo.py # Upsert BCTC (JSON flexible)
-│   │       └── event_repo.py   # Upsert sự kiện, mark_processed
+│   │       ├── event_repo.py   # Upsert sự kiện, mark_processed
+│   │       ├── indicator_repo.py # Bulk upsert technical indicators (Phase 2)
+│   │       ├── ratio_repo.py   # Bulk upsert financial ratios (Phase 2)
+│   │       └── industry_repo.py  # Groups, mappings, averages (Phase 2)
 │   └── services/
-│       ├── pipeline.py         # Orchestrator (run_full, run_single)
-│       └── price_adjuster.py   # Điều chỉnh giá cho corporate actions
+│       ├── pipeline.py         # Orchestrator crawl (Phase 1)
+│       ├── price_adjuster.py   # Điều chỉnh giá corporate actions (Phase 1)
+│       └── analysis_service.py # Orchestrator phân tích (Phase 2)
 ├── alembic/                    # Database migrations
-├── tests/                      # 53 unit tests (mock, no DB needed)
+├── tests/                      # 98 unit tests (mock, no DB needed)
+│   ├── test_crawlers/          # 23 tests — Phase 1
+│   ├── test_db/                # 14 tests — Phase 1
+│   ├── test_services/          # 19 tests — Phase 1 (16) + Phase 2 (3)
+│   └── test_analysis/          # 42 tests — Phase 2
+├── docs/                       # Documentation
+│   ├── phase1-usage.md         # Tài liệu tổng hợp (file này)
+│   └── phase2-guide.md         # Hướng dẫn chi tiết Phase 2
 ├── .env                        # Biến môi trường (không commit)
 └── pyproject.toml              # Dependencies & tool config
 ```
