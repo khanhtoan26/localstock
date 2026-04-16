@@ -79,3 +79,33 @@ class ScoreRepository:
         )
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
+
+    async def get_previous_date_scores(
+        self, before_date: date_type
+    ) -> tuple[date_type | None, list[CompositeScore]]:
+        """Get all scores from the most recent scoring date BEFORE before_date.
+
+        Used by SCOR-04 to compare today's scores against previous run.
+
+        Returns:
+            Tuple of (previous_date, list_of_scores). If no previous data exists,
+            returns (None, []).
+        """
+        # Find the max date strictly before before_date
+        max_date_stmt = (
+            select(func.max(CompositeScore.date))
+            .where(CompositeScore.date < before_date)
+        )
+        max_result = await self.session.execute(max_date_stmt)
+        prev_date = max_result.scalar()
+        if prev_date is None:
+            return None, []
+
+        scores = await self.get_by_date(prev_date)
+        return prev_date, scores
+
+    async def get_latest_date(self) -> date_type | None:
+        """Get the most recent date that has composite scores."""
+        stmt = select(func.max(CompositeScore.date))
+        result = await self.session.execute(stmt)
+        return result.scalar()
