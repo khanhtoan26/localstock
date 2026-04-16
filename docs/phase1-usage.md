@@ -1,7 +1,7 @@
-# LocalStock — Hướng dẫn sử dụng (Phase 1 & 2)
+# LocalStock — Hướng dẫn sử dụng (Phase 1, 2 & 3)
 
-> Tài liệu tổng hợp tất cả những gì có thể chạy sau khi hoàn thành Phase 1 (Data Pipeline) và Phase 2 (Technical & Fundamental Analysis).
-> Cập nhật: 2025-07-16
+> Tài liệu tổng hợp tất cả những gì có thể chạy sau khi hoàn thành Phase 1 (Data Pipeline), Phase 2 (Technical & Fundamental Analysis) và Phase 3 (Sentiment Analysis & Scoring Engine).
+> Cập nhật: 2026-04-16
 
 ---
 
@@ -14,10 +14,12 @@
 5. [Chạy pipeline thu thập dữ liệu](#5-chạy-pipeline-thu-thập-dữ-liệu)
 6. [Crawlers riêng lẻ](#6-crawlers-riêng-lẻ)
 7. [Phân tích kỹ thuật & cơ bản (Phase 2)](#7-phân-tích-kỹ-thuật--cơ-bản-phase-2)
-8. [Truy vấn dữ liệu](#8-truy-vấn-dữ-liệu)
-9. [Kiểm thử](#9-kiểm-thử)
-10. [Công cụ chất lượng code](#10-công-cụ-chất-lượng-code)
-11. [Bảng tổng hợp](#11-bảng-tổng-hợp)
+8. [Tin tức & Cảm xúc thị trường (Phase 3)](#8-tin-tức--cảm-xúc-thị-trường-phase-3)
+9. [Xếp hạng & Chấm điểm (Phase 3)](#9-xếp-hạng--chấm-điểm-phase-3)
+10. [Truy vấn dữ liệu](#10-truy-vấn-dữ-liệu)
+11. [Kiểm thử](#11-kiểm-thử)
+12. [Công cụ chất lượng code](#12-công-cụ-chất-lượng-code)
+13. [Bảng tổng hợp](#13-bảng-tổng-hợp)
 
 ---
 
@@ -41,6 +43,11 @@ uv sync --extra dev
 **Yêu cầu bên ngoài:**
 - **Supabase PostgreSQL** — database miễn phí tại [supabase.com](https://supabase.com)
 - **Kết nối internet** — để gọi vnstock API lấy dữ liệu thị trường
+- **Ollama** — local LLM server cho phân tích cảm xúc (tùy chọn, bỏ qua nếu không có)
+  ```bash
+  # Cài Ollama + tải model
+  curl -fsSL https://ollama.com/install.sh | sh && ollama pull qwen2.5:14b-instruct-q4_K_M
+  ```
 
 ---
 
@@ -69,6 +76,19 @@ CRAWL_BATCH_SIZE=50         # Kích thước batch
 
 # Logging
 LOG_LEVEL=INFO              # INFO, DEBUG, WARNING, ERROR
+
+# Phase 3 — Ollama / Sentiment / Scoring
+OLLAMA_HOST=http://localhost:11434
+OLLAMA_MODEL=qwen2.5:14b-instruct-q4_K_M
+OLLAMA_TIMEOUT=120
+OLLAMA_KEEP_ALIVE=30m
+SCORING_WEIGHT_TECHNICAL=0.35
+SCORING_WEIGHT_FUNDAMENTAL=0.35
+SCORING_WEIGHT_SENTIMENT=0.30
+SCORING_WEIGHT_MACRO=0.0
+FUNNEL_TOP_N=50
+SENTIMENT_ARTICLES_PER_STOCK=5
+SENTIMENT_LOOKBACK_DAYS=7
 ```
 
 | Biến | Bắt buộc | Mô tả |
@@ -78,6 +98,12 @@ LOG_LEVEL=INFO              # INFO, DEBUG, WARNING, ERROR
 | `VNSTOCK_SOURCE` | ❌ | `VCI` (mặc định) hoặc `KBS` |
 | `CRAWL_DELAY_SECONDS` | ❌ | Delay giữa requests, mặc định `1.0` giây |
 | `LOG_LEVEL` | ❌ | Mức log, mặc định `INFO` |
+| `OLLAMA_HOST` | ❌ | Địa chỉ Ollama server, mặc định `http://localhost:11434` |
+| `OLLAMA_MODEL` | ❌ | Model LLM cho sentiment, mặc định `qwen2.5:14b-instruct-q4_K_M` |
+| `OLLAMA_TIMEOUT` | ❌ | Timeout gọi LLM (giây), mặc định `120` |
+| `SCORING_WEIGHT_*` | ❌ | Trọng số chấm điểm mỗi chiều (tổng = 1.0) |
+| `FUNNEL_TOP_N` | ❌ | Số mã top chạy sentiment (tiết kiệm GPU), mặc định `50` |
+| `SENTIMENT_LOOKBACK_DAYS` | ❌ | Số ngày lùi lại lấy tin tức, mặc định `7` |
 
 > **Lưu ý SSL:** Nếu mạng có proxy/firewall chặn SSL, thêm biến môi trường:
 > ```bash
@@ -92,7 +118,7 @@ LOG_LEVEL=INFO              # INFO, DEBUG, WARNING, ERROR
 ### Tạo schema (lần đầu)
 
 ```bash
-# Áp dụng migration — tạo 10 bảng trong Supabase (Phase 1 + Phase 2)
+# Áp dụng migration — tạo 13 bảng trong Supabase (Phase 1 + Phase 2 + Phase 3)
 uv run alembic upgrade head
 ```
 
@@ -117,6 +143,14 @@ Các bảng được tạo:
 | `industry_groups` | 20 nhóm ngành VN (code, name_vi, name_en) | `code` |
 | `stock_industry_mapping` | Mapping mã CK → nhóm ngành (từ ICB Level 3) | `symbol` |
 | `industry_averages` | Trung bình ngành theo kỳ (avg_pe, avg_roe, ...) | `id`, unique `(group_code, year, period)` |
+
+**Phase 3 — Sentiment & Scoring:**
+
+| Bảng | Mô tả | Khóa chính |
+|------|--------|------------|
+| `news_articles` | Tin tức crawl từ CafeF / VnExpress RSS | `id`, unique `(url)` |
+| `sentiment_scores` | Kết quả phân tích cảm xúc LLM theo bài viết | `id`, unique `(article_id, symbol)` |
+| `composite_scores` | Điểm tổng hợp xếp hạng cổ phiếu theo ngày | `id`, unique `(symbol, date)` |
 
 ### Các lệnh Alembic hữu ích
 
@@ -191,6 +225,18 @@ Truy cập `http://localhost:8000/docs` để xem API documentation tương tác
 | `POST` | `/api/analysis/run` | Chạy phân tích toàn bộ HOSE |
 | `GET` | `/api/industry/groups` | Danh sách 20 nhóm ngành VN |
 | `GET` | `/api/industry/{group_code}/averages` | Trung bình ngành (P/E, ROE, ...) |
+
+#### Phase 3 — API tin tức, cảm xúc & chấm điểm
+
+| Method | Endpoint | Mô tả |
+|--------|----------|-------|
+| `POST` | `/api/news/crawl` | Crawl tin tức từ CafeF + VnExpress RSS |
+| `GET` | `/api/news` | Xem tin tức gần đây (params: `days`, `limit`) |
+| `GET` | `/api/news/{symbol}/sentiment` | Xem cảm xúc theo mã (params: `days`) |
+| `POST` | `/api/sentiment/run` | Chạy phân tích cảm xúc bằng LLM |
+| `POST` | `/api/scores/run` | Chạy pipeline chấm điểm toàn bộ |
+| `GET` | `/api/scores/top` | Top cổ phiếu xếp hạng (params: `limit`) |
+| `GET` | `/api/scores/{symbol}` | Xem điểm một mã cụ thể |
 
 ```bash
 # Ví dụ gọi API phân tích
@@ -535,9 +581,201 @@ curl http://localhost:8000/api/industry/BANKING/averages
 
 ---
 
-## 8. Truy vấn dữ liệu
+## 8. Tin tức & Cảm xúc thị trường (Phase 3)
 
-### 8.1. Qua Repository (trong code Python)
+Phase 3 bổ sung khả năng crawl tin tức tài chính và phân tích cảm xúc (sentiment) bằng LLM chạy local qua Ollama.
+
+### 8.1. Thu thập tin tức (News Crawl)
+
+Crawl tin tức từ CafeF và VnExpress qua RSS:
+
+```bash
+# API: Crawl tin tức từ CafeF + VnExpress RSS
+curl -X POST http://localhost:8000/api/news/crawl
+```
+
+**Response mẫu:**
+```json
+{
+  "status": "completed",
+  "articles_found": 85,
+  "articles_stored": 62,
+  "duplicates_skipped": 23,
+  "sources": ["cafef", "vnexpress"]
+}
+```
+
+```bash
+# API: Xem tin tức gần đây
+curl "http://localhost:8000/api/news?days=7&limit=10"
+```
+
+### 8.2. Phân tích cảm xúc (Sentiment Analysis)
+
+Yêu cầu Ollama đang chạy với model `qwen2.5`:
+
+```bash
+# Khởi động Ollama
+ollama serve &
+ollama pull qwen2.5:14b-instruct-q4_K_M
+
+# API: Chạy phân tích cảm xúc
+curl -X POST http://localhost:8000/api/sentiment/run
+```
+
+**Response mẫu:**
+```json
+{
+  "status": "completed",
+  "ollama_available": true,
+  "funnel_candidates": 50,
+  "articles_processed": 187,
+  "sentiment_scores_stored": 187,
+  "duration_seconds": 342
+}
+```
+
+> **Lưu ý:** Nếu Ollama không khả dụng, API trả `"ollama_available": false` và bỏ qua phân tích — không gây lỗi.
+
+```bash
+# API: Xem cảm xúc theo mã
+curl "http://localhost:8000/api/news/VNM/sentiment?days=7"
+```
+
+**Response mẫu:**
+```json
+{
+  "symbol": "VNM",
+  "aggregate_score": 0.65,
+  "article_count": 5,
+  "scores": [
+    {
+      "title": "Vinamilk báo lãi kỷ lục quý I/2026",
+      "sentiment": "positive",
+      "score": 0.85,
+      "reason": "Kết quả kinh doanh vượt kỳ vọng, tăng trưởng doanh thu 15%",
+      "published_at": "2026-04-14T08:30:00Z"
+    },
+    {
+      "title": "Ngành sữa cạnh tranh khốc liệt từ hàng nhập khẩu",
+      "sentiment": "negative",
+      "score": -0.40,
+      "reason": "Áp lực cạnh tranh từ sữa ngoại nhập, thị phần bị đe dọa",
+      "published_at": "2026-04-12T10:15:00Z"
+    }
+  ]
+}
+```
+
+### 8.3. Chi tiết kỹ thuật
+
+**Nguồn RSS:**
+- **CafeF** (4 feeds): `thi-truong-chung-khoan`, `doanh-nghiep`, `tai-chinh-ngan-hang`, `vi-mo-dau-tu`
+- **VnExpress** (1 feed): `kinh-doanh`
+
+**Xử lý LLM:**
+- Ollama structured output: `format=SentimentResult.model_json_schema()`
+- Anti-prompt-injection: cắt nội dung bài viết ở 2,000 ký tự
+- Kết quả: `sentiment` (positive/negative/neutral), `score` (-1.0 đến 1.0), `reason` (giải thích)
+
+**Tổng hợp cảm xúc:**
+- Time-weighted aggregation: exponential decay với `half_life=3 ngày`
+- Tin mới có trọng số cao hơn tin cũ
+- Aggregate score = trung bình có trọng số của tất cả bài viết liên quan
+
+**Chiến lược funnel:**
+- Chỉ chạy LLM cho top `FUNNEL_TOP_N` cổ phiếu (mặc định 50) — tiết kiệm GPU
+- Top N được chọn dựa trên điểm kỹ thuật + cơ bản từ Phase 2
+- Mỗi mã tối đa `SENTIMENT_ARTICLES_PER_STOCK` bài viết (mặc định 5)
+
+---
+
+## 9. Xếp hạng & Chấm điểm (Phase 3)
+
+Hệ thống chấm điểm tổng hợp kết hợp phân tích kỹ thuật, cơ bản và cảm xúc để xếp hạng cổ phiếu.
+
+### 9.1. Chạy chấm điểm
+
+```bash
+# API: Chạy pipeline chấm điểm toàn bộ
+curl -X POST http://localhost:8000/api/scores/run
+```
+
+**Response mẫu:**
+```json
+{
+  "status": "completed",
+  "stocks_scored": 398,
+  "errors": 2,
+  "date": "2026-04-16"
+}
+```
+
+### 9.2. Xem xếp hạng
+
+```bash
+# API: Top 20 cổ phiếu
+curl "http://localhost:8000/api/scores/top?limit=20"
+```
+
+**Response mẫu:**
+```json
+{
+  "date": "2026-04-16",
+  "stocks": [
+    {
+      "symbol": "FPT",
+      "total_score": 82.5,
+      "grade": "A",
+      "rank": 1,
+      "technical_score": 78.3,
+      "fundamental_score": 88.1,
+      "sentiment_score": 79.4
+    },
+    {
+      "symbol": "ACB",
+      "total_score": 76.8,
+      "grade": "B",
+      "rank": 2,
+      "technical_score": 72.1,
+      "fundamental_score": 80.5,
+      "sentiment_score": 75.2
+    }
+  ]
+}
+```
+
+```bash
+# API: Xem điểm một mã cụ thể
+curl "http://localhost:8000/api/scores/VNM"
+```
+
+### 9.3. Hệ thống chấm điểm
+
+| Chiều | Trọng số | Nguồn dữ liệu | Normalize |
+|-------|----------|----------------|-----------|
+| **Kỹ thuật** | 35% | RSI, MACD, Bollinger Bands, trend, volume | 0-100 |
+| **Cơ bản** | 35% | P/E, P/B, ROE, D/E | 0-100 |
+| **Cảm xúc** | 30% | LLM sentiment từ tin tức | 0-100 |
+| **Vĩ mô** | 0% | Chưa triển khai (Phase 4) | — |
+
+**Tổng điểm:** Composite 0-100, tự động phân bổ lại trọng số nếu thiếu chiều nào (ví dụ: không có sentiment → kỹ thuật 50% + cơ bản 50%).
+
+**Bảng xếp hạng (Grade):**
+
+| Grade | Điểm | Ý nghĩa |
+|-------|------|---------|
+| **A** | 80-100 | Xuất sắc |
+| **B** | 60-79 | Tốt |
+| **C** | 40-59 | Trung bình |
+| **D** | 20-39 | Yếu |
+| **F** | 0-19 | Kém |
+
+---
+
+## 10. Truy vấn dữ liệu
+
+### 10.1. Qua Repository (trong code Python)
 
 ```python
 import asyncio
@@ -604,7 +842,7 @@ async def main():
 asyncio.run(main())
 ```
 
-### 8.2. Qua SQL trực tiếp (Supabase Dashboard hoặc psql)
+### 10.2. Qua SQL trực tiếp (Supabase Dashboard hoặc psql)
 
 ```sql
 -- Top 10 mã theo volume trung bình 30 ngày
@@ -656,16 +894,45 @@ JOIN industry_averages ia ON sim.group_code = ia.group_code
 WHERE fr.pe_ratio IS NOT NULL
 ORDER BY fr.pe_ratio ASC
 LIMIT 20;
+
+-- [Phase 3] Tin tức gần đây
+SELECT title, source, published_at FROM news_articles
+ORDER BY published_at DESC LIMIT 20;
+
+-- [Phase 3] Cảm xúc theo mã
+SELECT na.title, ss.sentiment, ss.score, ss.reason
+FROM sentiment_scores ss
+JOIN news_articles na ON na.id = ss.article_id
+WHERE ss.symbol = 'VNM'
+ORDER BY ss.computed_at DESC;
+
+-- [Phase 3] Top 10 cổ phiếu xếp hạng cao nhất
+SELECT symbol, total_score, grade, rank,
+       technical_score, fundamental_score, sentiment_score
+FROM composite_scores
+WHERE date = CURRENT_DATE
+ORDER BY rank ASC
+LIMIT 10;
+
+-- [Phase 3] So sánh điểm các chiều
+SELECT symbol, grade,
+       ROUND(technical_score, 1) as tech,
+       ROUND(fundamental_score, 1) as fund,
+       ROUND(sentiment_score, 1) as sent,
+       ROUND(total_score, 1) as total
+FROM composite_scores
+WHERE date = CURRENT_DATE
+ORDER BY total_score DESC;
 ```
 
 ---
 
-## 9. Kiểm thử
+## 11. Kiểm thử
 
 ### Chạy tests
 
 ```bash
-# Tất cả tests (98 tests — Phase 1 + Phase 2)
+# Tất cả tests (147 tests — Phase 1 + Phase 2 + Phase 3)
 uv run pytest
 
 # Với output chi tiết
@@ -676,6 +943,9 @@ uv run pytest tests/test_crawlers/ tests/test_db/ tests/test_services/test_pipel
 
 # Chỉ Phase 2 tests (45 tests)
 uv run pytest tests/test_analysis/ tests/test_services/test_analysis_service.py -v
+
+# Chỉ Phase 3 tests (49 tests)
+uv run pytest tests/test_scoring/ tests/test_ai/ tests/test_services/test_news_service.py tests/test_services/test_sentiment_service.py tests/test_services/test_scoring_service.py tests/test_crawlers/test_news_crawler.py -v
 
 # Chỉ chạy 1 file
 uv run pytest tests/test_services/test_pipeline.py -v
@@ -707,6 +977,13 @@ uv run pytest --cov=src/localstock tests/
 | Industry | 12 | `tests/test_analysis/test_industry.py` | IndustryAnalyzer (20 VN groups, ICB mapping) |
 | Service | 3 | `tests/test_services/test_analysis_service.py` | AnalysisService orchestrator |
 
+**Phase 3 (49 tests):**
+
+| Nhóm | Số lượng | Thư mục | Nội dung |
+|------|----------|---------|----------|
+| Scoring | 25 | `tests/test_scoring/` | Normalizers, engine, config, grade |
+| AI | 24 | `tests/test_ai/` | OllamaClient, prompts, sentiment pipeline |
+
 ### Cấu hình test (pyproject.toml)
 
 ```toml
@@ -720,7 +997,7 @@ timeout = 30                  # Timeout 30 giây/test
 
 ---
 
-## 10. Công cụ chất lượng code
+## 12. Công cụ chất lượng code
 
 ### Ruff — Linting & Formatting
 
@@ -743,12 +1020,12 @@ uv run mypy src/localstock/
 
 ---
 
-## 11. Bảng tổng hợp
+## 13. Bảng tổng hợp
 
 | Chức năng | Lệnh | Yêu cầu | Kết quả |
 |-----------|-------|----------|---------|
 | **Cài đặt** | `uv sync` | Python ≥ 3.12 | Dependencies installed |
-| **Migration** | `uv run alembic upgrade head` | `.env` configured | 10 bảng trong Supabase |
+| **Migration** | `uv run alembic upgrade head` | `.env` configured | 13 bảng trong Supabase |
 | **API Server** | `uv run uvicorn localstock.api.app:app --port 8000` | Migration done | FastAPI tại `:8000` |
 | **Health Check** | `curl localhost:8000/health` | API running | JSON stats |
 | **Pipeline Full** | `uv run python run_pipeline.py` | DB connected | Crawl ~400 mã HOSE |
@@ -758,13 +1035,17 @@ uv run mypy src/localstock/
 | **Fundamental** | `curl localhost:8000/api/analysis/VNM/fundamental` | Phân tích xong | Tỷ số tài chính |
 | **Trend** | `curl localhost:8000/api/analysis/VNM/trend` | Phân tích xong | Xu hướng + S/R |
 | **Industry** | `curl localhost:8000/api/industry/groups` | Phân tích xong | 20 nhóm ngành VN |
-| **Tests** | `uv run pytest -v` | Dev deps | 98 tests |
+| **News Crawl** | `curl -X POST localhost:8000/api/news/crawl` | API running | Crawl tin tức RSS |
+| **Sentiment** | `curl -X POST localhost:8000/api/sentiment/run` | Ollama + tin tức | Phân tích cảm xúc |
+| **Scoring** | `curl -X POST localhost:8000/api/scores/run` | Phân tích xong | Chấm điểm ~400 mã |
+| **Top Stocks** | `curl localhost:8000/api/scores/top?limit=20` | Chấm điểm xong | Top cổ phiếu |
+| **Tests** | `uv run pytest -v` | Dev deps | 147 tests |
 | **Lint** | `uv run ruff check src/` | ruff installed | Code issues |
 | **Type Check** | `uv run mypy src/` | mypy installed | Type errors |
 
 ---
 
-## Kiến trúc LocalStock (Phase 1 + Phase 2)
+## Kiến trúc LocalStock (Phase 1 + Phase 2 + Phase 3)
 
 ```
 localstock/
@@ -773,14 +1054,25 @@ localstock/
 │   │   ├── app.py              # FastAPI app factory
 │   │   └── routes/
 │   │       ├── health.py       # GET /health
-│   │       └── analysis.py     # 6 API phân tích (Phase 2)
+│   │       ├── analysis.py     # 6 API phân tích (Phase 2)
+│   │       ├── news.py         # 4 news/sentiment endpoints (Phase 3)
+│   │       └── scores.py       # 3 scoring endpoints (Phase 3)
 │   ├── config.py               # Pydantic Settings (.env loading)
 │   ├── crawlers/               # Phase 1
 │   │   ├── base.py             # BaseCrawler (fetch, fetch_batch)
 │   │   ├── price_crawler.py    # OHLCV từ vnstock Quote API
 │   │   ├── finance_crawler.py  # BCTC từ vnstock Finance API
 │   │   ├── company_crawler.py  # Profile từ vnstock Company API
-│   │   └── event_crawler.py    # Sự kiện từ vnstock Company.events()
+│   │   ├── event_crawler.py    # Sự kiện từ vnstock Company.events()
+│   │   └── news_crawler.py     # CafeF + VnExpress RSS (Phase 3)
+│   ├── ai/                     # Phase 3
+│   │   ├── client.py           # OllamaClient (retry, health, structured output)
+│   │   └── prompts.py          # Sentiment system prompt (Vietnamese)
+│   ├── scoring/                # Phase 3
+│   │   ├── __init__.py         # score_to_grade()
+│   │   ├── config.py           # ScoringConfig (weights from settings)
+│   │   ├── normalizer.py       # 3 normalizers (tech, fund, sentiment)
+│   │   └── engine.py           # compute_composite() with weight redistribution
 │   ├── analysis/               # Phase 2
 │   │   ├── technical.py        # TechnicalAnalyzer (pandas-ta)
 │   │   ├── trend.py            # detect_trend(), pivot_points(), S/R
@@ -788,7 +1080,7 @@ localstock/
 │   │   └── industry.py         # IndustryAnalyzer (20 VN groups, ICB mapping)
 │   ├── db/
 │   │   ├── database.py         # Engine, session factory, dependency
-│   │   ├── models.py           # 10 ORM models (5 Phase 1 + 5 Phase 2)
+│   │   ├── models.py           # 13 ORM models (5 Phase 1 + 5 Phase 2 + 3 Phase 3)
 │   │   └── repositories/
 │   │       ├── stock_repo.py   # CRUD cho stocks
 │   │       ├── price_repo.py   # Upsert giá, get_latest_date
@@ -800,13 +1092,18 @@ localstock/
 │   └── services/
 │       ├── pipeline.py         # Orchestrator crawl (Phase 1)
 │       ├── price_adjuster.py   # Điều chỉnh giá corporate actions (Phase 1)
-│       └── analysis_service.py # Orchestrator phân tích (Phase 2)
+│       ├── analysis_service.py # Orchestrator phân tích (Phase 2)
+│       ├── news_service.py     # News crawl orchestrator (Phase 3)
+│       ├── sentiment_service.py # LLM sentiment pipeline (Phase 3)
+│       └── scoring_service.py  # Composite scoring pipeline (Phase 3)
 ├── alembic/                    # Database migrations
-├── tests/                      # 98 unit tests (mock, no DB needed)
+├── tests/                      # 147 unit tests (mock, no DB needed)
 │   ├── test_crawlers/          # 23 tests — Phase 1
 │   ├── test_db/                # 14 tests — Phase 1
 │   ├── test_services/          # 19 tests — Phase 1 (16) + Phase 2 (3)
-│   └── test_analysis/          # 42 tests — Phase 2
+│   ├── test_analysis/          # 42 tests — Phase 2
+│   ├── test_scoring/           # 25 tests — Phase 3
+│   └── test_ai/                # 24 tests — Phase 3
 ├── docs/                       # Documentation
 │   ├── phase1-usage.md         # Tài liệu tổng hợp (file này)
 │   └── phase2-guide.md         # Hướng dẫn chi tiết Phase 2
