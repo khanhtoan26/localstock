@@ -96,6 +96,11 @@ def predict_3day_trend(indicator_data: dict) -> dict:
             reasons.append(
                 f"Khối lượng giao dịch cao (relative_volume = {rel_vol:.1f}x) xác nhận xu hướng tăng"
             )
+        elif rel_vol > 1.5 and trend == "downtrend":
+            signals -= 1
+            reasons.append(
+                f"Khối lượng giao dịch cao (relative_volume = {rel_vol:.1f}x) xác nhận xu hướng giảm"
+            )
 
     # Determine direction
     if signals >= 2:

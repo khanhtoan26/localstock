@@ -15,6 +15,8 @@ from localstock.db.database import get_session
 from localstock.services.report_service import ReportService
 
 router = APIRouter(prefix="/api")
+# NOTE: Per-process lock — prevents concurrent generation within a single worker.
+# For multi-worker deployment, use a database-level advisory lock instead.
 _report_lock = asyncio.Lock()
 
 

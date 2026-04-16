@@ -292,7 +292,7 @@ class TestReportServiceRunFull:
         result = await service.run_full()
 
         assert result["reports_generated"] == 0
-        assert "error" in result or "Ollama" in str(result.get("error", ""))
+        assert "Ollama not available" in result["errors"]
 
     @pytest.mark.asyncio
     @patch("localstock.services.report_service.OllamaClient")

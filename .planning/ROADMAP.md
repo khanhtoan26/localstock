@@ -88,10 +88,10 @@ Plans:
 **Plans:** 4 plans
 
 Plans:
-- [ ] 04-01-PLAN.md — Foundation: DB models (MacroIndicator, AnalysisReport), migration, repositories, config updates
-- [ ] 04-02-PLAN.md — Macro module: VCB exchange rate crawler, sector impact rules, macro scoring integration
-- [ ] 04-03-PLAN.md — T+3 prediction logic, StockReport model, report prompts, OllamaClient.generate_report()
-- [ ] 04-04-PLAN.md — ReportService orchestrator, API endpoints for reports and macro data
+- [x] 04-01-PLAN.md — Foundation: DB models (MacroIndicator, AnalysisReport), migration, repositories, config updates
+- [x] 04-02-PLAN.md — Macro module: VCB exchange rate crawler, sector impact rules, macro scoring integration
+- [x] 04-03-PLAN.md — T+3 prediction logic, StockReport model, report prompts, OllamaClient.generate_report()
+- [x] 04-04-PLAN.md — ReportService orchestrator, API endpoints for reports and macro data
 
 ### Phase 5: Automation & Notifications
 **Goal**: Fully automated daily pipeline that runs after market close and sends intelligent alerts via Telegram

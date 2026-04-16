@@ -18,9 +18,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from localstock.ai.client import StockReport
 from localstock.reports.generator import (
     ReportDataBuilder,
-    StockReport,
     build_report_prompt,
 )
 

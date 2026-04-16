@@ -195,7 +195,7 @@ MACRO_SECTOR_IMPACT: dict[str, dict[str, float]] = {
 # Mapping from macro condition dict values to impact keys
 _CONDITION_TO_KEY: dict[str, dict[str, str]] = {
     "interest_rate": {"rising": "interest_rate_rising", "falling": "interest_rate_falling"},
-    "exchange_rate": {"weakening": "vnd_weakening", "strengthening": "vnd_strengthening"},
+    "exchange_rate": {"rising": "vnd_weakening", "falling": "vnd_strengthening"},
     "cpi": {"rising": "cpi_rising", "falling": "cpi_falling"},
     "gdp": {"growing": "gdp_growing", "slowing": "gdp_slowing"},
 }

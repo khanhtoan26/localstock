@@ -43,6 +43,16 @@ class ReportRepository:
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
+    async def get_most_recent(self) -> AnalysisReport | None:
+        """Get the single most recent report across all symbols."""
+        stmt = (
+            select(AnalysisReport)
+            .order_by(AnalysisReport.generated_at.desc())
+            .limit(1)
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
     async def get_by_date(self, target_date: date_type) -> list[AnalysisReport]:
         """Get all reports for a specific date, ordered by total_score desc."""
         stmt = (

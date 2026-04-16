@@ -89,14 +89,14 @@ class ReportService:
         is_healthy = await self.ollama.health_check()
         if not is_healthy:
             logger.warning("Ollama not available — skipping report generation")
-            summary["error"] = "Ollama not available"
+            summary["errors"].append("Ollama not available")
             return summary
 
         # Step 2: Get top-ranked stocks
         scores = await self.score_repo.get_top_ranked(limit=top_n)
         if not scores:
             logger.info("No scored stocks — skipping report generation")
-            summary["error"] = "No scored stocks available"
+            summary["errors"].append("No scored stocks available")
             return summary
 
         # Step 3: Get macro context once (shared across all stocks)
@@ -247,7 +247,7 @@ class ReportService:
         reports = await self.report_repo.get_by_date(today)
         if not reports:
             # Try most recent date with reports
-            latest = await self.report_repo.get_latest(None)
+            latest = await self.report_repo.get_most_recent()
             if latest:
                 reports = await self.report_repo.get_by_date(latest.date)
 

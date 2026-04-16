@@ -1,44 +1,10 @@
-"""Report data assembly and StockReport model.
+"""Report data assembly and prompt building.
 
-Per REPT-01: StockReport Pydantic model for structured LLM output with 9 sections.
 Per REPT-02: ReportDataBuilder assembles all stock data into prompt-ready dict.
-
-StockReport is used as the Ollama format schema for structured JSON generation.
-ReportDataBuilder gathers data from scoring, indicators, ratios, sentiment, macro, T+3.
+StockReport model is defined in ai.client (single source of truth for Ollama format schema).
 """
 
-from pydantic import BaseModel, Field
-
 from localstock.ai.prompts import REPORT_USER_TEMPLATE
-
-
-class StockReport(BaseModel):
-    """Structured LLM output for stock analysis report.
-
-    Per REPT-01: All 9 sections required for a complete analysis report.
-    Used as Ollama format parameter for structured JSON generation.
-
-    Attributes:
-        summary: 2-3 sentence overview of the stock.
-        technical_analysis: Technical indicator signal analysis.
-        fundamental_analysis: Fundamental ratio evaluation.
-        sentiment_analysis: Market sentiment from news.
-        macro_impact: Macro context impact on sector/stock.
-        long_term_suggestion: Long-term investment suggestion with reasoning.
-        swing_trade_suggestion: Swing trade suggestion with T+3 warning.
-        recommendation: Buy strong / Buy / Hold / Sell / Sell strong.
-        confidence: High / Medium / Low.
-    """
-
-    summary: str = Field(description="Tóm tắt 2-3 câu về mã cổ phiếu")
-    technical_analysis: str = Field(description="Phân tích tín hiệu kỹ thuật")
-    fundamental_analysis: str = Field(description="Đánh giá chỉ số cơ bản")
-    sentiment_analysis: str = Field(description="Phân tích tâm lý thị trường từ tin tức")
-    macro_impact: str = Field(description="Ảnh hưởng bối cảnh vĩ mô lên ngành/cổ phiếu")
-    long_term_suggestion: str = Field(description="Gợi ý đầu tư dài hạn với lý do")
-    swing_trade_suggestion: str = Field(description="Gợi ý lướt sóng kèm cảnh báo T+3")
-    recommendation: str = Field(description="Mua mạnh / Mua / Nắm giữ / Bán / Bán mạnh")
-    confidence: str = Field(description="Cao / Trung bình / Thấp")
 
 
 def _safe(value, fallback: str = "N/A") -> str:

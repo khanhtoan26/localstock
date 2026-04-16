@@ -362,7 +362,7 @@ class MacroIndicator(Base):
     value: Mapped[float] = mapped_column(Float)
     period: Mapped[str] = mapped_column(String(20))  # '2026-Q1', '2026-03', etc.
     source: Mapped[str] = mapped_column(String(50))  # 'SBV', 'GSO', etc.
-    trend: Mapped[str | None] = mapped_column(String(20), nullable=True)  # 'increasing', 'decreasing', 'stable'
+    trend: Mapped[str | None] = mapped_column(String(20), nullable=True)  # 'rising', 'falling', 'stable'
     recorded_at: Mapped[date] = mapped_column(Date)
     fetched_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC)
