@@ -2,7 +2,7 @@
 
 ## What This Is
 
-LocalStock là một AI Stock Agent cá nhân cho thị trường chứng khoán Việt Nam (HOSE). Agent tự động crawl dữ liệu ~400 mã cổ phiếu, phân tích đa chiều (kỹ thuật, cơ bản, sentiment, vĩ mô), xếp hạng và đưa ra gợi ý mã đáng mua kèm báo cáo chi tiết. Chạy trên máy cá nhân với LLM local miễn phí qua Ollama (RTX 3060).
+LocalStock là một AI Stock Agent cá nhân cho thị trường chứng khoán Việt Nam (HOSE). Agent tự động crawl dữ liệu ~400 mã cổ phiếu, phân tích đa chiều (kỹ thuật, cơ bản, sentiment, vĩ mô), xếp hạng và đưa ra gợi ý mã đáng mua kèm báo cáo tiếng Việt chi tiết. Hệ thống chạy tự động hàng ngày sau phiên giao dịch, gửi alert qua Telegram, và có web dashboard để theo dõi trực quan. Chạy trên máy cá nhân với LLM local miễn phí qua Ollama (RTX 3060).
 
 ## Core Value
 
@@ -12,41 +12,44 @@ Agent tự động phân tích và xếp hạng cổ phiếu HOSE — cho tôi d
 
 ### Validated
 
-(None yet — ship to validate)
+- ✓ Agent tự crawl dữ liệu giá/khối lượng ~400 mã HOSE (định kỳ + on-demand) — v1.0
+- ✓ Tính toán chỉ báo kỹ thuật (MA, RSI, MACD, Bollinger Bands...) — v1.0
+- ✓ Thu thập dữ liệu cơ bản (P/E, EPS, ROE, doanh thu, lợi nhuận từ BCTC) — v1.0
+- ✓ Crawl tin tức tài chính để phân tích sentiment — v1.0
+- ✓ Thu thập dữ liệu vĩ mô (lãi suất, tỷ giá, CPI, GDP...) — v1.0
+- ✓ LLM local (Ollama) tổng hợp phân tích đa chiều và đưa gợi ý — v1.0
+- ✓ Xếp hạng điểm cho từng mã (VD: VNM 85/100) — v1.0
+- ✓ Báo cáo chi tiết từng mã (kỹ thuật + cơ bản + sentiment + vĩ mô) — v1.0
+- ✓ Dashboard web hiển thị bảng xếp hạng, biểu đồ, chi tiết mã — v1.0
+- ✓ Notification qua Telegram khi có gợi ý tốt — v1.0
+- ✓ Agent chạy định kỳ (hàng ngày) tự động — v1.0
+- ✓ Agent chạy on-demand khi người dùng yêu cầu — v1.0
 
 ### Active
 
-- [ ] Agent tự crawl dữ liệu giá/khối lượng ~400 mã HOSE (định kỳ + on-demand)
-- [ ] Tính toán chỉ báo kỹ thuật (MA, RSI, MACD, Bollinger Bands...)
-- [ ] Thu thập dữ liệu cơ bản (P/E, EPS, ROE, doanh thu, lợi nhuận từ BCTC)
-- [ ] Crawl tin tức tài chính để phân tích sentiment
-- [ ] Thu thập dữ liệu vĩ mô (lãi suất, tỷ giá, CPI, GDP...)
-- [ ] LLM local (Ollama) tổng hợp phân tích đa chiều và đưa gợi ý
-- [ ] Xếp hạng điểm cho từng mã (VD: VNM 85/100)
-- [ ] Báo cáo chi tiết từng mã (kỹ thuật + cơ bản + sentiment + vĩ mô)
-- [ ] Dashboard web hiển thị bảng xếp hạng, biểu đồ, chi tiết mã
-- [ ] Notification qua Telegram khi có gợi ý tốt
-- [ ] Agent chạy định kỳ (hàng ngày) tự động
-- [ ] Agent chạy on-demand khi người dùng yêu cầu
+(None — all v1 requirements validated. Use `/gsd-new-milestone` to define v2 requirements.)
 
 ### Out of Scope
 
-- Thị trường HNX/UPCOM — tập trung HOSE trước, mở rộng sau
+- Thị trường HNX/UPCOM — tập trung HOSE trước, mở rộng sau (v2 candidate)
 - Multi-user / authentication — tool cá nhân, không cần auth
 - Paid LLM API (GPT/Claude) — dùng local LLM miễn phí qua Ollama
 - Trading tự động (auto-buy/sell) — chỉ gợi ý, không tự giao dịch
 - Mobile app — web dashboard là đủ cho v1
+- Intraday data (phút/giờ) — v2 candidate
+- Backtesting — v2 candidate
 
 ## Context
 
+- **Current version:** v1.0 MVP shipped 2026-04-16
+- **Codebase:** ~8,500 LOC Python (backend) + ~41,200 LOC TypeScript (frontend) + ~4,100 LOC CSS
+- **Backend:** Python + FastAPI + SQLAlchemy + Alembic + PostgreSQL (Supabase)
+- **Frontend:** Next.js 16 + shadcn/ui + Tailwind v4 + lightweight-charts v5
+- **AI:** Ollama local LLM (RTX 3060, 12GB VRAM) for sentiment analysis and report generation
+- **Notifications:** Telegram bot via python-telegram-bot
+- **Automation:** APScheduler daily pipeline after market close (15:30)
+- **Tests:** 326 backend unit tests passing
 - **Thị trường mục tiêu:** Sàn HOSE (~400 mã có thanh khoản cao)
-- **Phân tích đa chiều:** Kỹ thuật (chỉ báo giá/volume) + Cơ bản (BCTC, chỉ số tài chính) + Sentiment (tin tức) + Vĩ mô (lãi suất, tỷ giá, CPI)
-- **AI engine:** LLM chạy local qua Ollama trên RTX 3060 (12GB VRAM) — hỗ trợ model 7B-13B (Llama, Mistral, Qwen...)
-- **Nguồn dữ liệu:** Agent tự research và tìm nguồn phù hợp (CafeF, VnDirect, SSI, TCBS API...)
-- **Output:** Bảng xếp hạng điểm + báo cáo chi tiết + phân tích vĩ mô liên kết
-- **Notification:** Telegram bot gửi alert khi có gợi ý tốt
-- **Deployment:** Localhost trước, kiến trúc sẵn sàng lên cloud sau
-- **Tech stack:** Agent research và gợi ý stack phù hợp
 
 ## Constraints
 
@@ -59,10 +62,16 @@ Agent tự động phân tích và xếp hạng cổ phiếu HOSE — cho tôi d
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| LLM local qua Ollama thay vì paid API | Miễn phí, có RTX 3060, data sovereignty | — Pending |
-| Chỉ HOSE, không HNX/UPCOM | Tập trung thanh khoản cao, giảm scope v1 | — Pending |
-| Tool cá nhân, không multi-user | Giảm complexity, không cần auth/billing | — Pending |
-| Tech stack do agent research | Để research phase tìm stack tối ưu cho use case | — Pending |
+| LLM local qua Ollama thay vì paid API | Miễn phí, có RTX 3060, data sovereignty | ✓ Good — chạy ổn trên RTX 3060, model 7B đủ cho sentiment + reports |
+| Chỉ HOSE, không HNX/UPCOM | Tập trung thanh khoản cao, giảm scope v1 | ✓ Good — ~400 mã là đủ cho v1 |
+| Tool cá nhân, không multi-user | Giảm complexity, không cần auth/billing | ✓ Good — giữ đơn giản, CORS chỉ localhost |
+| Python + FastAPI backend | Hệ sinh thái data science mạnh (pandas, pandas-ta) | ✓ Good — tận dụng vnstock, pandas-ta |
+| PostgreSQL (Supabase) | Free tier đủ cho cá nhân, SQL mạnh cho analytics | ✓ Good — JSONB cho financial statements |
+| Next.js 16 + shadcn/ui frontend | Modern React, dark theme sẵn, component library mạnh | ✓ Good — build nhanh, responsive |
+| vnstock v3.5.1 cho data | Library Việt Nam cho HOSE data, community active | ✓ Good — API stable, cover đủ data |
+| lightweight-charts v5 cho biểu đồ | Nhẹ, chuyên cho financial charts, TradingView quality | ✓ Good — candlestick + volume overlay tốt |
+| APScheduler cho automation | Đơn giản, chạy trong process, không cần Celery/Redis | ✓ Good — daily pipeline ổn định |
+| Telegram cho notifications | User quen dùng, API đơn giản, push notification miễn phí | ✓ Good — daily digest + alert hoạt động tốt |
 
 ## Evolution
 
@@ -82,4 +91,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-16 after Phase 6 (Web Dashboard) completion — v1.0 milestone complete (6/6 phases)*
+*Last updated: 2026-04-16 after v1.0 milestone completion*
