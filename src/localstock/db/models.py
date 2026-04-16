@@ -396,3 +396,65 @@ class AnalysisReport(Base):
     __table_args__ = (
         UniqueConstraint("symbol", "date", "report_type", name="uq_analysis_report"),
     )
+
+
+class ScoreChangeAlert(Base):
+    """Records significant score changes detected between consecutive runs (SCOR-04)."""
+
+    __tablename__ = "score_change_alerts"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    symbol: Mapped[str] = mapped_column(String(10), index=True)
+    date: Mapped[date] = mapped_column(Date, index=True)
+    previous_score: Mapped[float] = mapped_column(Float)
+    current_score: Mapped[float] = mapped_column(Float)
+    delta: Mapped[float] = mapped_column(Float)
+    previous_grade: Mapped[str] = mapped_column(String(2))
+    current_grade: Mapped[str] = mapped_column(String(2))
+    direction: Mapped[str] = mapped_column(String(10))  # 'up' or 'down'
+    notified: Mapped[bool] = mapped_column(Boolean, default=False)
+    detected_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )
+
+    __table_args__ = (
+        UniqueConstraint("symbol", "date", name="uq_score_change_alert"),
+    )
+
+
+class SectorSnapshot(Base):
+    """Daily sector-level aggregated metrics for rotation tracking (SCOR-05)."""
+
+    __tablename__ = "sector_snapshots"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    date: Mapped[date] = mapped_column(Date, index=True)
+    group_code: Mapped[str] = mapped_column(String(20), index=True)
+    avg_score: Mapped[float] = mapped_column(Float)
+    avg_volume: Mapped[float] = mapped_column(Float)
+    total_volume: Mapped[int] = mapped_column(BigInteger)
+    stock_count: Mapped[int] = mapped_column(Integer)
+    avg_score_change: Mapped[float | None] = mapped_column(Float, nullable=True)
+
+    __table_args__ = (
+        UniqueConstraint("date", "group_code", name="uq_sector_snapshot"),
+    )
+
+
+class NotificationLog(Base):
+    """Log of sent notifications for deduplication (Pitfall 2 mitigation)."""
+
+    __tablename__ = "notification_logs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    date: Mapped[date] = mapped_column(Date, index=True)
+    notification_type: Mapped[str] = mapped_column(String(30))  # 'daily_digest', 'score_alert', 'manual'
+    sent_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )
+    status: Mapped[str] = mapped_column(String(20))  # 'sent', 'failed', 'skipped'
+    details: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+
+    __table_args__ = (
+        UniqueConstraint("date", "notification_type", name="uq_notification_log"),
+    )

@@ -39,6 +39,17 @@ class Settings(BaseSettings):
     # SSL verification (set to false behind corporate proxy with self-signed certs)
     ssl_verify: bool = True
 
+    # Telegram notifications (per D-01)
+    telegram_bot_token: str = ""  # Set via TELEGRAM_BOT_TOKEN env var
+    telegram_chat_id: str = ""    # Set via TELEGRAM_CHAT_ID env var
+
+    # Scheduler settings (per D-02)
+    scheduler_run_hour: int = 15
+    scheduler_run_minute: int = 45
+
+    # Score change alert threshold (per D-03)
+    score_change_threshold: float = 15.0
+
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
 
