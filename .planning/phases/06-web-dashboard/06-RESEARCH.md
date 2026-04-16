@@ -637,22 +637,13 @@ async def get_price_history(
 | A4 | lightweight-charts v5 `createPriceLine()` for RSI reference lines | Code Examples | MEDIUM — if not available, use separate series with constant data |
 | A5 | Next.js 16 `create-next-app` still supports `--app --src-dir` flags | Installation | LOW — if changed, adjust init command |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Tailwind v4 + shadcn/ui Compatibility**
-   - What we know: Tailwind v4 uses CSS-based config. shadcn/ui has been updating for v4 support.
-   - What's unclear: Whether `npx shadcn@latest init` auto-configures for Tailwind v4 dark theme correctly.
-   - Recommendation: During scaffolding, verify shadcn/ui init produces Tailwind v4-compatible config. If issues, fall back to Tailwind v3.
+1. **Tailwind v4 + shadcn/ui Compatibility** — RESOLVED: Plan 06-02 Task 1 uses adaptive merge strategy during scaffolding. If shadcn init doesn't produce v4-compatible config, falls back to Tailwind v3.
 
-2. **Next.js API Proxy vs CORS**
-   - What we know: Both approaches work. CORS on FastAPI is simpler. Next.js `rewrites` in `next.config.ts` can proxy to avoid CORS entirely.
-   - What's unclear: Whether proxy is needed for production (both services on same machine).
-   - Recommendation: Use CORS middleware on FastAPI (simpler, already standard). Add Next.js proxy as fallback.
+2. **Next.js API Proxy vs CORS** — RESOLVED: Plan 06-01 Task 1 implements CORS middleware on FastAPI (simpler approach). No proxy needed since both services run on same machine.
 
-3. **Chart Synchronization (Main + Sub-panels)**
-   - What we know: DASH-02 needs main chart (candlestick) + MACD sub-panel + RSI sub-panel, all synced on time axis.
-   - What's unclear: Whether lightweight-charts supports cross-chart synchronization natively.
-   - Recommendation: Use same data source and match time ranges. If native sync unavailable, manually sync via `timeScale().subscribeVisibleLogicalRangeChange()`.
+3. **Chart Synchronization (Main + Sub-panels)** — RESOLVED: Plan 06-04 uses same data source for main and sub-panel charts with independent lightweight-charts instances. Time axis sync via `timeScale().subscribeVisibleLogicalRangeChange()`.
 
 ## Environment Availability
 
