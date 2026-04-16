@@ -114,6 +114,24 @@ class PriceRepository:
         result = await self.session.execute(stmt)
         return result.scalar()
 
+    async def get_latest(self, symbol: str) -> StockPrice | None:
+        """Return the most recent price row for a symbol.
+
+        Args:
+            symbol: Stock ticker symbol (e.g., 'VNM').
+
+        Returns:
+            Latest StockPrice row or None if no data.
+        """
+        stmt = (
+            select(StockPrice)
+            .where(StockPrice.symbol == symbol)
+            .order_by(StockPrice.date.desc())
+            .limit(1)
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
     async def get_prices(
         self,
         symbol: str,

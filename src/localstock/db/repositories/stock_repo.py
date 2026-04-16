@@ -74,6 +74,19 @@ class StockRepository:
         logger.info(f"Upserted {len(rows)} stock listings")
         return len(rows)
 
+    async def get_by_symbol(self, symbol: str) -> Stock | None:
+        """Get a Stock by its ticker symbol.
+
+        Args:
+            symbol: Stock ticker (e.g., 'VNM').
+
+        Returns:
+            Stock instance or None if not found.
+        """
+        stmt = select(Stock).where(Stock.symbol == symbol)
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
     async def get_all_hose_symbols(self) -> list[str]:
         """Return all symbols where exchange='HOSE', ordered alphabetically."""
         stmt = select(Stock.symbol).where(Stock.exchange == "HOSE").order_by(Stock.symbol)
