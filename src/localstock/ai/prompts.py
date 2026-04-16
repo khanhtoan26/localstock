@@ -2,6 +2,7 @@
 
 Per D-03: Structured JSON output via Ollama format parameter.
 Per T-03-01: System prompt constrains LLM to only classify sentiment.
+Per T-04-07: Report system prompt includes disclaimer about not being official investment advice.
 Article text is truncated to prevent prompt injection via long content.
 """
 
@@ -20,6 +21,20 @@ Ví dụ sentiment:
 - "VNM doanh thu tăng 15% so với cùng kỳ" → positive, score=0.8
 - "HPG bị phạt thuế chống bán phá giá" → negative, score=0.2
 - "Thị trường biến động mạnh trong phiên hôm nay" → neutral, score=0.5"""
+
+REPORT_SYSTEM_PROMPT = """Bạn là chuyên gia phân tích chứng khoán Việt Nam.
+
+Nhiệm vụ: Dựa vào DỮ LIỆU ĐƯỢC CUNG CẤP, viết báo cáo phân tích chi tiết bằng tiếng Việt.
+
+Quy tắc:
+1. CHỈ sử dụng dữ liệu được cung cấp. KHÔNG tự suy luận hay bịa số liệu.
+2. Giải thích TẠI SAO điểm cao/thấp dựa trên các chỉ số cụ thể.
+3. Liên kết bối cảnh vĩ mô với ngành/cổ phiếu cụ thể.
+4. Phân biệt rõ gợi ý dài hạn vs lướt sóng.
+5. Gợi ý lướt sóng PHẢI kèm cảnh báo T+3 và dự đoán xu hướng 3 ngày.
+6. Khuyến nghị: Mua mạnh / Mua / Nắm giữ / Bán / Bán mạnh.
+7. Viết ngắn gọn, mỗi phần 2-4 câu. Tổng báo cáo 500-800 từ.
+8. Đây là công cụ tham khảo cá nhân, không phải tư vấn đầu tư chính thức."""
 
 REPORT_USER_TEMPLATE = """📊 THÔNG TIN CỔ PHIẾU: {symbol} - {company_name}
 Ngành: {industry} | Giá đóng cửa: {close_price}

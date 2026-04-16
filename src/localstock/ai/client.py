@@ -3,6 +3,7 @@
 Per D-02: Uses Qwen2.5 14B Q4_K_M (configurable).
 Per D-03: Uses Ollama format parameter with Pydantic JSON Schema for structured output.
 Per Pitfall 4: Health check before LLM calls — skip sentiment if Ollama is down.
+Per REPT-01: StockReport model for structured report generation output.
 """
 
 import httpx
@@ -16,7 +17,7 @@ from tenacity import (
     wait_exponential,
 )
 
-from localstock.ai.prompts import SENTIMENT_SYSTEM_PROMPT
+from localstock.ai.prompts import REPORT_SYSTEM_PROMPT, SENTIMENT_SYSTEM_PROMPT
 from localstock.config import get_settings
 
 
@@ -34,6 +35,35 @@ class SentimentResult(BaseModel):
     sentiment: str = Field(description="positive, negative, or neutral")
     score: float = Field(ge=0.0, le=1.0, description="Confidence 0.0-1.0, 0.5=neutral")
     reason: str = Field(description="Brief explanation in Vietnamese")
+
+
+class StockReport(BaseModel):
+    """Structured report output from LLM for stock analysis.
+
+    Per REPT-01: All 9 sections for a complete AI-generated analysis report.
+    Used as Ollama format parameter for structured JSON generation.
+
+    Attributes:
+        summary: 2-3 sentence overview of the stock.
+        technical_analysis: Technical indicator signal analysis.
+        fundamental_analysis: Fundamental ratio evaluation.
+        sentiment_analysis: Market sentiment from news.
+        macro_impact: Macro context impact on sector/stock.
+        long_term_suggestion: Long-term investment suggestion with reasoning.
+        swing_trade_suggestion: Swing trade suggestion with T+3 warning.
+        recommendation: Mua mạnh / Mua / Nắm giữ / Bán / Bán mạnh.
+        confidence: Cao / Trung bình / Thấp.
+    """
+
+    summary: str = Field(description="Tóm tắt 2-3 câu về mã cổ phiếu")
+    technical_analysis: str = Field(description="Phân tích tín hiệu kỹ thuật")
+    fundamental_analysis: str = Field(description="Đánh giá chỉ số cơ bản")
+    sentiment_analysis: str = Field(description="Phân tích tâm lý thị trường từ tin tức")
+    macro_impact: str = Field(description="Ảnh hưởng bối cảnh vĩ mô lên ngành/cổ phiếu")
+    long_term_suggestion: str = Field(description="Gợi ý đầu tư dài hạn với lý do")
+    swing_trade_suggestion: str = Field(description="Gợi ý lướt sóng kèm cảnh báo T+3")
+    recommendation: str = Field(description="Mua mạnh / Mua / Nắm giữ / Bán / Bán mạnh")
+    confidence: str = Field(description="Cao / Trung bình / Thấp")
 
 
 class OllamaClient:
@@ -133,4 +163,49 @@ class OllamaClient:
             f"Sentiment for {symbol}: {result.sentiment} "
             f"(score={result.score:.2f}) — {result.reason}"
         )
+        return result
+
+    @retry(
+        stop=stop_after_attempt(2),
+        wait=wait_exponential(min=5, max=30),
+        retry=retry_if_exception_type(
+            (httpx.ConnectError, httpx.TimeoutException, ResponseError)
+        ),
+    )
+    async def generate_report(self, data_prompt: str, symbol: str) -> StockReport:
+        """Generate a structured stock analysis report using LLM.
+
+        Sends data-injection prompt with REPORT_SYSTEM_PROMPT and returns
+        a StockReport parsed from the LLM's structured JSON output.
+
+        Per T-04-07: System prompt includes disclaimer about not being official advice.
+        Per REPT-01: Uses StockReport schema as Ollama format parameter.
+
+        Args:
+            data_prompt: Formatted prompt with all stock data injected.
+            symbol: Stock ticker symbol (e.g., "VNM") for logging.
+
+        Returns:
+            StockReport with all 9 analysis sections filled by LLM.
+
+        Raises:
+            ConnectionError: If Ollama server is not reachable (retried 2 times).
+            TimeoutError: If request exceeds timeout (retried 2 times).
+            ValidationError: If LLM output doesn't match StockReport schema.
+        """
+        logger.debug(f"Generating report for {symbol} ({len(data_prompt)} chars prompt)")
+
+        response = await self.client.chat(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": REPORT_SYSTEM_PROMPT},
+                {"role": "user", "content": data_prompt},
+            ],
+            format=StockReport.model_json_schema(),
+            options={"temperature": 0.3, "num_ctx": 4096},
+            keep_alive=self.keep_alive,
+        )
+
+        result = StockReport.model_validate_json(response.message.content)
+        logger.info(f"Generated report for {symbol}: {result.recommendation}")
         return result
