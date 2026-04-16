@@ -4,7 +4,9 @@ from fastapi import FastAPI
 
 from localstock.api.routes.analysis import router as analysis_router
 from localstock.api.routes.health import router as health_router
+from localstock.api.routes.macro import router as macro_router
 from localstock.api.routes.news import router as news_router
+from localstock.api.routes.reports import router as reports_router
 from localstock.api.routes.scores import router as scores_router
 
 
@@ -23,6 +25,8 @@ def create_app() -> FastAPI:
     app.include_router(analysis_router, tags=["analysis"])
     app.include_router(news_router, tags=["news"])
     app.include_router(scores_router, tags=["scores"])
+    app.include_router(reports_router, tags=["reports"])
+    app.include_router(macro_router, tags=["macro"])
     return app
 
 
