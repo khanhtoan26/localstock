@@ -11,13 +11,14 @@ import asyncio
 
 from loguru import logger
 
-from localstock.db.database import async_session
+from localstock.db.database import get_session_factory
 from localstock.services.scoring_service import ScoringService
 
 
 async def main() -> None:
+    factory = get_session_factory()
     logger.info("Running composite scoring...")
-    async with async_session() as session:
+    async with factory() as session:
         service = ScoringService(session)
         result = await service.run_full()
 
@@ -26,7 +27,11 @@ async def main() -> None:
     print(f"Failed:    {result.get('failed', 0)}")
 
     # Show top 10
-    top = await get_top_stocks()
+    from localstock.db.repositories.score_repo import ScoreRepository
+
+    async with factory() as session:
+        repo = ScoreRepository(session)
+        top = await repo.get_top_ranked(limit=10)
     if top:
         print(f"\nTop 10 stocks:")
         print(f"{'Rank':<6} {'Symbol':<8} {'Score':<8} {'Grade':<6}")
@@ -34,14 +39,6 @@ async def main() -> None:
         for s in top:
             print(f"{s.rank:<6} {s.symbol:<8} {s.total_score:<8.1f} {s.grade:<6}")
     print(f"{'='*50}")
-
-
-async def get_top_stocks():
-    from localstock.db.repositories.score_repo import ScoreRepository
-
-    async with async_session() as session:
-        repo = ScoreRepository(session)
-        return await repo.get_top_ranked(limit=10)
 
 
 if __name__ == "__main__":

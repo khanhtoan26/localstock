@@ -11,13 +11,14 @@ import sys
 
 from loguru import logger
 
-from localstock.db.database import async_session
+from localstock.db.database import get_session_factory
 from localstock.services.pipeline import Pipeline
 
 
 async def main(run_type: str = "daily") -> None:
     logger.info(f"Starting full pipeline ({run_type})...")
-    async with async_session() as session:
+    factory = get_session_factory()
+    async with factory() as session:
         pipeline = Pipeline(session)
         result = await pipeline.run_full(run_type=run_type)
 

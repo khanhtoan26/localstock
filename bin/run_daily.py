@@ -15,7 +15,7 @@ from datetime import UTC, datetime
 
 from loguru import logger
 
-from localstock.db.database import async_session
+from localstock.db.database import get_session_factory
 from localstock.services.pipeline import Pipeline
 from localstock.services.analysis_service import AnalysisService
 from localstock.services.news_service import NewsService
@@ -25,48 +25,43 @@ from localstock.services.report_service import ReportService
 
 
 async def main(skip_reports: bool = False) -> None:
+    factory = get_session_factory()
     start = datetime.now(UTC)
     print(f"🚀 LocalStock Daily Pipeline — {start.strftime('%Y-%m-%d %H:%M')}")
     print("=" * 60)
 
-    async with async_session() as session:
-        # Step 1: Crawl data
+    async with factory() as session:
         logger.info("Step 1/6: Crawling market data...")
         pipeline = Pipeline(session)
         crawl = await pipeline.run_full(run_type="daily")
         print(f"✅ Crawl: {crawl.symbols_success}/{crawl.symbols_total} stocks")
 
-    async with async_session() as session:
-        # Step 2: Technical + Fundamental analysis
+    async with factory() as session:
         logger.info("Step 2/6: Running analysis...")
         analysis = AnalysisService(session)
         anal_result = await analysis.run_full()
         print(f"✅ Analysis: {anal_result.get('analyzed', 0)} stocks")
 
-    async with async_session() as session:
-        # Step 3: News crawl
+    async with factory() as session:
         logger.info("Step 3/6: Crawling news...")
         news = NewsService(session)
         news_result = await news.crawl_all()
         print(f"✅ News: {news_result.get('articles_saved', 0)} articles")
 
-    async with async_session() as session:
-        # Step 4: Sentiment analysis
+    async with factory() as session:
         logger.info("Step 4/6: Sentiment analysis...")
         sentiment = SentimentService(session)
         sent_result = await sentiment.run_full()
         print(f"✅ Sentiment: {sent_result.get('analyzed', 0)} analyzed")
 
-    async with async_session() as session:
-        # Step 5: Composite scoring
+    async with factory() as session:
         logger.info("Step 5/6: Scoring...")
         scoring = ScoringService(session)
         score_result = await scoring.run_full()
         print(f"✅ Scoring: {score_result.get('scored', 0)} stocks ranked")
 
-    # Step 6: AI Reports (optional)
     if not skip_reports:
-        async with async_session() as session:
+        async with factory() as session:
             logger.info("Step 6/6: Generating AI reports...")
             reports = ReportService(session)
             report_result = await reports.run_full(top_n=10)

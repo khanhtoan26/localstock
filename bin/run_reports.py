@@ -13,13 +13,14 @@ import sys
 
 from loguru import logger
 
-from localstock.db.database import async_session
+from localstock.db.database import get_session_factory
 from localstock.services.report_service import ReportService
 
 
 async def main(top_n: int = 10) -> None:
     logger.info(f"Generating AI reports for top {top_n} stocks...")
-    async with async_session() as session:
+    factory = get_session_factory()
+    async with factory() as session:
         service = ReportService(session)
         result = await service.run_full(top_n=top_n)
 

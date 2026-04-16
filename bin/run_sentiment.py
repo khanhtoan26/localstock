@@ -11,13 +11,14 @@ import asyncio
 
 from loguru import logger
 
-from localstock.db.database import async_session
+from localstock.db.database import get_session_factory
 from localstock.services.news_service import NewsService
 from localstock.services.sentiment_service import SentimentService
 
 
 async def main() -> None:
-    async with async_session() as session:
+    factory = get_session_factory()
+    async with factory() as session:
         # Step 1: Crawl news
         logger.info("Crawling news from CafeF + VnExpress...")
         news_service = NewsService(session)

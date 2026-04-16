@@ -11,13 +11,14 @@ import sys
 
 from loguru import logger
 
-from localstock.db.database import async_session
+from localstock.db.database import get_session_factory
 from localstock.services.pipeline import Pipeline
 
 
 async def main(symbol: str) -> None:
     logger.info(f"Crawling data for {symbol}...")
-    async with async_session() as session:
+    factory = get_session_factory()
+    async with factory() as session:
         pipeline = Pipeline(session)
         result = await pipeline.run_single(symbol)
 

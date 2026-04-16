@@ -11,13 +11,14 @@ import asyncio
 
 from loguru import logger
 
-from localstock.db.database import async_session
+from localstock.db.database import get_session_factory
 from localstock.services.analysis_service import AnalysisService
 
 
 async def main() -> None:
     logger.info("Running technical + fundamental analysis...")
-    async with async_session() as session:
+    factory = get_session_factory()
+    async with factory() as session:
         service = AnalysisService(session)
         result = await service.run_full()
 
