@@ -33,6 +33,7 @@ class CompanyCrawler(BaseCrawler):
             if delay_seconds is not None
             else settings.crawl_delay_seconds,
         )
+        self.source: str = settings.vnstock_source
 
     async def fetch(self, symbol: str, **kwargs) -> pd.DataFrame:
         """Fetch company overview for a single symbol from vnstock.
@@ -52,7 +53,7 @@ class CompanyCrawler(BaseCrawler):
         Raises:
             ValueError: If vnstock returns empty or None data.
         """
-        source = kwargs.get("source", "VCI")
+        source = kwargs.get("source", self.source)
 
         def _sync_fetch():
             client = Vnstock(source=source)

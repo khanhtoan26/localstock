@@ -13,6 +13,7 @@ import pandas as pd
 from loguru import logger
 from vnstock import Vnstock
 
+from localstock.config import get_settings
 from localstock.crawlers.base import BaseCrawler
 
 
@@ -35,6 +36,7 @@ class EventCrawler(BaseCrawler):
 
     def __init__(self, delay_seconds: float = 1.0):
         super().__init__(delay_seconds=delay_seconds)
+        self.source: str = get_settings().vnstock_source
 
     async def fetch(self, symbol: str, **kwargs) -> pd.DataFrame:
         """Fetch corporate events for a symbol from vnstock.
@@ -55,7 +57,7 @@ class EventCrawler(BaseCrawler):
         Raises:
             Exception: Only if vnstock API itself errors (network, auth, etc.)
         """
-        source = kwargs.get("source", "VCI")
+        source = kwargs.get("source", self.source)
 
         def _sync_fetch():
             client = Vnstock(source=source)

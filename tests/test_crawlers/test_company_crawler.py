@@ -17,6 +17,7 @@ def mock_settings():
     with patch("localstock.crawlers.company_crawler.get_settings") as mock:
         settings = MagicMock()
         settings.crawl_delay_seconds = 0.0
+        settings.vnstock_source = "KBS"
         mock.return_value = settings
         yield settings
 
@@ -44,12 +45,12 @@ async def test_fetch_company_overview(mock_vnstock_company):
     assert "symbol" in df.columns
 
 
-async def test_fetch_uses_vci_source(mock_vnstock_company):
-    """CompanyCrawler uses VCI source by default (richer company data)."""
+async def test_fetch_uses_configured_source(mock_vnstock_company, mock_settings):
+    """CompanyCrawler uses vnstock_source from settings."""
+    mock_settings.vnstock_source = "KBS"
     crawler = CompanyCrawler(delay_seconds=0)
     await crawler.fetch("ACB")
-    # Verify Vnstock was called with VCI source
-    mock_vnstock_company.assert_called_with(source="VCI")
+    mock_vnstock_company.assert_called_with(source="KBS")
 
 
 async def test_fetch_raises_on_empty(mock_settings):
