@@ -248,3 +248,7 @@ def normalize_sentiment_score(sentiment_avg: float) -> float:
         Float 0.0-100.0.
     """
     return sentiment_avg * 100.0
+
+
+# Re-export normalize_macro_score for consistent import pattern
+from localstock.macro.scorer import normalize_macro_score  # noqa: E402, F401

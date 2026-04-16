@@ -14,9 +14,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from localstock.config import get_settings
 from localstock.db.repositories.indicator_repo import IndicatorRepository
+from localstock.db.repositories.industry_repo import IndustryRepository
+from localstock.db.repositories.macro_repo import MacroRepository
 from localstock.db.repositories.ratio_repo import RatioRepository
 from localstock.db.repositories.score_repo import ScoreRepository
 from localstock.db.repositories.stock_repo import StockRepository
+from localstock.macro.crawler import MacroCrawler
+from localstock.macro.scorer import normalize_macro_score
 from localstock.scoring.config import ScoringConfig
 from localstock.scoring.engine import compute_composite
 from localstock.scoring.normalizer import (
@@ -37,6 +41,8 @@ class ScoringService:
         self.ratio_repo = RatioRepository(session)
         self.score_repo = ScoreRepository(session)
         self.sentiment_service = SentimentService(session)
+        self.macro_repo = MacroRepository(session)
+        self.industry_repo = IndustryRepository(session)
         self.config = ScoringConfig.from_settings()
 
     async def run_full(self) -> dict:
@@ -57,6 +63,11 @@ class ScoringService:
         score_rows = []
 
         settings = get_settings()
+
+        # Get current macro conditions (once for all stocks)
+        macro_indicators = await self.macro_repo.get_all_latest()
+        crawler = MacroCrawler()
+        macro_conditions = await crawler.determine_macro_conditions(macro_indicators)
 
         for symbol in symbols:
             try:
@@ -90,8 +101,11 @@ class ScoringService:
                 if sent_avg is not None:
                     sent_score = normalize_sentiment_score(sent_avg)
 
-                # Macro: Phase 4 placeholder
+                # Macro score based on sector + current conditions
                 macro_score = None
+                if macro_conditions:
+                    sector_code = await self.industry_repo.get_group_for_symbol(symbol)
+                    macro_score = normalize_macro_score(sector_code, macro_conditions)
 
                 # Compute composite
                 total, grade, dims_used, weights = compute_composite(
