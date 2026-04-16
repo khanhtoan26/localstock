@@ -8,6 +8,7 @@ from sqlalchemy import (
     Date,
     DateTime,
     Float,
+    ForeignKey,
     Index,
     Integer,
     JSON,
@@ -308,7 +309,9 @@ class SentimentScore(Base):
     __tablename__ = "sentiment_scores"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    article_id: Mapped[int] = mapped_column(Integer, index=True)
+    article_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("news_articles.id"), index=True
+    )
     symbol: Mapped[str] = mapped_column(String(10), index=True)
     sentiment: Mapped[str] = mapped_column(String(10))  # 'positive', 'negative', 'neutral'
     score: Mapped[float] = mapped_column(Float)  # 0.0 to 1.0

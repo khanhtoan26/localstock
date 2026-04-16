@@ -9,7 +9,7 @@ VnExpress RSS secondary (kinh-doanh feed, 60 items).
 
 import asyncio
 import re
-import xml.etree.ElementTree as ET
+from defusedxml.ElementTree import fromstring as safe_fromstring
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
 
@@ -139,8 +139,8 @@ def parse_rss_feed(xml_text: str, source: str, feed_url: str) -> list[dict]:
     """
     articles = []
     try:
-        root = ET.fromstring(xml_text)
-    except ET.ParseError as e:
+        root = safe_fromstring(xml_text)
+    except Exception as e:
         logger.error(f"Failed to parse RSS XML from {feed_url}: {e}")
         return articles
 

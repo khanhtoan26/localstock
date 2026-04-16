@@ -60,10 +60,10 @@ class NewsRepository:
         """
         from localstock.db.models import SentimentScore
 
-        subq = select(SentimentScore.article_id).distinct().subquery()
+        subq = select(SentimentScore.article_id).distinct()
         stmt = (
             select(NewsArticle)
-            .where(NewsArticle.id.notin_(select(subq)))
+            .where(NewsArticle.id.notin_(subq))
             .where(NewsArticle.content.isnot(None))
             .order_by(NewsArticle.published_at.desc())
             .limit(limit)

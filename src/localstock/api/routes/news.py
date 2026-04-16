@@ -7,6 +7,8 @@ Endpoints:
 - POST /api/sentiment/run — Trigger sentiment analysis
 """
 
+import asyncio
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,6 +19,8 @@ from localstock.services.news_service import NewsService
 from localstock.services.sentiment_service import SentimentService
 
 router = APIRouter(prefix="/api")
+_crawl_lock = asyncio.Lock()
+_sentiment_lock = asyncio.Lock()
 
 
 @router.get("/news")
@@ -86,9 +90,12 @@ async def trigger_news_crawl(
     session: AsyncSession = Depends(get_session),
 ):
     """Trigger news crawl from RSS feeds."""
-    service = NewsService(session)
-    result = await service.crawl_and_store()
-    return result
+    if _crawl_lock.locked():
+        raise HTTPException(status_code=409, detail="News crawl already in progress")
+    async with _crawl_lock:
+        service = NewsService(session)
+        result = await service.crawl_and_store()
+        return result
 
 
 @router.post("/sentiment/run")
@@ -99,6 +106,9 @@ async def trigger_sentiment(
 
     Requires Ollama to be running. Will skip gracefully if unavailable.
     """
-    service = SentimentService(session)
-    result = await service.run_full()
-    return result
+    if _sentiment_lock.locked():
+        raise HTTPException(status_code=409, detail="Sentiment analysis already in progress")
+    async with _sentiment_lock:
+        service = SentimentService(session)
+        result = await service.run_full()
+        return result

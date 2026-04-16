@@ -7,7 +7,7 @@ Per Pitfall 4: Health check before LLM calls — skip sentiment if Ollama is dow
 
 import httpx
 from loguru import logger
-from ollama import AsyncClient
+from ollama import AsyncClient, ResponseError
 from pydantic import BaseModel, Field
 from tenacity import (
     retry,
@@ -63,7 +63,9 @@ class OllamaClient:
         self.host = host or settings.ollama_host
         self.timeout = timeout or settings.ollama_timeout
         self.keep_alive = keep_alive or settings.ollama_keep_alive
-        self.client = AsyncClient(host=self.host)
+        self.client = AsyncClient(
+            host=self.host, timeout=httpx.Timeout(self.timeout)
+        )
 
     async def health_check(self) -> bool:
         """Check if Ollama server is running (GET /api/version).
@@ -83,7 +85,9 @@ class OllamaClient:
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(min=2, max=10),
-        retry=retry_if_exception_type((ConnectionError, TimeoutError)),
+        retry=retry_if_exception_type(
+            (httpx.ConnectError, httpx.TimeoutException, ResponseError)
+        ),
     )
     async def classify_sentiment(
         self, article_text: str, symbol: str

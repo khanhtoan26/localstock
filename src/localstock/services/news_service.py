@@ -3,9 +3,7 @@
 Pipeline:
 1. Fetch RSS feeds (CafeF 4 feeds + VnExpress 1 feed)
 2. Parse and sanitize articles
-3. Extract tickers from titles/descriptions
-4. Store articles in DB via NewsRepository
-5. Optionally enrich with full article text
+3. Store articles in DB via NewsRepository
 """
 
 import asyncio
@@ -15,7 +13,7 @@ from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from localstock.config import get_settings
-from localstock.crawlers.news_crawler import NewsCrawler, extract_tickers
+from localstock.crawlers.news_crawler import NewsCrawler
 from localstock.db.repositories.news_repo import NewsRepository
 from localstock.db.repositories.stock_repo import StockRepository
 
@@ -48,16 +46,9 @@ class NewsService:
                 logger.warning("No articles found from RSS feeds")
                 return summary
 
-            # Get valid symbols for ticker extraction
-            valid_symbols = set(await self.stock_repo.get_all_hose_symbols())
-
             # Prepare rows for bulk upsert
             rows = []
             for article in articles:
-                # Extract tickers from title + description
-                text = f"{article.get('title', '')} {article.get('description', '')}"
-                tickers = extract_tickers(text, valid_symbols)
-
                 rows.append({
                     "url": article["url"],
                     "title": article["title"],
@@ -70,12 +61,6 @@ class NewsService:
 
             count = await self.news_repo.bulk_upsert(rows)
             summary["articles_stored"] = count
-
-            # Enrich with full article content
-            if enrich:
-                unprocessed = await self.news_repo.get_unprocessed(limit=50)
-                # Note: enrichment fetches article pages — do in Plan 02's NewsCrawler
-                # For now, articles have summary from RSS description
 
         except Exception as e:
             summary["errors"].append(str(e))

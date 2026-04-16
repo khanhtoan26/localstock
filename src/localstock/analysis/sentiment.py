@@ -51,7 +51,7 @@ def aggregate_sentiment(
         weighted_sum += s["score"] * weight
         total_weight += weight
 
-    if total_weight == 0:
+    if total_weight < 1e-10:
         return None
 
     return weighted_sum / total_weight

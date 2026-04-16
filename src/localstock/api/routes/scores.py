@@ -6,6 +6,8 @@ Endpoints:
 - POST /api/scores/run — Trigger full scoring pipeline
 """
 
+import asyncio
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,6 +15,7 @@ from localstock.db.database import get_session
 from localstock.services.scoring_service import ScoringService
 
 router = APIRouter(prefix="/api")
+_scoring_lock = asyncio.Lock()
 
 
 @router.get("/scores/top")
@@ -69,6 +72,9 @@ async def trigger_scoring(
     Steps: normalize dimensions → compute composite → assign ranks → store.
     This is a long-running operation.
     """
-    service = ScoringService(session)
-    result = await service.run_full()
-    return result
+    if _scoring_lock.locked():
+        raise HTTPException(status_code=409, detail="Scoring already in progress")
+    async with _scoring_lock:
+        service = ScoringService(session)
+        result = await service.run_full()
+        return result

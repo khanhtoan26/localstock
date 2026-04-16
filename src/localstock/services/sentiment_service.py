@@ -93,7 +93,7 @@ class SentimentService:
 
             # Limit tickers per article to avoid noise (Pitfall 3)
             if len(tickers) > 3:
-                tickers = tickers[:2]  # Only primary tickers
+                tickers = tickers[:3]
 
             article_text = article.content or article.summary or article.title
 
