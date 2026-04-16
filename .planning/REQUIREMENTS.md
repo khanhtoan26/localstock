@@ -41,7 +41,7 @@
 
 - [x] **SCOR-01**: Agent chấm điểm tổng hợp cho từng mã (thang 0-100) kết hợp 4 chiều: kỹ thuật + cơ bản + sentiment + vĩ mô
 - [x] **SCOR-02**: Agent cho phép tùy chỉnh trọng số chấm điểm (mặc định: kỹ thuật 30%, cơ bản 30%, sentiment 20%, vĩ mô 20%)
-- [ ] **SCOR-03**: Agent xếp hạng và đưa ra danh sách top 10-20 mã đáng mua kèm lý do
+- [x] **SCOR-03**: Agent xếp hạng và đưa ra danh sách top 10-20 mã đáng mua kèm lý do
 - [ ] **SCOR-04**: Agent phát hiện và cảnh báo khi điểm thay đổi đáng kể (>15 điểm) so với phiên trước
 - [ ] **SCOR-05**: Agent phân tích sector rotation — theo dõi dòng tiền chảy giữa các ngành
 
@@ -116,7 +116,7 @@
 | SENT-03 | Phase 3: Sentiment Analysis & Scoring Engine | Complete |
 | SCOR-01 | Phase 3: Sentiment Analysis & Scoring Engine | Complete |
 | SCOR-02 | Phase 3: Sentiment Analysis & Scoring Engine | Complete |
-| SCOR-03 | Phase 3: Sentiment Analysis & Scoring Engine | Pending |
+| SCOR-03 | Phase 3: Sentiment Analysis & Scoring Engine | Complete |
 | REPT-01 | Phase 4: AI Reports, Macro Context & T+3 | Pending |
 | REPT-02 | Phase 4: AI Reports, Macro Context & T+3 | Pending |
 | MACR-01 | Phase 4: AI Reports, Macro Context & T+3 | Pending |
