@@ -42,8 +42,8 @@
 - [x] **SCOR-01**: Agent chấm điểm tổng hợp cho từng mã (thang 0-100) kết hợp 4 chiều: kỹ thuật + cơ bản + sentiment + vĩ mô
 - [x] **SCOR-02**: Agent cho phép tùy chỉnh trọng số chấm điểm (mặc định: kỹ thuật 30%, cơ bản 30%, sentiment 20%, vĩ mô 20%)
 - [x] **SCOR-03**: Agent xếp hạng và đưa ra danh sách top 10-20 mã đáng mua kèm lý do
-- [ ] **SCOR-04**: Agent phát hiện và cảnh báo khi điểm thay đổi đáng kể (>15 điểm) so với phiên trước
-- [ ] **SCOR-05**: Agent phân tích sector rotation — theo dõi dòng tiền chảy giữa các ngành
+- [x] **SCOR-04**: Agent phát hiện và cảnh báo khi điểm thay đổi đáng kể (>15 điểm) so với phiên trước
+- [x] **SCOR-05**: Agent phân tích sector rotation — theo dõi dòng tiền chảy giữa các ngành
 
 ### T+3 Settlement Awareness
 
@@ -57,7 +57,7 @@
 
 ### Automation
 
-- [ ] **AUTO-01**: Agent chạy tự động hàng ngày sau khi thị trường đóng cửa (sau 15:30)
+- [x] **AUTO-01**: Agent chạy tự động hàng ngày sau khi thị trường đóng cửa (sau 15:30)
 - [ ] **AUTO-02**: Agent hỗ trợ chạy on-demand khi người dùng yêu cầu (phân tích 1 mã hoặc toàn bộ)
 
 ### Notification
@@ -123,12 +123,12 @@
 | MACR-02 | Phase 4: AI Reports, Macro Context & T+3 | Pending |
 | T3-01 | Phase 4: AI Reports, Macro Context & T+3 | Pending |
 | T3-02 | Phase 4: AI Reports, Macro Context & T+3 | Pending |
-| AUTO-01 | Phase 5: Automation & Notifications | Pending |
+| AUTO-01 | Phase 5: Automation & Notifications | Complete |
 | AUTO-02 | Phase 5: Automation & Notifications | Pending |
 | NOTI-01 | Phase 5: Automation & Notifications | Pending |
 | NOTI-02 | Phase 5: Automation & Notifications | Pending |
-| SCOR-04 | Phase 5: Automation & Notifications | Pending |
-| SCOR-05 | Phase 5: Automation & Notifications | Pending |
+| SCOR-04 | Phase 5: Automation & Notifications | Complete |
+| SCOR-05 | Phase 5: Automation & Notifications | Complete |
 | DASH-01 | Phase 6: Web Dashboard | Pending |
 | DASH-02 | Phase 6: Web Dashboard | Pending |
 | DASH-03 | Phase 6: Web Dashboard | Pending |

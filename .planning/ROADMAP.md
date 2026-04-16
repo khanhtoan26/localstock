@@ -106,7 +106,7 @@ Plans:
 **Plans:** 3 plans
 
 Plans:
-- [ ] 05-01-PLAN.md — Foundation: dependencies, config, DB models, migration, trading calendar, repositories
+- [x] 05-01-PLAN.md — Foundation: dependencies, config, DB models, migration, trading calendar, repositories
 - [ ] 05-02-PLAN.md — Score change detection, sector rotation, Telegram notifier, message formatters
 - [ ] 05-03-PLAN.md — AutomationService orchestrator, APScheduler integration, API endpoints
 

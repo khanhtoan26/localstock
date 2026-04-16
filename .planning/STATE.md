@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 03-04-PLAN.md
-last_updated: "2026-04-16T04:33:20.202Z"
+stopped_at: Completed 05-01-PLAN.md
+last_updated: "2026-04-16T07:55:26.301Z"
 last_activity: 2026-04-16
 progress:
   total_phases: 6
   completed_phases: 4
-  total_plans: 16
-  completed_plans: 16
-  percent: 100
+  total_plans: 19
+  completed_plans: 17
+  percent: 89
 ---
 
 # Project State
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-14)
 
 **Core value:** Agent tự động phân tích và xếp hạng cổ phiếu HOSE — cho tôi danh sách gợi ý đáng mua kèm lý do rõ ràng, cập nhật hàng ngày, không tốn phí API.
-**Current focus:** Phase 04 — ai-reports-macro-t3
+**Current focus:** Phase 05 — Automation & Notifications
 
 ## Current Position
 
-Phase: 05
-Plan: Not started
-Status: Executing Phase 04
+Phase: 05 (Automation & Notifications) — EXECUTING
+Plan: 2 of 3
+Status: Ready to execute
 Last activity: 2026-04-16
 
 Progress: [░░░░░░░░░░] 0%
@@ -66,6 +66,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 03 P03 | 3min | 2 tasks | 5 files |
 | Phase 03 P04 | 5min | 2 tasks | 6 files |
 | Phase 03 P04 | 3min | 2 tasks | 6 files |
+| Phase 05 P01 | 8min | 2 tasks | 14 files |
 
 ## Accumulated Context
 
@@ -110,6 +111,9 @@ Recent decisions affecting current work:
 - [Phase 03]: Services follow AnalysisService pattern: session-based __init__, run_full() -> dict
 - [Phase 03]: Rank assignment by sorted total_score descending before bulk upsert
 - [Phase 03]: API routes use flat dict responses, no Pydantic response models (consistent with existing pattern)
+- [Phase 05]: Alembic merge migration merges two heads (823bee92cc2e + a1b2c3d4e5f6) into single b5c6d7e8f901
+- [Phase 05]: holidays.Vietnam used for VN public holiday detection (handles lunar calendar Tết dates)
+- [Phase 05]: NotificationLog uq on (date, notification_type) for daily dedup
 
 ### Pending Todos
 
@@ -123,6 +127,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-16T07:01:54.737Z
-Stopped at: Session resumed, proceeding to plan Phase 5
+Last session: 2026-04-16T07:55:26.298Z
+Stopped at: Completed 05-01-PLAN.md
 Resume file: None
