@@ -350,3 +350,49 @@ class CompositeScore(Base):
     __table_args__ = (
         UniqueConstraint("symbol", "date", name="uq_composite_score"),
     )
+
+
+class MacroIndicator(Base):
+    """Macro-economic indicator data (interest_rate, exchange_rate_usd_vnd, cpi, gdp)."""
+
+    __tablename__ = "macro_indicators"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    indicator_type: Mapped[str] = mapped_column(String(30))  # interest_rate, exchange_rate_usd_vnd, cpi, gdp
+    value: Mapped[float] = mapped_column(Float)
+    period: Mapped[str] = mapped_column(String(20))  # '2026-Q1', '2026-03', etc.
+    source: Mapped[str] = mapped_column(String(50))  # 'SBV', 'GSO', etc.
+    trend: Mapped[str | None] = mapped_column(String(20), nullable=True)  # 'increasing', 'decreasing', 'stable'
+    recorded_at: Mapped[date] = mapped_column(Date)
+    fetched_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )
+
+    __table_args__ = (
+        UniqueConstraint("indicator_type", "period", name="uq_macro_indicator"),
+    )
+
+
+class AnalysisReport(Base):
+    """LLM-generated analysis report per stock."""
+
+    __tablename__ = "analysis_reports"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    symbol: Mapped[str] = mapped_column(String(10), index=True)
+    date: Mapped[date] = mapped_column(Date, index=True)
+    report_type: Mapped[str] = mapped_column(String(20))  # 'daily', 'weekly', etc.
+    content_json: Mapped[dict] = mapped_column(JSON)  # Full report as structured JSON
+    summary: Mapped[str] = mapped_column(Text)
+    recommendation: Mapped[str] = mapped_column(String(20))  # 'buy', 'sell', 'hold'
+    t3_prediction: Mapped[str | None] = mapped_column(String(20), nullable=True)  # T+3 price direction
+    model_used: Mapped[str] = mapped_column(String(50))  # LLM model identifier
+    total_score: Mapped[float] = mapped_column(Float)  # composite score at report time
+    grade: Mapped[str] = mapped_column(String(2))  # A, B, C, D, F
+    generated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )
+
+    __table_args__ = (
+        UniqueConstraint("symbol", "date", "report_type", name="uq_analysis_report"),
+    )
