@@ -44,7 +44,7 @@ Declared values (multiples of 4):
 Exceptions:
 - Sidebar width: 240px (fixed, `w-60` in Tailwind) — per D-04 Bloomberg-style layout
 - Chart main height: 400px — per research Pattern 2
-- Chart sub-panel height: 150px — per research MACD/RSI panels
+- Chart sub-panel height: 152px (38 × 4) — per research MACD/RSI panels
 - Content area left offset: 240px (`ml-60`) — matches sidebar width
 
 ---
@@ -54,11 +54,11 @@ Exceptions:
 | Role | Size | Weight | Line Height | Usage |
 |------|------|--------|-------------|-------|
 | Body | 14px | 400 (regular) | 1.5 | Table cells, report text, card content, general prose |
-| Label | 12px | 500 (medium) | 1.4 | Table column headers, metadata labels, chart axis labels, muted captions |
+| Label | 12px | 400 (regular) | 1.4 | Table column headers, metadata labels, chart axis labels, muted captions |
 | Heading | 20px | 600 (semibold) | 1.2 | Page titles ("Xếp Hạng Cổ Phiếu"), section headers ("Phân Tích Kỹ Thuật") |
-| Display | 28px | 700 (bold) | 1.1 | Stock symbol on detail page, hero metric values |
+| Display | 28px | 600 (semibold) | 1.1 | Stock symbol on detail page, hero metric values |
 
-**Rationale:** 14px body is standard for data-dense financial dashboards (Bloomberg, Simplize). 12px labels keep column headers compact for wide tables with 8+ columns. Monospace (`font-mono`) for all numeric score/price values.
+**Rationale:** 14px body is standard for data-dense financial dashboards (Bloomberg, Simplize). 12px labels keep column headers compact for wide tables with 8+ columns. Monospace (`font-mono`) for all numeric score/price values. Two weights only: 400 (regular) for body text and labels, 600 (semibold) for headings and display — size difference alone distinguishes Label from Body.
 
 ---
 
@@ -175,6 +175,8 @@ Exceptions:
 
 ### Rankings Page (`/rankings` — DASH-01)
 
+**Focal point:** DataTable is the primary visual anchor — fills the entire content area width.
+
 **Layout:** Single DataTable filling content area width.
 
 **Table columns (left to right):**
@@ -203,12 +205,14 @@ Exceptions:
 
 ### Stock Detail Page (`/stock/[symbol]` — DASH-02)
 
+**Focal point:** Candlestick price chart (400px) is the primary visual anchor — largest element, first scrollable content after header.
+
 **Layout (top to bottom):**
 
-1. **Header bar** — Symbol (Display size, 28px bold) + grade badge + score + back link
+1. **Header bar** — Symbol (Display size, 28px semibold) + grade badge + score + back link
 2. **Price chart** — Candlestick + volume + indicator overlays (400px height)
 3. **Timeframe selector** — Button group: 1T (1 month), 3T, 6T, 1N (1 year), 2N
-4. **Sub-panels** — MACD panel (150px) + RSI panel (150px), stacked vertically
+4. **Sub-panels** — MACD panel (152px) + RSI panel (152px), stacked vertically
 5. **AI Report card** — Full Vietnamese analysis report in a card
 6. **Score breakdown card** — Individual dimension scores in a grid
 
@@ -235,6 +239,8 @@ Default: **1N** (1 year — shows enough context for trend analysis).
 - If report is null: show "Chưa có báo cáo — chạy pipeline để tạo báo cáo AI"
 
 ### Market Overview Page (`/market` — DASH-03)
+
+**Focal point:** Macro indicator cards (2×2 grid) are the primary visual anchor — first content block, immediately communicates market state.
 
 **Layout (top to bottom):**
 
@@ -326,7 +332,7 @@ All copy in Vietnamese per CONTEXT.md specifics.
 | `StockTable` | `components/rankings/stock-table.tsx` | DataTable wrapper with column defs |
 | `PriceChart` | `components/charts/price-chart.tsx` | lightweight-charts candlestick + volume wrapper |
 | `IndicatorOverlay` | `components/charts/indicator-overlay.tsx` | SMA/EMA/BB line series on main chart |
-| `SubPanel` | `components/charts/sub-panel.tsx` | MACD or RSI sub-chart (150px) |
+| `SubPanel` | `components/charts/sub-panel.tsx` | MACD or RSI sub-chart (152px) |
 | `MacroCards` | `components/market/macro-cards.tsx` | 2×2 grid of macro indicator cards |
 | `SectorTable` | `components/market/sector-table.tsx` | Sector performance ranking table |
 | `EmptyState` | `components/ui/empty-state.tsx` | Reusable empty state with heading + body + optional CTA |
