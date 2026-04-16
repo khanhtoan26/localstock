@@ -85,7 +85,13 @@ Plans:
   3. Reports link macro conditions to specific sector/stock impact (e.g., rising interest rates → negative for real estate, positive for banks)
   4. Swing trade suggestions include a ≥3-day trend prediction with explicit T+3 settlement warning
   5. Long-term investment and swing trade recommendations are clearly distinguished in reports
-**Plans**: TBD
+**Plans:** 4 plans
+
+Plans:
+- [ ] 04-01-PLAN.md — Foundation: DB models (MacroIndicator, AnalysisReport), migration, repositories, config updates
+- [ ] 04-02-PLAN.md — Macro module: VCB exchange rate crawler, sector impact rules, macro scoring integration
+- [ ] 04-03-PLAN.md — T+3 prediction logic, StockReport model, report prompts, OllamaClient.generate_report()
+- [ ] 04-04-PLAN.md — ReportService orchestrator, API endpoints for reports and macro data
 
 ### Phase 5: Automation & Notifications
 **Goal**: Fully automated daily pipeline that runs after market close and sends intelligent alerts via Telegram
