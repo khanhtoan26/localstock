@@ -103,7 +103,12 @@ Plans:
   3. Telegram bot sends daily digest of top buy suggestions after each automated run
   4. Telegram sends special alerts when significant score changes (>15 points) or strong signals are detected
   5. System detects and reports sector rotation patterns — tracking money flow between industries over time
-**Plans**: TBD
+**Plans:** 3 plans
+
+Plans:
+- [ ] 05-01-PLAN.md — Foundation: dependencies, config, DB models, migration, trading calendar, repositories
+- [ ] 05-02-PLAN.md — Score change detection, sector rotation, Telegram notifier, message formatters
+- [ ] 05-03-PLAN.md — AutomationService orchestrator, APScheduler integration, API endpoints
 
 ### Phase 6: Web Dashboard
 **Goal**: Visual web interface for browsing stock rankings, viewing charts with technical indicators, and reading AI analysis reports
