@@ -144,3 +144,21 @@ class TestCompositeScoring:
             config=config,
         )
         assert total <= 100.0
+
+    def test_composite_macro_65_correct_weighted_total(self):
+        """macro=65 with 0.30/0.30/0.20/0.20 produces correct weighted total."""
+        config = ScoringConfig(
+            weight_technical=0.30,
+            weight_fundamental=0.30,
+            weight_sentiment=0.20,
+            weight_macro=0.20,
+        )
+        total, grade, dims, weights = compute_composite(
+            tech=80.0, fund=70.0, sent=60.0, macro=65.0,
+            config=config,
+        )
+        # 80*0.3 + 70*0.3 + 60*0.2 + 65*0.2 = 24+21+12+13 = 70.0
+        assert total == pytest.approx(70.0)
+        assert dims == 4
+        assert "macro" in weights
+        assert weights["macro"] == pytest.approx(0.20)

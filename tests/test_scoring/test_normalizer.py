@@ -179,3 +179,21 @@ class TestScoringConfig:
         )
         assert config.weight_technical == 0.50
         assert config.weight_fundamental == 0.30
+
+
+class TestNormalizeMacroImport:
+    """Test normalize_macro_score is importable from scoring.normalizer."""
+
+    def test_normalize_macro_score_importable(self):
+        """normalize_macro_score should be importable from scoring.normalizer."""
+        from localstock.scoring.normalizer import normalize_macro_score  # noqa: F811
+
+        assert callable(normalize_macro_score)
+
+    def test_normalize_macro_score_returns_expected(self):
+        """normalize_macro_score via normalizer re-export works correctly."""
+        from localstock.scoring.normalizer import normalize_macro_score  # noqa: F811
+
+        score = normalize_macro_score("BANKING", {"interest_rate": "rising"})
+        assert 0 <= score <= 100
+        assert score > 50  # Banking benefits from rate rises
