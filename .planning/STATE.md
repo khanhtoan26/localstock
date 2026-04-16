@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed 05-02-PLAN.md
-last_updated: "2026-04-16T08:04:03.335Z"
+status: verifying
+stopped_at: Completed 05-03-PLAN.md
+last_updated: "2026-04-16T08:11:51.151Z"
 last_activity: 2026-04-16
 progress:
   total_phases: 6
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 19
-  completed_plans: 18
-  percent: 95
+  completed_plans: 19
+  percent: 100
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 
 Phase: 05 (Automation & Notifications) — EXECUTING
 Plan: 3 of 3
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-16
 
 Progress: [░░░░░░░░░░] 0%
@@ -68,6 +68,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 03 P04 | 3min | 2 tasks | 6 files |
 | Phase 05 P01 | 8min | 2 tasks | 14 files |
 | Phase 05 P02 | 4min | 2 tasks | 10 files |
+| Phase 05 P03 | 5min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -118,6 +119,9 @@ Recent decisions affecting current work:
 - [Phase 05]: detect_score_changes standalone async function, not class — single-purpose contract
 - [Phase 05]: TelegramNotifier uses HTML parse mode for simpler escaping, 4000-char split threshold
 - [Phase 05]: Vietnamese language formatters with emoji indicators for mobile readability
+- [Phase 05]: AutomationService uses per-step sessions via get_session_factory() — each step gets own lifecycle
+- [Phase 05]: asyncio.Lock at module level prevents concurrent pipeline runs, API returns 409
+- [Phase 05]: APScheduler initialized inside FastAPI lifespan, not at import time (Pitfall 3)
 
 ### Pending Todos
 
@@ -131,6 +135,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-16T08:04:03.332Z
-Stopped at: Completed 05-02-PLAN.md
+Last session: 2026-04-16T08:11:51.149Z
+Stopped at: Completed 05-03-PLAN.md
 Resume file: None

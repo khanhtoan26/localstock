@@ -108,7 +108,7 @@ Plans:
 Plans:
 - [x] 05-01-PLAN.md — Foundation: dependencies, config, DB models, migration, trading calendar, repositories
 - [x] 05-02-PLAN.md — Score change detection, sector rotation, Telegram notifier, message formatters
-- [ ] 05-03-PLAN.md — AutomationService orchestrator, APScheduler integration, API endpoints
+- [x] 05-03-PLAN.md — AutomationService orchestrator, APScheduler integration, API endpoints
 
 ### Phase 6: Web Dashboard
 **Goal**: Visual web interface for browsing stock rankings, viewing charts with technical indicators, and reading AI analysis reports

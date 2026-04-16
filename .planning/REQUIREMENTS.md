@@ -58,7 +58,7 @@
 ### Automation
 
 - [x] **AUTO-01**: Agent chạy tự động hàng ngày sau khi thị trường đóng cửa (sau 15:30)
-- [ ] **AUTO-02**: Agent hỗ trợ chạy on-demand khi người dùng yêu cầu (phân tích 1 mã hoặc toàn bộ)
+- [x] **AUTO-02**: Agent hỗ trợ chạy on-demand khi người dùng yêu cầu (phân tích 1 mã hoặc toàn bộ)
 
 ### Notification
 
@@ -124,7 +124,7 @@
 | T3-01 | Phase 4: AI Reports, Macro Context & T+3 | Pending |
 | T3-02 | Phase 4: AI Reports, Macro Context & T+3 | Pending |
 | AUTO-01 | Phase 5: Automation & Notifications | Complete |
-| AUTO-02 | Phase 5: Automation & Notifications | Pending |
+| AUTO-02 | Phase 5: Automation & Notifications | Complete |
 | NOTI-01 | Phase 5: Automation & Notifications | Complete |
 | NOTI-02 | Phase 5: Automation & Notifications | Complete |
 | SCOR-04 | Phase 5: Automation & Notifications | Complete |
