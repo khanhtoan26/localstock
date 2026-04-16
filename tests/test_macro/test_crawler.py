@@ -1,5 +1,8 @@
 """Tests for MacroCrawler — VCB exchange rate parsing."""
 
+from unittest.mock import AsyncMock, patch
+
+import httpx
 import pytest
 
 from localstock.macro.crawler import MacroCrawler
@@ -28,24 +31,33 @@ VCB_XML_MALFORMED = """<?xml version="1.0"?>
 <ExrateList><broken>"""
 
 
+def _mock_httpx_client(response_text, status_code=200, side_effect=None):
+    """Create a mock httpx.AsyncClient context manager."""
+    mock_response = AsyncMock()
+    mock_response.status_code = status_code
+    mock_response.text = response_text
+    mock_response.raise_for_status = lambda: None
+
+    mock_client = AsyncMock()
+    if side_effect:
+        mock_client.get = AsyncMock(side_effect=side_effect)
+    else:
+        mock_client.get = AsyncMock(return_value=mock_response)
+    mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+    mock_client.__aexit__ = AsyncMock(return_value=False)
+    return mock_client
+
+
 class TestFetchExchangeRate:
     """Test MacroCrawler.fetch_exchange_rate()."""
 
     @pytest.mark.asyncio
-    async def test_parses_valid_xml(self, mocker):
+    async def test_parses_valid_xml(self):
         """Should parse VCB XML and return dict with value, source, trend."""
-        mock_response = mocker.AsyncMock()
-        mock_response.status_code = 200
-        mock_response.text = VCB_XML_VALID
-
-        mock_client = mocker.AsyncMock()
-        mock_client.get = mocker.AsyncMock(return_value=mock_response)
-        mock_client.__aenter__ = mocker.AsyncMock(return_value=mock_client)
-        mock_client.__aexit__ = mocker.AsyncMock(return_value=False)
-        mocker.patch("httpx.AsyncClient", return_value=mock_client)
-
-        crawler = MacroCrawler()
-        result = await crawler.fetch_exchange_rate()
+        mock_client = _mock_httpx_client(VCB_XML_VALID)
+        with patch("localstock.macro.crawler.httpx.AsyncClient", return_value=mock_client):
+            crawler = MacroCrawler()
+            result = await crawler.fetch_exchange_rate()
 
         assert result is not None
         assert result["value"] == 25850.0
@@ -55,93 +67,55 @@ class TestFetchExchangeRate:
         assert "recorded_at" in result
 
     @pytest.mark.asyncio
-    async def test_trend_rising_when_value_higher(self, mocker):
+    async def test_trend_rising_when_value_higher(self):
         """Trend should be 'rising' (vnd weakening) when current > previous."""
-        mock_response = mocker.AsyncMock()
-        mock_response.status_code = 200
-        mock_response.text = VCB_XML_VALID
-
-        mock_client = mocker.AsyncMock()
-        mock_client.get = mocker.AsyncMock(return_value=mock_response)
-        mock_client.__aenter__ = mocker.AsyncMock(return_value=mock_client)
-        mock_client.__aexit__ = mocker.AsyncMock(return_value=False)
-        mocker.patch("httpx.AsyncClient", return_value=mock_client)
-
-        crawler = MacroCrawler()
-        result = await crawler.fetch_exchange_rate(previous_value=25000.0)
+        mock_client = _mock_httpx_client(VCB_XML_VALID)
+        with patch("localstock.macro.crawler.httpx.AsyncClient", return_value=mock_client):
+            crawler = MacroCrawler()
+            result = await crawler.fetch_exchange_rate(previous_value=25000.0)
 
         assert result is not None
         assert result["trend"] == "rising"
 
     @pytest.mark.asyncio
-    async def test_trend_falling_when_value_lower(self, mocker):
+    async def test_trend_falling_when_value_lower(self):
         """Trend should be 'falling' (vnd strengthening) when current < previous."""
-        mock_response = mocker.AsyncMock()
-        mock_response.status_code = 200
-        mock_response.text = VCB_XML_VALID
-
-        mock_client = mocker.AsyncMock()
-        mock_client.get = mocker.AsyncMock(return_value=mock_response)
-        mock_client.__aenter__ = mocker.AsyncMock(return_value=mock_client)
-        mock_client.__aexit__ = mocker.AsyncMock(return_value=False)
-        mocker.patch("httpx.AsyncClient", return_value=mock_client)
-
-        crawler = MacroCrawler()
-        result = await crawler.fetch_exchange_rate(previous_value=26000.0)
+        mock_client = _mock_httpx_client(VCB_XML_VALID)
+        with patch("localstock.macro.crawler.httpx.AsyncClient", return_value=mock_client):
+            crawler = MacroCrawler()
+            result = await crawler.fetch_exchange_rate(previous_value=26000.0)
 
         assert result is not None
         assert result["trend"] == "falling"
 
     @pytest.mark.asyncio
-    async def test_handles_connection_error(self, mocker):
+    async def test_handles_connection_error(self):
         """Should return None on connection errors."""
-        import httpx
-
-        mock_client = mocker.AsyncMock()
-        mock_client.get = mocker.AsyncMock(side_effect=httpx.ConnectError("timeout"))
-        mock_client.__aenter__ = mocker.AsyncMock(return_value=mock_client)
-        mock_client.__aexit__ = mocker.AsyncMock(return_value=False)
-        mocker.patch("httpx.AsyncClient", return_value=mock_client)
-
-        crawler = MacroCrawler()
-        result = await crawler.fetch_exchange_rate()
+        mock_client = _mock_httpx_client("", side_effect=httpx.ConnectError("timeout"))
+        with patch("localstock.macro.crawler.httpx.AsyncClient", return_value=mock_client):
+            crawler = MacroCrawler()
+            result = await crawler.fetch_exchange_rate()
 
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_handles_malformed_xml(self, mocker):
-        """Should return None on malformed XML."""
-        mock_response = mocker.AsyncMock()
-        mock_response.status_code = 200
-        mock_response.text = VCB_XML_MALFORMED
-
-        mock_client = mocker.AsyncMock()
-        mock_client.get = mocker.AsyncMock(return_value=mock_response)
-        mock_client.__aenter__ = mocker.AsyncMock(return_value=mock_client)
-        mock_client.__aexit__ = mocker.AsyncMock(return_value=False)
-        mocker.patch("httpx.AsyncClient", return_value=mock_client)
-
-        crawler = MacroCrawler()
-        result = await crawler.fetch_exchange_rate()
+    async def test_handles_malformed_xml(self):
+        """Should return None on malformed XML (no USD element found)."""
+        mock_client = _mock_httpx_client(VCB_XML_MALFORMED)
+        with patch("localstock.macro.crawler.httpx.AsyncClient", return_value=mock_client):
+            crawler = MacroCrawler()
+            result = await crawler.fetch_exchange_rate()
 
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_validates_rate_range(self, mocker):
+    async def test_validates_rate_range(self):
         """Rate outside 20000-30000 VND/USD should return None (T-04-03)."""
         bad_xml = VCB_XML_VALID.replace("25,850.00", "5,000.00")
-        mock_response = mocker.AsyncMock()
-        mock_response.status_code = 200
-        mock_response.text = bad_xml
-
-        mock_client = mocker.AsyncMock()
-        mock_client.get = mocker.AsyncMock(return_value=mock_response)
-        mock_client.__aenter__ = mocker.AsyncMock(return_value=mock_client)
-        mock_client.__aexit__ = mocker.AsyncMock(return_value=False)
-        mocker.patch("httpx.AsyncClient", return_value=mock_client)
-
-        crawler = MacroCrawler()
-        result = await crawler.fetch_exchange_rate()
+        mock_client = _mock_httpx_client(bad_xml)
+        with patch("localstock.macro.crawler.httpx.AsyncClient", return_value=mock_client):
+            crawler = MacroCrawler()
+            result = await crawler.fetch_exchange_rate()
 
         assert result is None
 
