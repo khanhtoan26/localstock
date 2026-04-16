@@ -22,15 +22,19 @@ class Settings(BaseSettings):
     ollama_keep_alive: str = "30m"
 
     # Scoring weights — must sum to 1.0 across active dims (per D-04, D-06)
-    scoring_weight_technical: float = 0.35
-    scoring_weight_fundamental: float = 0.35
-    scoring_weight_sentiment: float = 0.30
-    scoring_weight_macro: float = 0.0  # Phase 4 activates this
+    scoring_weight_technical: float = 0.30
+    scoring_weight_fundamental: float = 0.30
+    scoring_weight_sentiment: float = 0.20
+    scoring_weight_macro: float = 0.20  # Phase 4: macro dimension active
 
     # Funnel settings
     funnel_top_n: int = 50  # Stocks passing to LLM sentiment
     sentiment_articles_per_stock: int = 5
     sentiment_lookback_days: int = 7
+
+    # Report generation settings (Phase 4)
+    report_top_n: int = 20  # Top-ranked stocks to generate reports for
+    report_max_tokens: int = 4096  # LLM context window for report generation
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 

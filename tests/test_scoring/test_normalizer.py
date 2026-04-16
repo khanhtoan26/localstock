@@ -162,10 +162,10 @@ class TestScoringConfig:
         from localstock.scoring.config import ScoringConfig
 
         config = ScoringConfig.from_settings()
-        assert config.weight_technical == pytest.approx(0.35)
-        assert config.weight_fundamental == pytest.approx(0.35)
-        assert config.weight_sentiment == pytest.approx(0.30)
-        assert config.weight_macro == pytest.approx(0.0)
+        assert config.weight_technical == pytest.approx(0.30)
+        assert config.weight_fundamental == pytest.approx(0.30)
+        assert config.weight_sentiment == pytest.approx(0.20)
+        assert config.weight_macro == pytest.approx(0.20)
 
     def test_scoring_config_manual(self):
         """ScoringConfig can be created manually."""
