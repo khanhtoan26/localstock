@@ -20,3 +20,28 @@ Ví dụ sentiment:
 - "VNM doanh thu tăng 15% so với cùng kỳ" → positive, score=0.8
 - "HPG bị phạt thuế chống bán phá giá" → negative, score=0.2
 - "Thị trường biến động mạnh trong phiên hôm nay" → neutral, score=0.5"""
+
+REPORT_USER_TEMPLATE = """📊 THÔNG TIN CỔ PHIẾU: {symbol} - {company_name}
+Ngành: {industry} | Giá đóng cửa: {close_price}
+Điểm tổng hợp: {total_score}/100 (Hạng {grade})
+
+📈 PHÂN TÍCH KỸ THUẬT (Điểm: {technical_score}/100)
+RSI(14): {rsi_14} | MACD Histogram: {macd_histogram}
+Xu hướng: {trend_direction} (Strength: {trend_strength})
+
+💰 PHÂN TÍCH CƠ BẢN (Điểm: {fundamental_score}/100)
+P/E: {pe_ratio} | P/B: {pb_ratio} | ROE: {roe}
+D/E: {debt_to_equity} | Tăng trưởng DT: {revenue_growth}
+
+📰 TÂM LÝ THỊ TRƯỜNG (Điểm: {sentiment_score}/100)
+{sentiment_summary}
+
+🌐 BỐI CẢNH VĨ MÔ (Điểm: {macro_score}/100)
+{macro_conditions}
+
+⏰ DỰ ĐOÁN XU HƯỚNG T+3
+Hướng: {t3_direction} | Độ tin cậy: {t3_confidence}
+Lý do: {t3_reasons}
+{t3_warning}
+
+Hãy viết báo cáo phân tích chi tiết dựa trên dữ liệu trên."""
