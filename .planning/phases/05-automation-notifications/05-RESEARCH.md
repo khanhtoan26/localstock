@@ -381,22 +381,22 @@ class SectorSnapshot(Base):
 | A5 | Sector rotation can be meaningfully measured by volume+score aggregation at industry level | Pattern 5 | May need more sophisticated flow metrics; but simple approach is good starting point |
 | A6 | `misfire_grace_time=3600` is the correct param for APScheduler v3 | Pattern 1 | Different param name would cause silent ignoring |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Telegram Bot Token Provisioning**
    - What we know: User must create a bot via @BotFather and provide token + chat_id
    - What's unclear: Should we prompt user to set up during first run, or document it?
-   - Recommendation: Add `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` to Settings with empty defaults. If not configured, notifications are silently skipped (pipeline still runs). Add setup instructions in README.
+   - RESOLVED: Add `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` to Settings with empty defaults. If not configured, notifications are silently skipped (pipeline still runs). Add setup instructions in README.
 
 2. **On-Demand Trigger via Telegram Commands**
    - What we know: AUTO-02 requires on-demand analysis. This could be API only or API + Telegram.
    - What's unclear: Should Telegram bot accept commands like `/analyze VNM` to trigger analysis?
-   - Recommendation: For v1, implement on-demand via API endpoints only (simpler). Telegram bot is send-only. Add Telegram commands in v2. This keeps scope manageable.
+   - RESOLVED: For v1, implement on-demand via API endpoints only (simpler). Telegram bot is send-only. Add Telegram commands in v2. This keeps scope manageable.
 
 3. **Pipeline Concurrency Lock**
    - What we know: Existing API routes use `asyncio.Lock` to prevent concurrent runs.
    - What's unclear: How does scheduled run interact with on-demand API trigger?
-   - Recommendation: Use a shared process-level lock. If scheduler is running, on-demand returns "pipeline in progress." If on-demand is running, scheduler job waits or skips.
+   - RESOLVED: Use a shared process-level lock. If scheduler is running, on-demand returns "pipeline in progress." If on-demand is running, scheduler job waits or skips.
 
 ## Environment Availability
 
