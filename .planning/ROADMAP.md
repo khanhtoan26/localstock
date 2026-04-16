@@ -73,7 +73,7 @@ Plans:
 - [x] 03-01-PLAN.md — Foundation: dependencies, config, DB models, migration, repositories
 - [x] 03-02-PLAN.md — News crawler (RSS), Ollama AI client, sentiment analysis module
 - [x] 03-03-PLAN.md — Scoring normalizers and composite scoring engine (TDD)
-- [ ] 03-04-PLAN.md — Service orchestrators, API endpoints, full pipeline integration
+- [x] 03-04-PLAN.md — Service orchestrators, API endpoints, full pipeline integration
 
 ### Phase 4: AI Reports, Macro Context & T+3 Awareness
 **Goal**: Rich Vietnamese-language analysis reports that explain WHY stocks score high/low, enriched with macro-economic context and T+3 trading awareness
