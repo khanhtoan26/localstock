@@ -122,10 +122,10 @@ Plans:
 **UI hint**: yes
 
 Plans:
-- [ ] 06-01-PLAN.md — Backend API gaps: CORS + price/indicator/sector endpoints
-- [ ] 06-02-PLAN.md — Next.js scaffold, dark theme, layout shell, shared libs, reusable components
-- [ ] 06-03-PLAN.md — Rankings page (DataTable) + Market Overview page (macro cards + sector table)
-- [ ] 06-04-PLAN.md — Stock Detail page with candlestick charts, indicator overlays, MACD/RSI sub-panels, AI report
+- [x] 06-01-PLAN.md — Backend API gaps: CORS + price/indicator/sector endpoints
+- [x] 06-02-PLAN.md — Next.js scaffold, dark theme, layout shell, shared libs, reusable components
+- [x] 06-03-PLAN.md — Rankings page (DataTable) + Market Overview page (macro cards + sector table)
+- [x] 06-04-PLAN.md — Stock Detail page with candlestick charts, indicator overlays, MACD/RSI sub-panels, AI report
 
 ## Progress
 
