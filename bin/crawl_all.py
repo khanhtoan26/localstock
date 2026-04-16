@@ -11,8 +11,11 @@ import sys
 
 from loguru import logger
 
+from localstock import configure_ssl
 from localstock.db.database import get_session_factory
 from localstock.services.pipeline import Pipeline
+
+configure_ssl()
 
 
 async def main(run_type: str = "daily") -> None:

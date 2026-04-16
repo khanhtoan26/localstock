@@ -11,8 +11,11 @@ import asyncio
 
 from loguru import logger
 
+from localstock import configure_ssl
 from localstock.db.database import get_session_factory
 from localstock.services.news_service import NewsService
+
+configure_ssl()
 from localstock.services.sentiment_service import SentimentService
 
 

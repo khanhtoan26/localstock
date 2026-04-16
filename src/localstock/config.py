@@ -36,6 +36,9 @@ class Settings(BaseSettings):
     report_top_n: int = 20  # Top-ranked stocks to generate reports for
     report_max_tokens: int = 4096  # LLM context window for report generation
 
+    # SSL verification (set to false behind corporate proxy with self-signed certs)
+    ssl_verify: bool = True
+
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
 

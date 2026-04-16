@@ -15,6 +15,7 @@ from datetime import UTC, datetime
 
 from loguru import logger
 
+from localstock import configure_ssl
 from localstock.db.database import get_session_factory
 from localstock.services.pipeline import Pipeline
 from localstock.services.analysis_service import AnalysisService
@@ -22,6 +23,8 @@ from localstock.services.news_service import NewsService
 from localstock.services.sentiment_service import SentimentService
 from localstock.services.scoring_service import ScoringService
 from localstock.services.report_service import ReportService
+
+configure_ssl()
 
 
 async def main(skip_reports: bool = False) -> None:
