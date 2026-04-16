@@ -1,0 +1,20 @@
+/** Chart color constants from UI-SPEC.md — single source of truth for all charts */
+export const CHART_COLORS = {
+  candleUp: "#22c55e",
+  candleDown: "#ef4444",
+  volumeUp: "#22c55e40",
+  volumeDown: "#ef444440",
+  sma20: "#3b82f6",
+  ema12: "#a855f7",
+  bbBands: "#6b728080",
+  macdLine: "#3b82f6",
+  macdSignal: "#f97316",
+  macdHistPositive: "#22c55e",
+  macdHistNegative: "#ef4444",
+  rsiLine: "#a855f7",
+  rsiOverbought: "#ef4444",
+  rsiOversold: "#22c55e",
+  chartBg: "#0f172a",
+  chartGrid: "#1e293b",
+  chartText: "#94a3b8",
+} as const;
