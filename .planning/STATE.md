@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 05-01-PLAN.md
-last_updated: "2026-04-16T07:55:26.301Z"
+stopped_at: Completed 05-02-PLAN.md
+last_updated: "2026-04-16T08:04:03.335Z"
 last_activity: 2026-04-16
 progress:
   total_phases: 6
   completed_phases: 4
   total_plans: 19
-  completed_plans: 17
-  percent: 89
+  completed_plans: 18
+  percent: 95
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-14)
 ## Current Position
 
 Phase: 05 (Automation & Notifications) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-04-16
 
@@ -67,6 +67,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 03 P04 | 5min | 2 tasks | 6 files |
 | Phase 03 P04 | 3min | 2 tasks | 6 files |
 | Phase 05 P01 | 8min | 2 tasks | 14 files |
+| Phase 05 P02 | 4min | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -114,6 +115,9 @@ Recent decisions affecting current work:
 - [Phase 05]: Alembic merge migration merges two heads (823bee92cc2e + a1b2c3d4e5f6) into single b5c6d7e8f901
 - [Phase 05]: holidays.Vietnam used for VN public holiday detection (handles lunar calendar Tết dates)
 - [Phase 05]: NotificationLog uq on (date, notification_type) for daily dedup
+- [Phase 05]: detect_score_changes standalone async function, not class — single-purpose contract
+- [Phase 05]: TelegramNotifier uses HTML parse mode for simpler escaping, 4000-char split threshold
+- [Phase 05]: Vietnamese language formatters with emoji indicators for mobile readability
 
 ### Pending Todos
 
@@ -127,6 +131,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-16T07:55:26.298Z
-Stopped at: Completed 05-01-PLAN.md
+Last session: 2026-04-16T08:04:03.332Z
+Stopped at: Completed 05-02-PLAN.md
 Resume file: None

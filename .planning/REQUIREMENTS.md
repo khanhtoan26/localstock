@@ -62,8 +62,8 @@
 
 ### Notification
 
-- [ ] **NOTI-01**: Agent gửi thông báo qua Telegram bot khi có gợi ý mã đáng mua (daily digest)
-- [ ] **NOTI-02**: Agent gửi alert đặc biệt qua Telegram khi phát hiện thay đổi điểm lớn hoặc tín hiệu mạnh
+- [x] **NOTI-01**: Agent gửi thông báo qua Telegram bot khi có gợi ý mã đáng mua (daily digest)
+- [x] **NOTI-02**: Agent gửi alert đặc biệt qua Telegram khi phát hiện thay đổi điểm lớn hoặc tín hiệu mạnh
 
 ### Dashboard
 
@@ -125,8 +125,8 @@
 | T3-02 | Phase 4: AI Reports, Macro Context & T+3 | Pending |
 | AUTO-01 | Phase 5: Automation & Notifications | Complete |
 | AUTO-02 | Phase 5: Automation & Notifications | Pending |
-| NOTI-01 | Phase 5: Automation & Notifications | Pending |
-| NOTI-02 | Phase 5: Automation & Notifications | Pending |
+| NOTI-01 | Phase 5: Automation & Notifications | Complete |
+| NOTI-02 | Phase 5: Automation & Notifications | Complete |
 | SCOR-04 | Phase 5: Automation & Notifications | Complete |
 | SCOR-05 | Phase 5: Automation & Notifications | Complete |
 | DASH-01 | Phase 6: Web Dashboard | Pending |
