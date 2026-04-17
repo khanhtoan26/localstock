@@ -37,10 +37,12 @@
   2. User can toggle between warm-light and dark themes via a visible control, and preference persists across browser sessions
   3. Charts (candlestick, volume, indicators) automatically update their colors when theme changes — no page reload needed
   4. Financial color indicators (grade badges, stock up/down) remain clearly legible on both theme backgrounds
-**Plans:** 2 plans
+**Plans:** 4 plans
 Plans:
 - [x] 07-01-PLAN.md — Theme infrastructure + warm palette + color fixes (THEME-01, THEME-02, THEME-03, THEME-05)
 - [x] 07-02-PLAN.md — Chart theme integration + visual verification (THEME-04)
+- [ ] 07-03-PLAN.md — Dependencies + AI report panel + score breakdown components (STOCK-02)
+- [ ] 07-04-PLAN.md — Stock page side-by-side layout + tabbed data panel (STOCK-01, STOCK-02)
 **UI hint**: yes
 
 ### Phase 8: Stock Page Reading-First Redesign
@@ -90,7 +92,7 @@ Plans:
 | 4. AI Reports, Macro Context & T+3 | v1.0 | 4/4 | Complete | 2026-04-15 |
 | 5. Automation & Notifications | v1.0 | 3/3 | Complete | 2026-04-15 |
 | 6. Web Dashboard | v1.0 | 4/4 | Complete | 2026-04-16 |
-| 7. Theme Foundation & Visual Identity | v1.1 | 0/2 | Planning | - |
+| 7. Theme Foundation & Visual Identity | v1.1 | 2/4 | Executing | - |
 | 8. Stock Page Reading-First Redesign | v1.1 | 0/0 | Not started | - |
 | 9. Academic/Learning Page & Glossary Data | v1.1 | 0/0 | Not started | - |
 | 10. Interactive Glossary Linking | v1.1 | 0/0 | Not started | - |
