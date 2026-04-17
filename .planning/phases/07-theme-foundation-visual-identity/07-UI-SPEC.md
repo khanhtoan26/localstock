@@ -1,7 +1,7 @@
 ---
 phase: 7
 slug: theme-foundation-visual-identity
-status: draft
+status: approved
 shadcn_initialized: true
 preset: base-nova
 created: 2026-04-17
@@ -55,6 +55,8 @@ No typography changes in this phase. Existing values preserved:
 | Display | 24px | 700 (bold) | 1.2 |
 
 Source: Existing codebase patterns (`text-sm` = 14px body, `text-lg font-semibold` = 18px headings, `text-xs` = 12px labels). This phase does not introduce new type styles.
+
+> ⚠ Existing codebase uses 4 weights — consolidation to ≤2 (e.g. 400 regular + 600 semibold) is a candidate for a future UX polish phase.
 
 ---
 
@@ -154,6 +156,8 @@ Note: Volume alpha increased to `60` (37.5%) on warm-light to compensate for low
 ---
 
 ## Interaction Contract
+
+> **Focal point:** Primary focal point remains the stock rankings table/chart area — the theme toggle is a peripheral control, not a focal element.
 
 ### Theme Toggle
 
