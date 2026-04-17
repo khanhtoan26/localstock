@@ -5,9 +5,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   return (
     <NextThemesProvider
       attribute="class"
-      defaultTheme="claude"
-      themes={["claude", "dark"]}
-      value={{ claude: "", dark: "dark" }}
+      defaultTheme="light"
+      themes={["light", "dark"]}
       enableSystem={false}
       disableTransitionOnChange
       storageKey="localstock-theme"
