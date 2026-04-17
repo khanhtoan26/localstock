@@ -1,194 +1,186 @@
 # Project Research Summary
 
-**Project:** LocalStock — AI Stock Agent for Vietnamese Market (HOSE)
-**Domain:** Financial Data Pipeline + AI Analysis Agent
-**Researched:** 2025-07-18
+**Project:** LocalStock v1.1 — UX Polish & Educational Depth
+**Domain:** Frontend redesign of a Vietnamese stock market AI agent (Next.js 16 + React 19 + Tailwind v4 + shadcn/ui)
+**Researched:** 2026-04-17
 **Confidence:** HIGH
 
 ## Executive Summary
 
-LocalStock is a personal AI-powered stock analysis agent for the Vietnamese HOSE market (~400 tickers). The expert-recommended approach is a **batch data pipeline** — not a real-time system — that runs daily after market close (15:30 VN time), crawling price/financial data via the `vnstock` library, computing technical and fundamental scores with pure Python (pandas-ta), then using a local LLM (Qwen2.5 on Ollama/RTX 3060) to synthesize Vietnamese-language narrative reports for the top-ranked stocks. The core differentiator versus existing Vietnamese platforms (Simplize, Fireant, WiChart) is the combination of multi-dimensional AI scoring per stock and LLM-generated Vietnamese analysis reports — no competing tool in Vietnam does either.
+LocalStock v1.1 is a **pure-frontend milestone** that transforms an existing dark-mode-only financial dashboard into a reading-first AI report experience. The four features — theme system, stock page redesign, academic/learning page, and interactive glossary linking — share a clear dependency chain and require zero backend changes. The existing stack (Next.js 16, @base-ui/react 1.4.0, Tailwind v4, shadcn/ui base-nova style, TanStack Query 5) is well-suited for all four features; only 5 new npm packages are needed (`next-themes`, `react-markdown`, `remark-gfm`, `rehype-sanitize`, `@tailwindcss/typography`), plus 3 shadcn component installs (Sheet, Tabs, Popover/HoverCard). The recommended approach is a typed TypeScript glossary module (not MDX/CMS) for ~25 entries, `react-markdown` for structured report rendering, and `next-themes` for FOUC-free theme switching.
 
-The recommended architecture is a **Python monolith with clean module boundaries** (not microservices), using FastAPI for the API layer, PostgreSQL for storage, and a sequential pipeline pattern (Ingest → Analyze → Score → Synthesize → Notify). The frontend is a Next.js dashboard with TradingView's lightweight-charts. The system is designed as a single-user localhost tool with a clear path to cloud deployment by swapping config. All stack choices are HIGH confidence — vnstock, pandas-ta, FastAPI, Ollama, and Next.js are mature, well-documented technologies with no exotic dependencies.
+The recommended build order follows the dependency chain: **Theme foundation first** (it touches `globals.css` and `layout.tsx` which every other feature depends on), then **stock page redesign** (creates the `AIReportView` component that glossary hooks into), then **academic/learning page** (produces the glossary data that glossary linking consumes), and finally **glossary linking** (requires both the report renderer and the glossary data). Content authoring (~25 glossary entries) should start in parallel with engineering from Phase 2 onward — it's the single biggest time cost (~50 hours for 50 entries, but a minimum viable set of 15-20 entries suffices for launch).
 
-The primary risks are **data fragility** (Vietnamese broker APIs change without notice — vnstock abstracts this but it's still the weakest link), **price adjustment for corporate actions** (unadjusted prices corrupt all technical analysis — HOSE has frequent stock dividends/splits), and **LLM hallucination** (local 7B-14B models confidently fabricate financial numbers if not fed structured data in every prompt). All three risks are mitigable with known patterns identified in the pitfalls research, but they must be addressed in the earliest phases — not bolted on later.
+The key risks are: (1) **financial semantic tokens are dark-mode values sitting in `:root`** — they will render nonsensically when the warm-light theme activates unless audited and duplicated into both theme blocks; (2) **canvas-based charts (lightweight-charts) cannot follow CSS variable changes** — they require imperative `chart.applyOptions()` calls keyed to theme state; (3) **Vietnamese typography requires intentional font and line-height choices** — stacked diacritics clip at default line-height, and many popular fonts have poor Vietnamese coverage; (4) **glossary linking against LLM output is non-deterministic** — the same indicator appears in many surface forms across reports, requiring alias-based matching with Vietnamese-aware word boundaries. All four risks have well-documented mitigation strategies and should be addressed in Phase 1 (risks 1-3) and Phase 3-4 (risk 4).
 
 ## Key Findings
 
 ### Recommended Stack
 
-The stack is a Python-heavy backend with a JavaScript frontend. Python dominates because vnstock, pandas-ta, Ollama client, and underthesea are all Python-native. The frontend is a separate Next.js app that reads from the FastAPI REST API. See [STACK.md](./STACK.md) for full details.
+The existing stack handles v1.1 without framework changes. Five new runtime/dev dependencies are needed, all battle-tested and React 19 / Next.js 16 compatible. The critical stack decision is to **stay within the Base UI primitive ecosystem** — do not introduce Radix UI, vaul, or any competing primitive library, as the project is locked to `base-nova` style via `components.json`.
 
 **Core technologies:**
-- **Python 3.12+ / FastAPI**: Primary backend — async API, Pydantic validation, auto-generated docs. All data/AI libraries are Python-native.
-- **PostgreSQL 16+**: Primary database — handles concurrent writes from crawler + API, full-text search for news, JSON columns for financial reports. Docker Compose makes it trivial to run.
-- **vnstock 3.5+**: The only viable library for Vietnamese stock data (OHLCV, financial statements, ratios). Free for personal use. Active maintenance (62 releases).
-- **pandas-ta**: 130+ technical indicators, pure Python (no C compilation unlike TA-Lib). Works directly on DataFrames.
-- **Ollama + Qwen2.5 14B (Q4_K_M)**: Local LLM inference. Qwen2.5 has the best Vietnamese language support among open models. ~9-10GB VRAM at Q4 quantization fits RTX 3060 (12GB). Fallback: Qwen2.5 7B Q8_0.
-- **Next.js 16+ / shadcn/ui / lightweight-charts**: Dashboard with TradingView-quality stock charts (~45KB bundle), professional UI components.
-- **APScheduler**: In-process cron-like scheduler. No Redis/RabbitMQ needed (unlike Celery). Perfect for single-machine.
-- **python-telegram-bot**: Async notifications for daily digests and score change alerts.
+- **next-themes@^0.4.6**: Theme state management — injects an inline `<script>` before hydration to prevent FOUC; handles localStorage persistence and `<html>` class toggling. Use `attribute="class"`, `defaultTheme="claude"`, `enableSystem={false}`.
+- **react-markdown@^10 + remark-gfm@^4 + rehype-sanitize@^6**: Replaces current `whitespace-pre-wrap` plain text rendering with structured Markdown. Enables GFM tables (LLM outputs these constantly), XSS sanitization on LLM output, and custom `components` overrides for glossary term injection.
+- **@tailwindcss/typography@^0.5.19**: `prose` classes for reading-first AI reports — paragraph rhythm, list spacing, and blockquote tone for Vietnamese long-form content at `prose-lg` (~18px / 1.75 leading).
+- **Be Vietnam Pro (via next/font/google)**: Vietnamese-optimized variable font — system fonts render Vietnamese stacked diacritics (`ế`, `ợ`, `ủ`) poorly. `subsets: ["vietnamese", "latin"]` required.
+- **@base-ui/react (existing 1.4.0)**: Drawer, Popover, PreviewCard, and Tooltip primitives already installed. Use Drawer for right-side data panel, PreviewCard for hover glossary definitions.
+- **Typed TS glossary module (not MDX)**: ~25 entries as a `Record<GlossaryCode, GlossaryEntry>` in `lib/glossary.ts`. Compile-time type safety on `seeAlso` links, zero new dependencies, shared by report renderer and academic pages.
 
-**Critical version notes:** Pin vnstock carefully — the `vnai` dependency has caused deadlock issues (GitHub issue #210). Use `uv` for Python package management (10-100x faster than pip).
+**Explicitly rejected:** vaul, @radix-ui/*, @next/mdx, contentlayer/velite/nextra, streamdown, framer-motion, styled-components/emotion, prismjs/shiki, katex. See STACK.md for per-item rationale.
 
 ### Expected Features
 
-See [FEATURES.md](./FEATURES.md) for full analysis including competitor comparison.
+**Must have (table stakes — v1.1 broken without these):**
+- Theme persistence across reloads (localStorage via next-themes)
+- No flash of wrong theme on load (inline blocking script)
+- Theme toggle visible from every page (top-right header or sidebar)
+- Stock page loads AI report first, not chart (the philosophy shift)
+- Structured section rendering of AI reports (not `JSON.stringify`)
+- Drawer open/close without breaking scroll position
+- Glossary terms clickable (not hover-only — mobile has no hover)
+- Academic page searchable with Vietnamese diacritic-insensitive matching
+- Charts re-themed for warm mode (candle colors legible on cream)
 
-**Must have (table stakes — v1 MVP):**
-- Price/volume data crawling (~400 HOSE tickers, daily OHLCV + 2yr history)
-- Financial statement data (quarterly income/balance/cashflow via vnstock)
-- Core technical indicators (MA, RSI, MACD, Bollinger Bands, volume analysis)
-- Key financial ratios (P/E, P/B, EPS, ROE, ROA, D/E)
-- Composite scoring system (technical + fundamental weighted scores)
-- LLM-synthesized Vietnamese analysis reports (the killer differentiator)
-- Ranked stock list with CLI output (top 20 with scores + reasoning)
-- Scheduled daily run (after market close) + on-demand single-stock analysis
+**Should have (differentiators):**
+- Claude-style warm cream (`oklch(0.97 0.02 70)`) + terracotta accent palette — unclaimed aesthetic in the stock tool space
+- Right drawer with tabbed panels (Chart / Raw Data) — one drawer, tabs inside (Linear/Notion pattern)
+- AI report auto-links known terms to glossary — client-side `react-markdown` component override on inline code tokens
+- Hover card definitions with click-to-expand (PreviewCard for hover, Popover for tap/mobile)
+- Drawer state persisted in URL search params (`?drawer=chart`) for shareable links and browser back support
 
-**Should have (v1.x — after core pipeline validated):**
-- Telegram notifications (daily digest + score change alerts)
-- Vietnamese news sentiment analysis (LLM-classified, rule-based fallback)
-- Macro-economic context linking (SBV rates, CPI → stock impact)
-- Web dashboard (ranked table + stock detail with charts)
-- Industry comparison (sector-relative scoring)
-
-**Defer (v2+):**
-- Sector rotation analysis, backtesting/retrospective accuracy, HNX/UPCOM support, conversational AI chatbot
-
-**Explicitly excluded (anti-features):**
-- Auto-trading, real-time tick data, portfolio tracking, price prediction, multi-user/social
+**Defer to v1.2+:**
+- Per-term live example charts in academic entries
+- Keyboard shortcut system (single drawer toggle binding is fine for v1.1)
+- In-drawer mini-chart preview on hover over dates/prices in report text
+- Cross-linking between academic entries (only after content stabilizes)
+- AI-powered "explain this simpler" button
 
 ### Architecture Approach
 
-The system follows a **pipeline architecture** (ETL + Analysis) built as a monolith with clean module boundaries. Data flows sequentially: Ingest → Store → Analyze → Score → Synthesize → Notify. Each stage can run independently for testing. The LLM is treated as an internal service with structured JSON output (not free-form text parsing). A critical architectural decision is the **funnel approach**: rule-based scoring filters 400 stocks to ~50 candidates for sentiment analysis, then only the top 15-20 get full LLM report generation. See [ARCHITECTURE.md](./ARCHITECTURE.md) for full details.
+All four features are frontend-only and follow a clear dependency chain: Theme → Stock Page Redesign + Academic Page → Glossary Linking. The architecture adds **15 new components** and **modifies 8 existing components**, with 3 shadcn/ui installs (Sheet, Tabs, Popover/HoverCard) and 4 new route pages under `/learn`. The single most important architectural insight is that the **glossary data module (`glossary-data.ts`) is the shared spine** — it feeds both the academic/learning pages and the report term-linking system. It must be designed first even if populated incrementally.
 
 **Major components:**
-1. **Data Ingestion Layer** — Price crawler (vnstock), financial report crawler, news scraper (httpx+BS4), macro data collector. Each crawler implements a common adapter interface for source-swappability.
-2. **Analysis Layer** — Technical analysis (pandas-ta), fundamental analysis (ratio calculations), sentiment analysis (Ollama LLM), macro analysis (rule engine + LLM). Each module is independent — no cross-dependencies.
-3. **Scoring Engine** — Weighted aggregator (Technical 30% + Fundamental 30% + Sentiment 20% + Macro 20%). Configurable weights via config file. Categorical ratings (Strong Buy/Buy/Hold/Sell), not false-precision decimals.
-4. **AI Synthesis** — Ollama client with structured output, prompt templates, report generation. LLM is a synthesizer (interprets pre-computed data), never a data source.
-5. **Pipeline Coordinator** — Orchestrates the full crawl→analyze→score→report→notify sequence. APScheduler triggers daily runs.
-6. **Presentation Layer** — FastAPI REST API, Next.js web dashboard, Telegram bot.
-
-**Key patterns:** Repository pattern for DB access, adapter pattern for data sources, LLM-as-service with Pydantic schema enforcement.
+1. **ThemeProvider + ThemeToggle** — Client-side theme context wrapping `next-themes`; manages `<html>` class toggle between no-class (warm `:root`) and `.dark`. Chart colors updated imperatively via `chart.applyOptions()` keyed to `resolvedTheme`.
+2. **AIReportView** — New component replacing `whitespace-pre-wrap` text dump. Renders `content_json` sections via `react-markdown` with glossary term injection through custom `components.code` override. This is the integration point for Features 2 and 4.
+3. **StockDataDrawer** — shadcn Sheet (right-side, `position: fixed`) with internal Tabs (Chart / Data). Lazy-loads chart data via React Query `enabled: drawerOpen`. Existing PriceChart, SubPanel, TimeframeSelector components move inside largely unchanged.
+4. **Glossary data module + linkify engine** — Typed `glossary.ts` with aliases per term; `glossary-linkify.ts` builds a compiled regex from all aliases (longest-first), scans report text in a single pass, wraps matches in `<GlossaryLink>` components. Runs at render time via remark plugin or react-markdown component override, not post-hoc DOM mutation.
+5. **Academic/Learning pages** — Static Server Component routes at `/learn/[category]`, rendering `ConceptCard` components from the same glossary data. Category-based navigation (Technical / Fundamental / Macro).
 
 ### Critical Pitfalls
 
-See [PITFALLS.md](./PITFALLS.md) for the full list of 7 critical pitfalls plus Vietnamese market-specific traps.
+1. **Financial tokens are dark values in `:root`** — `--chart-bg: #0f172a` (dark navy) sits in `:root` because the app was always dark. When warm-light activates, every component reading `var(--chart-bg)` gets inverted colors. **Fix:** Audit every CSS variable; provide values in both `:root` (warm) and `.dark` blocks. Unify color spaces on oklch.
 
-1. **Vietnamese data sources are ephemeral** — Broker APIs (TCBS, SSI, VnDirect) change without notice. During research, TCBS returned empty responses and SSI returned 502. Only VCI (via vnstock) was reachable. *Prevention:* Use vnstock as abstraction layer, implement adapter pattern, cache historical data aggressively, build health checks before each fetch cycle.
+2. **Canvas charts ignore CSS/class changes** — `lightweight-charts` renders to `<canvas>` with colors set at `createChart()` time. Theme toggle changes nothing visually. **Fix:** Refactor `chart-colors.ts` from constants to `getChartColors(theme)` function. Add `useEffect` on `resolvedTheme` that calls `chart.applyOptions()` and `series.applyOptions()` — no chart destruction needed.
 
-2. **Unadjusted prices corrupt all technical analysis** — vnstock returns unadjusted historical prices. Stock splits and stock dividends (common on HOSE) create false signals in RSI, MACD, etc. *Prevention:* Implement price adjustment logic for corporate actions, source ex-date/ratio data from CafeF, validate against TradingView adjusted charts.
+3. **Hardcoded Tailwind colors fail on light backgrounds** — `gradeColors` uses `text-green-400` (contrast 2.0:1 on cream), `text-yellow-400` (1.5:1 on cream). **Fix:** Replace with `text-green-700 dark:text-green-400` pattern or define grade colors as CSS variables in the theme matrix.
 
-3. **Local LLMs hallucinate financial facts** — 7B-14B models confidently fabricate numbers ("VNM P/E is 15.2") from pattern matching. *Prevention:* NEVER ask LLM to recall facts. Always inject all data into the prompt. Use structured JSON output. Post-validate any numbers in LLM output against the database.
+4. **LLM output surface forms are non-deterministic** — "RSI" appears as `RSI`, `chỉ số RSI`, `chỉ báo sức mạnh tương đối`, `Relative Strength Index` across reports. `MA` collides with Vietnamese words. **Fix:** Each glossary entry declares an alias list; match longest-first; require uppercase for ambiguous abbreviations; add LLM system prompt guidance to normalize forms. Build regression tests against 20-30 real reports.
 
-4. **Vietnamese sentiment analysis is much harder than English** — Word segmentation is mandatory, financial domain vocabulary differs from general Vietnamese, small LLMs have weak Vietnamese understanding. *Prevention:* Start with rule-based keyword sentiment ("giảm sàn" = strongly negative). Use underthesea for word segmentation. Consider PhoBERT for classification. Don't block scoring on perfect sentiment.
-
-5. **Financial statement unit mismatch (BCTC)** — Companies report in different units (triệu đồng vs tỷ đồng vs đồng). Silent corruption makes one company's P/E 1,000x too low, promoting it to #1 in rankings. *Prevention:* Normalize all financial data to tỷ đồng at ingestion time. Store original unit alongside normalized value. Sanity-check P/E, ROE, EPS ranges.
+5. **Glossary cold-start kills perceived quality** — Shipping glossary UI with 5 stub entries looks broken. **Fix:** Ship with ≥15 high-frequency entries (top 8 technical + 7 fundamental indicators). Build frequency list from actual report corpus. Start content authoring in parallel with engineering, not after.
 
 ## Implications for Roadmap
 
-Based on combined research, the roadmap should follow the data dependency chain. You cannot analyze data you haven't crawled, score analysis you haven't computed, or present results that don't exist.
+Based on research, suggested phase structure:
 
-### Phase 1: Foundation & Data Pipeline
-**Rationale:** Everything depends on having data in a database. Data ingestion is also the most fragile part (API instability, price adjustment, unit normalization) — get it right first.
-**Delivers:** Project scaffold, database schema, price crawler, financial report crawler, corporate action adjustment, CLI to verify data integrity.
-**Addresses:** Price/volume crawling, financial statement data, historical data backfill, company profile/listing info.
-**Avoids:** Pitfall 1 (data source instability — adapter pattern), Pitfall 2 (unadjusted prices — corporate action handling), Pitfall 5 (BCTC unit mismatch — normalization at ingestion).
+### Phase 1: Theme Foundation & Visual Identity
+**Rationale:** Every subsequent feature renders differently per theme. Theme touches `globals.css`, `layout.tsx`, and the color pipeline — foundational files. Doing theme last would mean reworking every component twice.
+**Delivers:** Warm-light default (Claude cream + terracotta) + preserved dark mode, FOUC-free toggle, theme-aware charts, contrast-passing financial tokens, Be Vietnam Pro font pipeline.
+**Addresses:** Theme persistence, FOUC prevention, chart re-theming, grade badge contrast, warm palette, Vietnamese font — all P1 features from FEATURES.md.
+**Avoids:** Pitfalls #1 (FOUC), #2 (token inversion), #3 (canvas charts), #4 (hardcoded colors), #5 (WCAG contrast).
+**Files:** `globals.css` (major), `layout.tsx` (major), new `theme-provider.tsx` / `theme-toggle.tsx`, `chart-colors.ts` (major refactor), `utils.ts`, `grade-badge.tsx`, `price-chart.tsx`, `sub-panel.tsx`, `sidebar.tsx`.
+**Estimate:** 3-4 days (including palette tuning and contrast verification).
 
-### Phase 2: Technical & Fundamental Analysis
-**Rationale:** Pure computation, no LLM dependency. Produces the first two scoring dimensions. Gives you a usable (if incomplete) ranking system immediately.
-**Delivers:** Technical indicators + scoring, fundamental ratios + scoring, basic composite score (2 dimensions), CLI ranked list.
-**Addresses:** Core technical indicators, volume analysis, trend identification, financial ratios, revenue/profit growth, composite scoring (partial).
-**Avoids:** Pitfall 6 (false precision — use categorical ratings from the start, show component scores).
+### Phase 2: Stock Page Reading-First Redesign
+**Rationale:** Creates the `AIReportView` component that Phase 4 hooks into. Drawer component is the backbone for on-demand data access. Must happen before glossary linking because the report renderer is the injection point for term links.
+**Delivers:** AI report full-width above the fold, right-side drawer with Chart/Data tabs, structured section rendering via react-markdown, lazy chart data loading, drawer state in URL params.
+**Addresses:** Report-first layout, drawer component, structured report rendering, drawer URL state, scroll preservation, lazy data loading — core differentiator features.
+**Avoids:** Pitfalls #6 (eager chart loading), #9 (broken deep links), #10 (scroll position), #11 (Vietnamese typography), #12 (chart dimensions in drawer).
+**Uses:** react-markdown, remark-gfm, rehype-sanitize, @tailwindcss/typography (new deps installed in Phase 1), Sheet + Tabs (shadcn installs).
+**Estimate:** 3-4 days.
 
-### Phase 3: LLM Integration & Sentiment
-**Rationale:** The most complex and least predictable component. By this point you already have a useful tool (technical + fundamental ranking). LLM adds the differentiating value.
-**Delivers:** Ollama client wrapper, prompt templates, news crawler + sentiment classification, LLM report generation for top stocks, full 3-dimension scoring (tech + fundamental + sentiment).
-**Addresses:** LLM-synthesized Vietnamese reports, Vietnamese news sentiment analysis, multi-dimensional score fusion.
-**Avoids:** Pitfall 3 (LLM hallucination — data injection prompts from day one), Pitfall 4 (Vietnamese sentiment difficulty — start with rules, add ML later), Pitfall 7 (VRAM exhaustion — funnel approach, only LLM top 30-50 stocks).
+### Phase 3: Academic/Learning Page + Glossary Content
+**Rationale:** Produces the glossary data module that Phase 4 consumes. Content authoring is the single biggest time cost — starting it here (parallel with engineering) ensures ≥15 entries are ready when glossary linking ships. Academic pages also validate the glossary data schema before it's wired into reports.
+**Delivers:** `/learn` route with Technical/Fundamental/Macro category pages, glossary data module (`glossary-data.ts` or `glossary.ts`), ConceptCard components, diacritic-insensitive client-side search, sidebar nav expansion ("Học Thuật").
+**Addresses:** Academic page skeleton, glossary content authoring, client-side search, sidebar navigation.
+**Avoids:** Pitfall #14 (glossary cold-start — content ships with infrastructure).
+**Implements:** Static content architecture (typed TS arrays, not MDX). FormulaBlock + InterpretationGuide components for visual learning aids.
+**Estimate:** 2-3 days engineering + 3-5 days content authoring (parallel track).
 
-### Phase 4: Automation & Notifications
-**Rationale:** Only automate what works end-to-end manually. Scheduler + Telegram are the delivery mechanism for daily value.
-**Delivers:** APScheduler daily pipeline, Telegram bot (daily digest + alerts), score change detection, error handling & monitoring, Vietnamese holiday calendar handling.
-**Addresses:** Scheduled daily run, Telegram notifications, score change alerts, on-demand analysis triggers.
-**Avoids:** Scheduler edge cases (weekends, Vietnamese holidays — Tết, 30/4, 2/9).
-
-### Phase 5: Web Dashboard
-**Rationale:** Dashboard is read-only presentation — it needs a fully populated database to display. Building UI before the pipeline runs is wasted effort. CLI + Telegram provide output in earlier phases.
-**Delivers:** FastAPI REST API endpoints, Next.js dashboard with ranked stock table, stock detail view with charts (lightweight-charts), analysis report display.
-**Addresses:** Web dashboard, stock charts, ranked stock browsing, report viewing.
-**Avoids:** UX pitfalls (show data freshness timestamps, score breakdowns not just totals, confidence indicators).
-
-### Phase 6: Macro Analysis & Refinement
-**Rationale:** Macro analysis is the least data-available dimension (SBV/GSO data requires semi-manual collection). Add it last as the 4th scoring dimension. Use this phase for scoring calibration.
-**Delivers:** Macro data collection, macro scoring, full 4-dimension composite score, industry/sector comparison, scoring weight calibration, retrospective accuracy tracking.
-**Addresses:** Macro-economic context linking, industry comparison, customizable scoring weights, sector-relative scoring.
-**Avoids:** Pitfall 6 (scoring overconfidence — backtest against historical returns in this phase).
+### Phase 4: Interactive Glossary Linking
+**Rationale:** Must be last — depends on both AIReportView (from Phase 2) and glossary-data.ts (from Phase 3). This is the "tie it together" feature that connects AI reports to educational content.
+**Delivers:** Term auto-detection in AI reports via react-markdown component override, PreviewCard hover definitions (desktop), Popover tap definitions (mobile), "Xem chi tiết →" navigation to academic pages, first-occurrence-only linking to avoid hyperlink clutter.
+**Addresses:** Interactive term linking, hover preview + click-through, cross-referencing between reports and learning content.
+**Avoids:** Pitfalls #7 (LLM surface forms — alias-based matching), #8 (DOM mutation — remark plugin instead), #13 (tooltip dismissal — use PreviewCard/Popover, not Tooltip).
+**Uses:** @base-ui/react PreviewCard + Popover (existing), glossary-linkify.ts (new pure function).
+**Estimate:** 2-3 days (including matcher regression testing against real reports).
 
 ### Phase Ordering Rationale
 
-- **Data before analysis:** You cannot compute RSI without price data. You cannot calculate P/E without financial statements. Phase 1 must precede Phase 2.
-- **Computation before LLM:** Technical and fundamental analysis are pure math — fast, deterministic, debuggable. Get these working before introducing the LLM's non-determinism. Phase 2 before Phase 3.
-- **Manual before automated:** Run the pipeline manually end-to-end before adding a scheduler. Phase 3 completion before Phase 4 automation.
-- **Backend before frontend:** A dashboard with no data is useless. CLI output and Telegram cover the presentation need while the pipeline matures. Phase 4 before Phase 5.
-- **Core before enrichment:** Technical + fundamental + sentiment cover 80% of the scoring value. Macro is the hardest to source and least impactful dimension. Phase 6 is enhancement, not core.
+- **Theme first because it's foundational:** Every CSS variable, every component color, every chart is affected. Building anything on the old dark-only styling means rework.
+- **Stock page before academic page:** The stock page redesign creates the `AIReportView` component and installs react-markdown. Academic pages can then reuse the same Markdown renderer for style parity. However, these two phases have minimal code overlap and could partially overlap if needed.
+- **Content authoring starts in Phase 3 but continues through Phase 4:** The glossary data module is defined in Phase 3 (schema + initial 15+ entries). Additional entries can be added during Phase 4 without blocking engineering.
+- **Glossary linking is strictly last:** It depends on both the report renderer (Phase 2) and the glossary data (Phase 3). Attempting it earlier means building against components that don't exist yet.
+- **This ordering also groups pitfalls naturally:** Phase 1 handles all 5 theme-related pitfalls. Phase 2 handles all 4 layout/drawer pitfalls. Phase 3-4 handle all 4 glossary pitfalls. Scope creep (Pitfall #15) is a process discipline across all phases.
 
 ### Research Flags
 
-**Phases likely needing deeper research during planning:**
-- **Phase 1 (Data Pipeline):** Corporate action data sourcing for HOSE needs investigation — where to reliably get ex-dates and split ratios. CafeF is the likely source but scraping patterns need validation.
-- **Phase 3 (LLM Integration):** Prompt engineering for Vietnamese financial analysis is niche — little public guidance exists. Qwen2.5's actual Vietnamese financial text comprehension needs empirical testing. VRAM budget with 14B vs 7B model needs benchmarking on the actual RTX 3060.
-- **Phase 4 (Automation):** Vietnamese public holiday calendar integration — need to find or build a reliable holiday list for market closures.
+Phases likely needing deeper research during planning:
+- **Phase 1 (Chart re-theming):** The `chart.applyOptions()` approach for lightweight-charts v5 theme switching needs validation with the actual chart code. Verify that series colors (candle up/down, volume alpha) update correctly without chart destruction. Also verify Be Vietnam Pro Vietnamese diacritic rendering at actual report text sizes.
+- **Phase 4 (Glossary matcher):** Vietnamese-aware word boundary regex (`(?<![\p{L}])` with `u` flag) needs testing against real LLM report corpus. The alias list per term needs to be built empirically from actual reports, not guessed. Consider running matcher on last 30 reports to measure recall before shipping.
 
-**Phases with standard patterns (skip deep research):**
-- **Phase 2 (Analysis):** Technical indicators via pandas-ta and ratio calculations are well-documented, standard patterns. No research needed.
-- **Phase 5 (Dashboard):** Next.js + shadcn/ui + lightweight-charts is a well-trodden path. Standard CRUD dashboard patterns apply.
+Phases with standard patterns (skip research-phase):
+- **Phase 2 (Stock page redesign):** shadcn Sheet + Tabs is a well-documented pattern; existing React Query hooks provide all data; layout restructure is CSS/JSX work with no unknowns.
+- **Phase 3 (Academic page):** Static content pages with typed data arrays — the simplest possible content architecture. No API integration, no build pipeline, no unknowns.
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | All technologies verified via PyPI/npm. Versions confirmed. vnstock is the only viable VN stock library — no alternatives. |
-| Features | HIGH | Competitor analysis (Simplize, Fireant, WiChart, Danelfin) confirms feature gaps. MVP scope is well-defined with clear v1/v1.x/v2+ boundaries. |
-| Architecture | HIGH | Pipeline architecture is the natural fit for batch data processing. Patterns are standard (repository, adapter, ETL). Build order follows clear dependency chain. |
-| Pitfalls | HIGH | Verified via vnstock source code review, API endpoint testing, and issue tracker analysis. Vietnamese market-specific traps (±7% limits, corporate actions, đội lái) are domain-critical. |
+| Stack | HIGH | All packages verified against npm as of Apr 2026; existing codebase inspected directly; version compatibility matrix confirmed. No speculative choices. |
+| Features | HIGH | Feature landscape well-defined by existing competitive analysis (Seeking Alpha, Linear, Claude.ai); prioritization grounded in actual codebase state (what exists vs what's missing). |
+| Architecture | HIGH | All 4 features use established patterns within the existing stack. No new backend work. Component inventory verified against actual `src/` file tree. |
+| Pitfalls | HIGH | 15 pitfalls grounded in verified codebase reading (actual file contents cited); mitigation strategies reference specific APIs and patterns. Recovery costs assessed realistically. |
 
 **Overall confidence:** HIGH
 
 ### Gaps to Address
 
-- **Database choice discrepancy:** STACK.md recommends PostgreSQL; ARCHITECTURE.md assumes SQLite for localhost. **Recommendation: Use PostgreSQL from the start** — Docker Compose makes it trivially easy, avoids migration later, and handles concurrent access from scheduler + API. SQLite is a false economy.
-- **Corporate action data source:** No confirmed reliable API for HOSE corporate actions (ex-dates, split ratios, stock dividend rates). CafeF scraping is the likely approach but needs validation during Phase 1 planning.
-- **Qwen2.5 Vietnamese performance:** Model recommendation is based on training data composition analysis, not empirical testing on Vietnamese financial text. Need to benchmark during Phase 3 — may need to fall back to 7B or try Vistral.
-- **vnai dependency risk:** vnstock's mandatory `vnai` analytics package has caused issues (deadlocks on Windows, potential tracking concerns). May need to fork vnstock or patch out vnai if it becomes problematic on Linux.
-- **PhoBERT vs LLM for sentiment:** PITFALLS.md recommends PhoBERT for sentiment classification, but STACK.md recommends underthesea + LLM. **Recommendation: Start with rule-based keyword sentiment (fastest, most reliable), upgrade to LLM-based classification if accuracy is sufficient, and only bring in PhoBERT if LLM sentiment proves inadequate** — PhoBERT competes for GPU VRAM with Ollama.
+- **next-themes vs hand-rolled theme provider:** ARCHITECTURE.md flags next-themes as an anti-pattern (unnecessary dependency for 2 themes), while STACK.md and PITFALLS.md both recommend it strongly (handles the tricky inline blocking script and hydration warning correctly). **Recommendation: Use next-themes.** The 2kB cost is trivially justified by eliminating the FOUC edge cases that a hand-rolled solution inevitably hits. The inline `<script>` timing is subtle and next-themes has been battle-tested for 3+ years.
+
+- **Exact drawer width:** 420px? 480px? 560px? Depends on minimum readable chart width inside the drawer. Current PriceChart uses ResizeObserver and should adapt, but need to verify that a ~450px-wide candlestick chart is still legible. **Resolve during Phase 2 implementation** with real chart data.
+
+- **Glossary entry count:** FEATURES.md estimates 50 entries (~50 hours), ARCHITECTURE.md says 30-40, STACK.md says ~25. **Recommendation:** Start with 15-20 high-frequency entries (the terms that appear in >50% of reports), ship as MVP, add more incrementally. Build the frequency list by grepping actual LLM report output.
+
+- **Vietnamese serif font for report body:** FEATURES.md suggests serif for AI reports (Claude/Stratechery pattern), STACK.md recommends Be Vietnam Pro (a sans-serif font). **Recommendation:** Use Be Vietnam Pro as the primary body font (verified Vietnamese diacritic support) and defer serif exploration to v1.2. Serif Vietnamese fonts with good diacritic coverage are rare and need per-font testing.
+
+- **`lightweight-charts` v5 `applyOptions()` live color update:** Confirmed supported in the API, but not yet tested against the actual `price-chart.tsx` code which creates multiple series (candle, volume, SMA lines). Verify in Phase 1 that all series types accept runtime color updates without flicker.
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- vnstock v3.5.1 — PyPI + GitHub (thinh-vu/vnstock) — stock data API, source code review
-- FastAPI v0.135.3 — PyPI — backend framework
-- Ollama Python v0.6.1 — PyPI + GitHub — LLM client
-- pandas-ta v0.4.71b0 — PyPI — technical indicators
-- Next.js v16.2.3 — npm — dashboard framework
-- lightweight-charts v5.1.0 — npm — financial charts
-- APScheduler v3.11.2 — PyPI — scheduler
-- python-telegram-bot v22.7 — PyPI — notifications
-- underthesea v9.4.0 — PyPI + GitHub — Vietnamese NLP
-- Competitor platforms: Simplize, Fireant, WiChart — site crawls confirmed feature gaps
-- HOSE market structure — price limits, ATC/ATO, T+2 settlement rules
+- Local codebase inspection: `package.json`, `components.json`, `globals.css`, `layout.tsx`, `chart-colors.ts`, `utils.ts`, `price-chart.tsx`, `sub-panel.tsx`, `stock/[symbol]/page.tsx`, `sidebar.tsx`, `app-shell.tsx`, `queries.ts`
+- [next-themes on GitHub](https://github.com/pacocoursey/next-themes) — v0.4.6 behavior, inline script FOUC prevention, hydration warning handling
+- [Base UI releases](https://base-ui.com/react/overview/releases) — v1.4.0 (Apr 13, 2026), Drawer stable since v1.3.0
+- [Tailwind CSS v4 Dark Mode docs](https://tailwindcss.com/docs/dark-mode) — `@custom-variant dark` syntax
+- [@tailwindcss/typography on npm](https://www.npmjs.com/package/@tailwindcss/typography) — v0.5.19 with `@plugin` directive for v4
+- [react-markdown](https://remarkjs.github.io/react-markdown/) — custom `components` override pattern for glossary tokens
+- [rehype-sanitize](https://github.com/rehypejs/rehype-sanitize) — `defaultSchema` for XSS hardening on LLM output
+- [Be Vietnam Pro on Google Fonts](https://fonts.google.com/specimen/Be+Vietnam+Pro) — Vietnamese-optimized variable font
+- [lightweight-charts theme tutorial](https://tradingview.github.io/lightweight-charts/tutorials/customization/chart-colors) — `applyOptions` for dynamic updates
+- [WebAIM Contrast Checker](https://webaim.org/resources/contrastchecker/) — WCAG 4.5:1 requirements
 
 ### Secondary (MEDIUM confidence)
-- Qwen2.5 14B VRAM requirements — quantization math estimates (~9-10GB Q4_K_M), needs empirical verification
-- newspaper4k v0.9.5 — Vietnamese article extraction capability needs testing
-- Vietnamese financial sentiment research — limited academic work, only 1 GitHub repo >20 stars
-- Architecture patterns — synthesized from general financial data pipeline best practices, not VN-market-specific case studies
+- [Tailwind CSS discussion #17405](https://github.com/tailwindlabs/tailwindcss/discussions/17405) — multi-theme pattern with `data-theme` + class variants
+- [Claude brand colors on Mobbin](https://mobbin.com/colors/brand/claude) — warm terracotta + cream reference (reverse-engineered, not official spec)
+- [Vietnamese Typography recommendations](https://vietnamesetypography.com/type-recommendations/) — stacked diacritic line-height guidance
+- [shadcn Claude theme](https://www.shadcn.io/theme/claude) — community-maintained shadcn tokens matching Claude palette
+- Competitive analysis: Seeking Alpha, Morningstar, Simply Wall St, Linear, Notion, Claude.ai — layout patterns, drawer UX, glossary approaches
 
 ### Tertiary (LOW confidence)
-- HOSE corporate action data sourcing — CafeF assumed but not validated as scraping target
-- Vietnamese public holiday calendar — programmatic source not yet identified
+- Exact glossary entry count and authoring time — varies by depth; 15 entries is safe MVP, 50 is aspirational for v1.1
+- Serif font choice for Vietnamese body text — candidates identified but not rendering-tested
 
 ---
-*Research completed: 2025-07-18*
+*Research completed: 2026-04-17*
 *Ready for roadmap: yes*

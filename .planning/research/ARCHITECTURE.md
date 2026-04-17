@@ -1,655 +1,668 @@
-# Architecture Research
+# Architecture: v1.1 UX Polish & Educational Depth
 
-**Domain:** Stock Analysis AI Agent (Vietnamese Market — HOSE)
-**Researched:** 2025-07-18
-**Confidence:** HIGH
+**Domain:** Integration architecture for 4 new features into existing LocalStock frontend
+**Researched:** 2026-04-17
+**Confidence:** HIGH — all features use well-established patterns within the existing stack
 
-## Standard Architecture
+## Executive Summary
 
-### System Overview
+v1.1 adds four frontend-centric features to an existing Next.js 16 + shadcn/ui + Tailwind v4 app. The critical insight is that **these features are almost entirely frontend work** — no new backend API endpoints are needed for theme, stock page redesign, or academic content. Only the glossary linking _could_ benefit from backend support (term extraction from AI reports), but a static glossary dictionary is the pragmatic first approach.
 
+The existing architecture is well-suited for all four features. shadcn/ui's CSS variable system already supports theming. The stock page redesign is a layout restructure (not a data change). The academic page is static content with a new route. The glossary is a client-side text-processing layer over existing AI report strings.
+
+**No backend changes required for v1.1.**
+
+---
+
+## Current Architecture Snapshot
+
+### File Structure (Relevant to v1.1)
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                      PRESENTATION LAYER                             │
-│  ┌──────────────────┐  ┌──────────────────┐                         │
-│  │  Web Dashboard   │  │  Telegram Bot    │                         │
-│  │  (FastAPI +      │  │  (Notifications  │                         │
-│  │   Static HTML)   │  │   + On-demand)   │                         │
-│  └────────┬─────────┘  └────────┬─────────┘                         │
-├───────────┴────────────────────┴────────────────────────────────────┤
-│                         API LAYER                                    │
-│  ┌──────────────────────────────────────────────────────────────┐   │
-│  │              FastAPI REST API (Internal)                      │   │
-│  │   /stocks  /rankings  /reports  /analysis  /triggers         │   │
-│  └──────────────────────┬───────────────────────────────────────┘   │
-├─────────────────────────┴───────────────────────────────────────────┤
-│                      ORCHESTRATION LAYER                             │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐          │
-│  │  Scheduler   │  │  Pipeline    │  │  On-Demand       │          │
-│  │  (APScheduler│  │  Coordinator │  │  Trigger         │          │
-│  │   daily run) │  │  (run steps) │  │  (API/Telegram)  │          │
-│  └──────┬───────┘  └──────┬───────┘  └────────┬─────────┘          │
-├─────────┴─────────────────┴───────────────────┴─────────────────────┤
-│                       ANALYSIS LAYER                                 │
-│  ┌───────────┐  ┌───────────┐  ┌───────────┐  ┌──────────────┐     │
-│  │ Technical │  │Fundamental│  │ Sentiment │  │   Macro      │     │
-│  │ Analysis  │  │ Analysis  │  │ Analysis  │  │  Analysis    │     │
-│  │(pandas-ta)│  │(ratios)   │  │(Ollama)   │  │(indicators)  │     │
-│  └─────┬─────┘  └─────┬─────┘  └─────┬─────┘  └──────┬───────┘     │
-│        └───────────────┴──────────────┴───────────────┘             │
-│                         ↓                                            │
-│  ┌──────────────────────────────────────────────────────────────┐   │
-│  │              Scoring Engine (Aggregator)                      │   │
-│  │   Weights: Technical 30% + Fundamental 30% +                 │   │
-│  │            Sentiment 20% + Macro 20%                         │   │
-│  └──────────────────────┬───────────────────────────────────────┘   │
-│                         ↓                                            │
-│  ┌──────────────────────────────────────────────────────────────┐   │
-│  │              AI Synthesis (Ollama LLM)                        │   │
-│  │   Generate human-readable report + recommendation            │   │
-│  └──────────────────────────────────────────────────────────────┘   │
-├─────────────────────────────────────────────────────────────────────┤
-│                      DATA INGESTION LAYER                            │
-│  ┌───────────┐  ┌───────────┐  ┌───────────┐  ┌──────────────┐     │
-│  │  Price    │  │ Financial │  │   News    │  │   Macro      │     │
-│  │  Crawler  │  │  Report   │  │  Crawler  │  │   Data       │     │
-│  │ (vnstock) │  │  Crawler  │  │(httpx/bs4)│  │  Collector   │     │
-│  │          │  │ (vnstock) │  │           │  │ (manual/API) │     │
-│  └─────┬─────┘  └─────┬─────┘  └─────┬─────┘  └──────┬───────┘     │
-├────────┴──────────────┴──────────────┴───────────────┴──────────────┤
-│                      STORAGE LAYER                                   │
-│  ┌──────────────────────────────────────────────────────────────┐   │
-│  │                    SQLite Database                            │   │
-│  │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────────┐    │   │
-│  │  │ prices   │ │financials│ │  news    │ │  macro_data  │    │   │
-│  │  ├──────────┤ ├──────────┤ ├──────────┤ ├──────────────┤    │   │
-│  │  │ stocks   │ │  scores  │ │ reports  │ │  run_history │    │   │
-│  │  └──────────┘ └──────────┘ └──────────┘ └──────────────┘    │   │
-│  └──────────────────────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────────────┘
+apps/helios/src/
+├── app/
+│   ├── globals.css          ← Theme CSS variables live here
+│   ├── layout.tsx           ← Root layout, hardcodes className="dark"
+│   ├── page.tsx             ← Redirects to /rankings
+│   ├── rankings/page.tsx
+│   ├── market/page.tsx
+│   └── stock/[symbol]/page.tsx  ← Major redesign target
+├── components/
+│   ├── layout/
+│   │   ├── app-shell.tsx    ← Shell with sidebar + main area
+│   │   └── sidebar.tsx      ← Navigation (2 items: Xếp Hạng, Thị Trường)
+│   ├── charts/
+│   │   ├── price-chart.tsx  ← lightweight-charts candlestick
+│   │   ├── sub-panel.tsx    ← MACD/RSI sub-charts
+│   │   └── timeframe-selector.tsx
+│   ├── rankings/
+│   │   ├── stock-table.tsx
+│   │   └── grade-badge.tsx  ← Uses hardcoded dark-theme Tailwind colors
+│   ├── market/
+│   │   ├── macro-cards.tsx
+│   │   └── sector-table.tsx
+│   └── ui/                  ← shadcn/ui components (9 total)
+│       ├── badge.tsx, button.tsx, card.tsx
+│       ├── empty-state.tsx, error-state.tsx
+│       ├── scroll-area.tsx, separator.tsx
+│       ├── skeleton.tsx, table.tsx
+└── lib/
+    ├── api.ts               ← API client (single fetch wrapper)
+    ├── chart-colors.ts      ← Hardcoded dark-theme chart colors
+    ├── queries.ts           ← TanStack Query hooks (9 hooks)
+    ├── query-provider.tsx   ← QueryClient provider
+    ├── types.ts             ← API response types
+    └── utils.ts             ← cn(), formatScore(), gradeColors (hardcoded)
 ```
 
-### Component Responsibilities
+### Key Architectural Facts
 
-| Component | Responsibility | Typical Implementation |
-|-----------|----------------|------------------------|
-| **Price Crawler** | Fetch daily OHLCV data for ~400 HOSE stocks | `vnstock.Quote` with source `KBS` or `VCI` |
-| **Financial Report Crawler** | Fetch balance sheet, income statement, ratios | `vnstock.Finance` — balance_sheet, income_statement, ratio |
-| **News Crawler** | Scrape financial news articles from Vietnamese sources | `httpx` + `beautifulsoup4` against CafeF, VnExpress Finance |
-| **Macro Data Collector** | Gather interest rates, exchange rates, CPI, GDP | Mix of web scraping + manual CSV updates (SBV, GSO) |
-| **Technical Analysis** | Calculate MA, RSI, MACD, Bollinger Bands, etc. | `pandas-ta` (150+ indicators, numba-accelerated) |
-| **Fundamental Analysis** | Compute P/E, EPS, ROE, debt ratios from reports | Pure Python/pandas calculations from crawled financials |
-| **Sentiment Analysis** | Classify news as positive/negative/neutral per stock | Ollama LLM with structured JSON output |
-| **Macro Analysis** | Assess market environment from macro indicators | Rule-based scoring + LLM context synthesis |
-| **Scoring Engine** | Aggregate multi-dimensional scores into final ranking | Weighted average with configurable weights |
-| **AI Synthesis** | Generate human-readable report per stock | Ollama LLM — takes all analysis as context, outputs report |
-| **Pipeline Coordinator** | Orchestrate crawl → analyze → score → report sequence | Python function chain, sequential execution |
-| **Scheduler** | Trigger daily automated runs (after market close) | `APScheduler` with cron trigger (e.g., 15:30 daily) |
-| **REST API** | Expose data to dashboard + accept on-demand triggers | `FastAPI` with JSON endpoints |
-| **Web Dashboard** | Display rankings, charts, stock detail views | FastAPI serving static HTML/JS + Jinja2 templates, or lightweight React |
-| **Telegram Bot** | Send alerts for top-ranked stocks, accept commands | `python-telegram-bot` library |
+1. **Theme is hardcoded dark**: `layout.tsx` has `<html lang="vi" className="dark">` — no theme switching infrastructure exists.
+2. **CSS variables use two color spaces**: Light `:root` uses `oklch()`, dark `.dark` uses `hsl()`. This inconsistency should be normalized.
+3. **`@custom-variant dark (&:is(.dark *))` in globals.css**: This is Tailwind v4's way to define the dark variant — it checks for `.dark` class on an ancestor.
+4. **Chart colors are hardcoded constants**: `chart-colors.ts` exports a single `CHART_COLORS` object with hex values. No theme awareness.
+5. **Grade badge colors are hardcoded**: `gradeColors` in `utils.ts` uses hardcoded dark-theme Tailwind classes like `bg-green-500/20 text-green-400`.
+6. **Financial semantic tokens**: `--stock-up`, `--stock-down`, `--chart-bg`, `--chart-grid`, `--chart-text` exist as CSS custom properties in `:root` but are dark-theme-only values.
+7. **Stock page is vertical scroll**: Charts on top → timeframe → MACD/RSI → AI report card → score breakdown. AI report is buried at the bottom.
+8. **AI report renders as plain text**: `whitespace-pre-wrap` on `reportQuery.data.summary` — no structured parsing, no clickable terms.
+9. **No `Sheet`/`Drawer` component exists**: Would need to install from shadcn/ui for the right-drawer pattern.
+10. **shadcn/ui style is `base-nova`**: Uses `@base-ui/react` primitives (not Radix UI). This is the newer shadcn v4 style.
 
-## Recommended Project Structure
+---
 
-```
-localstock/
-├── src/
-│   ├── crawlers/              # Data ingestion layer
-│   │   ├── __init__.py
-│   │   ├── base.py            # Abstract crawler interface
-│   │   ├── price_crawler.py   # Stock price data via vnstock
-│   │   ├── finance_crawler.py # Financial reports via vnstock
-│   │   ├── news_crawler.py    # News scraping from CafeF/VnExpress
-│   │   └── macro_crawler.py   # Macro economic data
-│   │
-│   ├── analysis/              # Analysis engine
-│   │   ├── __init__.py
-│   │   ├── technical.py       # Technical indicators (pandas-ta)
-│   │   ├── fundamental.py     # Fundamental ratio calculations
-│   │   ├── sentiment.py       # LLM-based sentiment analysis
-│   │   └── macro.py           # Macro environment scoring
-│   │
-│   ├── scoring/               # Scoring & ranking
-│   │   ├── __init__.py
-│   │   ├── scorer.py          # Multi-dimensional score aggregation
-│   │   └── config.py          # Scoring weights & thresholds
-│   │
-│   ├── ai/                    # LLM integration
-│   │   ├── __init__.py
-│   │   ├── client.py          # Ollama client wrapper
-│   │   ├── prompts.py         # Prompt templates
-│   │   └── synthesizer.py     # Report generation
-│   │
-│   ├── pipeline/              # Orchestration
-│   │   ├── __init__.py
-│   │   ├── coordinator.py     # Pipeline execution logic
-│   │   └── scheduler.py       # APScheduler setup
-│   │
-│   ├── api/                   # FastAPI application
-│   │   ├── __init__.py
-│   │   ├── app.py             # FastAPI app setup
-│   │   ├── routes/            # API route handlers
-│   │   │   ├── stocks.py
-│   │   │   ├── rankings.py
-│   │   │   ├── reports.py
-│   │   │   └── triggers.py
-│   │   └── deps.py            # Dependencies (DB session, etc.)
-│   │
-│   ├── notifications/         # Alert system
-│   │   ├── __init__.py
-│   │   └── telegram.py        # Telegram bot integration
-│   │
-│   ├── db/                    # Database layer
-│   │   ├── __init__.py
-│   │   ├── models.py          # SQLAlchemy ORM models
-│   │   ├── database.py        # Engine & session setup
-│   │   └── migrations/        # Alembic migrations (optional)
-│   │
-│   └── config.py              # App-wide configuration
-│
-├── dashboard/                  # Frontend static files
-│   ├── index.html
-│   ├── css/
-│   └── js/
-│
-├── data/                       # Local data directory
-│   └── localstock.db          # SQLite database file
-│
-├── tests/
-│   ├── test_crawlers/
-│   ├── test_analysis/
-│   ├── test_scoring/
-│   └── test_ai/
-│
-├── pyproject.toml              # Project config & dependencies
-├── .env.example                # Environment variables template
-└── README.md
-```
+## Feature 1: Theme System (Warm-Light Default + Dark Toggle)
 
-### Structure Rationale
+### Architecture Pattern: CSS Variable Swapping via Class Toggle
 
-- **src/crawlers/:** Each data source is isolated — if one API changes or breaks, only its crawler needs updating. The `base.py` defines a common interface so crawlers are interchangeable.
-- **src/analysis/:** Each analysis dimension is a standalone module. They all take DataFrames in and produce scored results out. No cross-dependencies between analysis modules.
-- **src/scoring/:** Separated from analysis because it's the aggregation point. Scoring weights are configurable in `config.py`, making it easy to tune without touching analysis logic.
-- **src/ai/:** Ollama integration is isolated behind a clean interface. If you ever switch to a different LLM backend (or add cloud LLM), only this module changes.
-- **src/pipeline/:** The coordinator knows the order of operations but delegates actual work to crawlers, analyzers, and scorers. This separation means you can run any individual step independently.
-- **src/db/:** Repository pattern with SQLAlchemy ORM. The database is a detail, not the architecture — switching from SQLite to PostgreSQL means changing one connection string.
+**How it works**: shadcn/ui themes are already CSS-variable-driven. Currently the app has `:root` (light, unused) and `.dark` class overrides. The approach is:
 
-## Architectural Patterns
+1. Define a **warm-light theme** as the new `:root` defaults (cream backgrounds, orange accents)
+2. Keep `.dark` class overrides (existing, with minor tweaks)
+3. Toggle by adding/removing `.dark` class on `<html>` (exactly how shadcn/ui intends)
+4. Persist preference in `localStorage`
+5. Prevent flash of wrong theme (FOWT) with a `<script>` in `<head>` that reads localStorage before React hydrates
 
-### Pattern 1: Pipeline Architecture (ETL + Analysis)
+### Components to Create
 
-**What:** The system is a data pipeline with clear stages: Ingest → Store → Analyze → Score → Present. Each stage produces output consumed by the next stage.
+| Component | Path | Purpose |
+|-----------|------|---------|
+| `ThemeProvider` | `src/components/theme/theme-provider.tsx` | React Context providing `theme` state + `toggleTheme()`. Client component. |
+| `ThemeToggle` | `src/components/theme/theme-toggle.tsx` | Sun/Moon icon button in sidebar. Client component. |
+| `ThemeScript` | `src/components/theme/theme-script.tsx` | Inline `<script>` to prevent FOWT. Server component that renders a raw script tag. |
 
-**When to use:** Data processing systems where steps are sequential and each step enriches the data.
+### Components to Modify
 
-**Trade-offs:**
-- ✅ Simple mental model, easy to debug (inspect data at any stage)
-- ✅ Each stage can be run independently for testing
-- ✅ Natural fit for batch processing (daily runs)
-- ❌ Not great for real-time — but we don't need real-time
+| Component | File | What Changes |
+|-----------|------|-------------|
+| `RootLayout` | `src/app/layout.tsx` | Remove hardcoded `className="dark"`. Wrap with `ThemeProvider`. Add `ThemeScript` in `<head>`. Remove `suppressHydrationWarning` is needed on `<html>` since theme script modifies the DOM before hydration. |
+| `Sidebar` | `src/components/layout/sidebar.tsx` | Add `ThemeToggle` button at bottom of sidebar. |
+| `GradeBadge` | `src/components/rankings/grade-badge.tsx` | Replace hardcoded color classes with CSS variable-based or theme-aware classes. |
+| `globals.css` | `src/app/globals.css` | Replace `:root` light theme with warm-light (cream/orange). Update `.dark` to use consistent oklch. Add warm-light financial semantic tokens. |
+| `chart-colors.ts` | `src/lib/chart-colors.ts` | Make theme-aware: export a function `getChartColors(isDark: boolean)` or use CSS variables via `getComputedStyle()`. |
+| `utils.ts` | `src/lib/utils.ts` | Update `gradeColors` to use semantic CSS variable-based classes instead of hardcoded dark-theme colors. |
 
-**Example:**
-```python
-# pipeline/coordinator.py
-class PipelineCoordinator:
-    def __init__(self, db, crawlers, analyzers, scorer, synthesizer):
-        self.db = db
-        self.crawlers = crawlers
-        self.analyzers = analyzers
-        self.scorer = scorer
-        self.synthesizer = synthesizer
-
-    async def run_full_pipeline(self, date: str = None):
-        """Execute the complete analysis pipeline."""
-        run_id = self.db.create_run(date or today())
-
-        # Stage 1: Ingest
-        symbols = await self.crawlers.price.fetch_all_hose()
-        await self.crawlers.finance.fetch_reports(symbols)
-        articles = await self.crawlers.news.fetch_latest()
-        macro = await self.crawlers.macro.fetch_current()
-
-        # Stage 2: Analyze
-        tech_scores = self.analyzers.technical.analyze(symbols)
-        fund_scores = self.analyzers.fundamental.analyze(symbols)
-        sent_scores = await self.analyzers.sentiment.analyze(articles)
-        macro_score = self.analyzers.macro.analyze(macro)
-
-        # Stage 3: Score & Rank
-        rankings = self.scorer.aggregate(
-            tech_scores, fund_scores, sent_scores, macro_score
-        )
-
-        # Stage 4: Synthesize reports (LLM)
-        for stock in rankings.top(20):
-            report = await self.synthesizer.generate_report(stock)
-            self.db.save_report(run_id, stock.symbol, report)
-
-        # Stage 5: Notify
-        await self.notify_top_picks(rankings)
-
-        return run_id
-```
-
-### Pattern 2: Repository Pattern for Data Access
-
-**What:** Abstract database access behind repository classes. Business logic never touches SQL directly.
-
-**When to use:** Any project where you want testability and the ability to swap storage backends.
-
-**Trade-offs:**
-- ✅ Easy to test (mock the repository)
-- ✅ SQLite → PostgreSQL migration is trivial
-- ✅ Clear data access boundaries
-- ❌ Slight overhead for a single-user tool (acceptable)
-
-**Example:**
-```python
-# db/models.py
-from sqlalchemy import Column, Integer, Float, String, Date, DateTime
-from sqlalchemy.orm import DeclarativeBase
-
-class Base(DeclarativeBase):
-    pass
-
-class StockPrice(Base):
-    __tablename__ = "stock_prices"
-    id = Column(Integer, primary_key=True)
-    symbol = Column(String(10), index=True)
-    date = Column(Date, index=True)
-    open = Column(Float)
-    high = Column(Float)
-    low = Column(Float)
-    close = Column(Float)
-    volume = Column(Integer)
-
-class StockScore(Base):
-    __tablename__ = "stock_scores"
-    id = Column(Integer, primary_key=True)
-    run_id = Column(Integer, index=True)
-    symbol = Column(String(10), index=True)
-    technical_score = Column(Float)
-    fundamental_score = Column(Float)
-    sentiment_score = Column(Float)
-    macro_score = Column(Float)
-    total_score = Column(Float)
-    rank = Column(Integer)
-```
-
-### Pattern 3: LLM as a Service (Internal)
-
-**What:** Treat the local Ollama LLM as an internal microservice. Wrap it in a client class with retries, structured output parsing, and prompt management. Separate prompt templates from business logic.
-
-**When to use:** Any LLM integration where you need reliable, structured outputs.
-
-**Trade-offs:**
-- ✅ Prompt changes don't require code changes
-- ✅ Structured JSON output via Ollama's `format` parameter ensures parseable results
-- ✅ Easy to swap models (Qwen2.5 → Llama 3.1 → Mistral)
-- ❌ LLM inference is the slowest step (mitigate with batch processing)
-
-**Example:**
-```python
-# ai/client.py
-from ollama import chat
-from pydantic import BaseModel
-
-class SentimentResult(BaseModel):
-    sentiment: str  # "positive", "negative", "neutral"
-    confidence: float
-    key_factors: list[str]
-    summary: str
-
-class OllamaClient:
-    def __init__(self, model: str = "qwen2.5:7b"):
-        self.model = model
-
-    async def analyze_sentiment(self, article: str, symbol: str) -> SentimentResult:
-        response = chat(
-            model=self.model,
-            messages=[{
-                "role": "system",
-                "content": SENTIMENT_SYSTEM_PROMPT,
-            }, {
-                "role": "user",
-                "content": f"Analyze sentiment for {symbol}:\n{article}",
-            }],
-            format=SentimentResult.model_json_schema(),  # Structured output
-        )
-        return SentimentResult.model_validate_json(response.message.content)
-```
-
-### Pattern 4: Configurable Scoring Weights
-
-**What:** Scoring weights and thresholds are configuration, not code. Store them in a YAML/JSON config file or dataclass so users can tune without modifying analysis logic.
-
-**When to use:** Any scoring/ranking system where the weighting formula is subjective.
-
-**Trade-offs:**
-- ✅ Easy to experiment with different weightings
-- ✅ Can have presets (conservative, aggressive, balanced)
-- ❌ Users need to understand what the weights mean
-
-**Example:**
-```python
-# scoring/config.py
-from dataclasses import dataclass
-
-@dataclass
-class ScoringConfig:
-    # Dimension weights (must sum to 1.0)
-    technical_weight: float = 0.30
-    fundamental_weight: float = 0.30
-    sentiment_weight: float = 0.20
-    macro_weight: float = 0.20
-
-    # Score thresholds
-    buy_threshold: float = 75.0    # Score >= 75 → "Buy" signal
-    watch_threshold: float = 60.0  # Score 60-75 → "Watch"
-    # Below 60 → "Avoid"
-
-    # Technical indicator settings
-    rsi_oversold: float = 30.0
-    rsi_overbought: float = 70.0
-    ma_short_period: int = 20
-    ma_long_period: int = 50
-```
-
-## Data Flow
-
-### Daily Pipeline Flow
+### Data Flow: Theme State
 
 ```
-[Market Close 15:00]
+localStorage("localstock-theme")
+        ↓ (read on page load)
+ThemeScript (inline <script>)
+        ↓ (sets className on <html> before paint)
+ThemeProvider (React Context)
+        ↓ (provides theme + toggleTheme to component tree)
+ThemeToggle ←→ ThemeProvider (toggle action → updates className + localStorage)
         ↓
-[Scheduler triggers at 15:30]
+CSS Variables automatically cascade
         ↓
-┌─── INGEST ──────────────────────────────────────────┐
-│                                                      │
-│  vnstock API ──→ Price data (400 symbols)            │
-│                  ~2-5 min (rate-limited)              │
-│                         ↓                            │
-│  vnstock API ──→ Financial reports (quarterly)       │
-│                  ~5-10 min (cached, not daily)        │
-│                         ↓                            │
-│  HTTP scrape ──→ News articles (CafeF, VnExpress)   │
-│                  ~2-3 min                            │
-│                         ↓                            │
-│  HTTP/manual ──→ Macro data (rates, CPI, FX)        │
-│                  ~1 min (infrequent updates)         │
-│                                                      │
-│  ALL DATA ──→ SQLite DB                             │
-└──────────────────────────────────────────────────────┘
-        ↓
-┌─── ANALYZE ─────────────────────────────────────────┐
-│                                                      │
-│  Price data ──→ pandas-ta ──→ Technical scores       │
-│                 (MA, RSI, MACD, BB per symbol)       │
-│                 ~1-2 min for 400 symbols             │
-│                         ↓                            │
-│  Financial data ──→ Ratio calc ──→ Fundamental scores│
-│                     (P/E, EPS, ROE, debt)            │
-│                     ~30 sec                          │
-│                         ↓                            │
-│  News articles ──→ Ollama LLM ──→ Sentiment scores  │
-│                    (per-article classification)       │
-│                    ~10-20 min (LLM bottleneck)       │
-│                         ↓                            │
-│  Macro data ──→ Rule engine ──→ Macro score          │
-│                 (environment assessment)             │
-│                 ~instant                             │
-│                                                      │
-│  ALL SCORES ──→ SQLite DB                           │
-└──────────────────────────────────────────────────────┘
-        ↓
-┌─── SCORE & RANK ────────────────────────────────────┐
-│                                                      │
-│  Weighted aggregation ──→ Total score per symbol     │
-│  Sort by score ──→ Rankings                          │
-│  ~instant                                            │
-│                                                      │
-│  RANKINGS ──→ SQLite DB                             │
-└──────────────────────────────────────────────────────┘
-        ↓
-┌─── SYNTHESIZE (Top 20 only) ────────────────────────┐
-│                                                      │
-│  All analysis data ──→ Ollama LLM ──→ Report text   │
-│  (structured prompt with all dimensions)             │
-│  ~5-10 min for top 20 stocks                        │
-│                                                      │
-│  REPORTS ──→ SQLite DB                              │
-└──────────────────────────────────────────────────────┘
-        ↓
-┌─── NOTIFY ──────────────────────────────────────────┐
-│                                                      │
-│  Top-ranked stocks ──→ Telegram message              │
-│  Score changes ──→ Alert if significant              │
-│                                                      │
-└──────────────────────────────────────────────────────┘
-        ↓
-[Dashboard reads from DB — always current]
+All components re-render with new colors (no prop drilling)
 ```
 
-### On-Demand Flow
+### Warm-Light Theme Color Palette (Claude-inspired)
 
-```
-[User triggers via Dashboard or Telegram]
-        ↓
-[API receives request]
-        ↓
-[Pipeline Coordinator runs targeted analysis]
-  - Single stock: full analysis for 1 symbol (~2-3 min)
-  - Refresh all: full pipeline (~30-40 min)
-        ↓
-[Results returned immediately or via notification]
-```
-
-### Key Data Flows
-
-1. **Price ingestion:** vnstock API → pandas DataFrame → SQLite `stock_prices` table. Append-only, partitioned by date. Historical data fetched once, daily data appended.
-
-2. **Technical analysis:** Read price history from DB → pandas-ta computes indicators → scores normalized to 0-100 → saved to `stock_scores` with dimension breakdown.
-
-3. **Sentiment pipeline:** News crawler → raw articles stored in `news` table → batch of articles sent to Ollama one-by-one → sentiment result (positive/negative/neutral + confidence) stored back → aggregated per symbol.
-
-4. **Report generation:** All scores + raw data for a stock assembled into a structured prompt → Ollama generates human-readable Vietnamese report → stored in `reports` table → served via API to dashboard.
-
-5. **Notification:** After pipeline completes, scorer identifies stocks crossing thresholds (new entries in top 10, big score changes) → formats Telegram message → sends via bot API.
-
-## Database Schema (Key Tables)
-
-```sql
--- Core reference
-stocks (symbol PK, name, industry, exchange, listed_date)
-
--- Price data (append-only, daily)
-stock_prices (id PK, symbol FK, date, open, high, low, close, volume)
-  INDEX: (symbol, date) UNIQUE
-
--- Financial reports (quarterly)
-financials (id PK, symbol FK, period, year, quarter,
-            revenue, net_income, total_assets, equity,
-            eps, pe, roe, roa, debt_to_equity)
-  INDEX: (symbol, year, quarter) UNIQUE
-
--- News articles
-news (id PK, title, url UNIQUE, source, published_at,
-      content_snippet, symbols_mentioned JSON)
-
--- Sentiment results
-sentiments (id PK, news_id FK, symbol, sentiment, confidence,
-            key_factors JSON, analyzed_at)
-
--- Macro indicators
-macro_data (id PK, indicator, value, date, source)
-  INDEX: (indicator, date) UNIQUE
-
--- Analysis results per run
-stock_scores (id PK, run_id, symbol FK, date,
-              technical_score, fundamental_score,
-              sentiment_score, macro_score,
-              total_score, rank)
-  INDEX: (run_id, symbol) UNIQUE
-
--- AI-generated reports
-reports (id PK, run_id, symbol FK, date,
-         report_text, recommendation, created_at)
-
--- Pipeline run history
-pipeline_runs (id PK, started_at, completed_at, status,
-               symbols_processed, errors JSON)
+```css
+:root {
+  /* Warm cream background */
+  --background: oklch(0.97 0.01 85);        /* warm cream, not pure white */
+  --foreground: oklch(0.25 0.02 50);         /* warm dark brown, not black */
+  
+  /* Cards slightly warmer than bg */
+  --card: oklch(0.98 0.008 85);
+  --card-foreground: oklch(0.25 0.02 50);
+  
+  /* Orange accent (Claude-style) */
+  --primary: oklch(0.65 0.18 50);            /* warm orange */
+  --primary-foreground: oklch(0.98 0.005 85);
+  
+  /* Warm muted tones */
+  --muted: oklch(0.93 0.01 85);
+  --muted-foreground: oklch(0.50 0.02 50);
+  
+  /* Financial semantic tokens for light theme */
+  --stock-up: oklch(0.55 0.2 145);           /* green, slightly muted for light bg */
+  --stock-down: oklch(0.55 0.2 25);          /* red, slightly muted for light bg */
+  --chart-bg: oklch(0.97 0.01 85);           /* matches background */
+  --chart-grid: oklch(0.90 0.01 85);         /* subtle warm grid */
+  --chart-text: oklch(0.45 0.02 50);         /* readable on cream */
+}
 ```
 
-## Scaling Considerations
+### Critical Integration Points
 
-| Scale | Architecture Adjustments |
-|-------|--------------------------|
-| **1 user, localhost** (target) | SQLite, single-process pipeline, synchronous execution. This is the target. No scaling needed. |
-| **1-5 users, cloud** | Switch SQLite → PostgreSQL (change connection string). Add basic auth. Deploy as single Docker container. APScheduler still works. |
-| **5-50 users, cloud** | Add Redis for caching frequently-accessed rankings. Consider Celery for pipeline execution (non-blocking). Separate API server from pipeline worker. |
-| **50+ users** | Out of scope for this project. Would need proper task queue, read replicas, and CDN for dashboard. |
+1. **lightweight-charts requires imperative color updates**: Charts use `createChart()` with color options, not CSS. When theme toggles, charts must either: (a) re-create with new colors (simple — `useEffect` already destroys/recreates on data change), or (b) call `chart.applyOptions()` to update. Option (a) is simpler since charts already re-render when data changes — just add `theme` to the dependency array.
 
-### Scaling Priorities (when moving to cloud)
+2. **`@custom-variant dark (&:is(.dark *))` already works**: Tailwind v4's dark variant targets `.dark` ancestor. No changes needed to the variant definition.
 
-1. **First bottleneck: LLM inference speed.** Sentiment analysis of many articles is slow on RTX 3060. Mitigation: batch smartly, only analyze new articles, cache results. On cloud, use a larger GPU or cloud LLM API.
-2. **Second bottleneck: Rate limiting from data sources.** vnstock wraps broker APIs that may throttle. Mitigation: respect rate limits, cache aggressively, fetch only changed data.
+3. **Hydration mismatch risk**: Server renders without theme class → client adds it → React complains. The `ThemeScript` inline `<script>` in `<head>` solves this by setting the class before React hydrates. Must use `suppressHydrationWarning` on `<html>`.
 
-## Anti-Patterns
+4. **Grade badge colors need semantic approach**: Current `bg-green-500/20 text-green-400` is dark-theme-only. Replace with CSS custom properties: `--grade-a-bg`, `--grade-a-text`, etc., defined per theme. Or use `text-green-600 dark:text-green-400` dual-mode classes.
 
-### Anti-Pattern 1: Real-Time Architecture for a Batch Problem
+### Suggested Implementation
 
-**What people do:** Build WebSocket-based real-time dashboards, event-driven architectures, streaming pipelines for a tool that fundamentally runs once per day after market close.
+```tsx
+// src/components/theme/theme-provider.tsx
+"use client";
+import { createContext, useContext, useEffect, useState } from "react";
 
-**Why it's wrong:** Massive over-engineering. HOSE trades 9:00-15:00 Mon-Fri. You need results once daily. Real-time adds complexity (state management, connection handling, backpressure) with zero value for this use case.
+type Theme = "light" | "dark";
+const STORAGE_KEY = "localstock-theme";
 
-**Do this instead:** Simple batch pipeline triggered by scheduler. Dashboard reads from DB. Polling or manual refresh is perfectly fine. The data changes once per day.
+const ThemeContext = createContext<{
+  theme: Theme;
+  toggleTheme: () => void;
+}>({ theme: "light", toggleTheme: () => {} });
 
-### Anti-Pattern 2: Microservices for a Single-User Tool
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const [theme, setTheme] = useState<Theme>("light");
 
-**What people do:** Split crawlers, analyzers, scorers, and API into separate services with message queues between them.
+  useEffect(() => {
+    // Read from DOM (set by ThemeScript before hydration)
+    const isDark = document.documentElement.classList.contains("dark");
+    setTheme(isDark ? "dark" : "light");
+  }, []);
 
-**Why it's wrong:** Deployment complexity explodes (Docker Compose with 6+ services, message broker, service discovery). For a localhost single-user tool, this is absurd. A monolith that runs as one Python process is simpler, faster, and easier to debug.
+  const toggleTheme = () => {
+    const next = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    document.documentElement.classList.toggle("dark", next === "dark");
+    localStorage.setItem(STORAGE_KEY, next);
+  };
 
-**Do this instead:** Monolith with clean module boundaries. The module structure (`crawlers/`, `analysis/`, `scoring/`) provides the separation. If you ever need to split, the clean boundaries make it possible — but you won't need to.
+  return (
+    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+}
 
-### Anti-Pattern 3: Raw LLM Calls Without Structure
-
-**What people do:** Send free-form prompts to the LLM and parse the text output with regex or hope-based string matching.
-
-**Why it's wrong:** LLM text output is unpredictable. "Positive" vs "positive" vs "Tích cực" vs "The sentiment is generally positive" — parsing is fragile.
-
-**Do this instead:** Use Ollama's `format` parameter with a JSON Schema (or Pydantic model schema). The LLM is constrained to output valid JSON matching your schema. Parse with `model_validate_json()`. Zero ambiguity.
-
-### Anti-Pattern 4: Analyzing All 400 Stocks with LLM
-
-**What people do:** Send every stock through the full LLM synthesis pipeline, generating detailed reports for all 400 symbols.
-
-**Why it's wrong:** At ~30 seconds per LLM call on RTX 3060, analyzing all 400 stocks takes 3+ hours. Most of these stocks won't be interesting.
-
-**Do this instead:** Use a funnel approach. Technical + Fundamental scoring (fast, no LLM) filters 400 stocks down to ~50 candidates. Sentiment analysis runs on news mentioning those ~50 stocks. Full LLM report generation only for the top 15-20 ranked stocks. Total LLM time: ~15-20 minutes instead of hours.
-
-### Anti-Pattern 5: Storing Computed Indicators in the Database
-
-**What people do:** Store every computed technical indicator (RSI values, MACD lines, all MAs) as separate columns in the database.
-
-**Why it's wrong:** Creates a wide, rigid schema. Adding a new indicator means a migration. The raw data (prices) is the source of truth — indicators are derived and cheap to recompute.
-
-**Do this instead:** Store raw price data. Compute indicators on-the-fly when needed using pandas-ta. Cache the final scores (not intermediate indicators) for the rankings. If you need historical indicator values for charting, store them as JSON blobs, not separate columns.
-
-## Integration Points
-
-### External Services
-
-| Service | Integration Pattern | Notes |
-|---------|---------------------|-------|
-| **vnstock (KBS/VCI API)** | Python library call → returns pandas DataFrame | Rate limited. Add 0.5-1s delay between symbol requests. KBS source is more stable than VCI based on community reports. Catch and retry on HTTP 429. |
-| **CafeF** | HTTP scrape with httpx + bs4 | HTML structure changes periodically. Build resilient selectors. Cache articles by URL (dedup). Respect robots.txt. |
-| **VnExpress Finance** | HTTP scrape with httpx + bs4 | Similar to CafeF. Use both for broader coverage. |
-| **Ollama (localhost:11434)** | Python client library (`ollama` package) | Must be running before pipeline starts. Health check at pipeline start. Model must be pre-pulled. Use `format` param for structured output. |
-| **Telegram Bot API** | `python-telegram-bot` library | Create bot via @BotFather. Store bot token in `.env`. Simple: send message to configured chat_id. |
-| **SBV / GSO** (macro data) | HTTP scrape or manual CSV | State Bank of Vietnam and General Statistics Office. Data updates infrequently (monthly/quarterly). Semi-automated collection is fine. |
-
-### Internal Boundaries
-
-| Boundary | Communication | Notes |
-|----------|---------------|-------|
-| Crawlers ↔ DB | SQLAlchemy ORM | Crawlers write raw data. They don't know about analysis. |
-| Analysis ↔ DB | SQLAlchemy ORM read + write scores | Analyzers read raw data, write scores. They don't know about each other. |
-| Scoring ↔ Analysis | In-memory (function calls) | Scorer reads from analysis results (either DB or passed directly). No network boundary. |
-| AI ↔ Ollama | HTTP (localhost:11434) | Only boundary with network I/O besides web crawling. Wrap in retry logic. |
-| API ↔ DB | SQLAlchemy ORM (read-mostly) | Dashboard API is read-heavy. The pipeline writes. No concurrency issue with SQLite WAL mode. |
-| Pipeline ↔ All modules | Direct Python imports | Coordinator imports and calls modules. No IPC, no message queue. Simple. |
-
-## Build Order (Dependencies)
-
-The build order follows the data dependency chain. You can't analyze data you haven't crawled, and you can't score analysis you haven't computed.
-
-```
-Phase 1: Foundation
-  └── DB schema + models (everything depends on storage)
-  └── Configuration system (.env, scoring config)
-  └── Project scaffolding (pyproject.toml, structure)
-
-Phase 2: Data Ingestion
-  └── Price crawler (vnstock) ← most critical data
-  └── Stock listing (symbol registry)
-  └── Basic CLI to trigger crawl manually
-
-Phase 3: Technical Analysis
-  └── Technical indicators (pandas-ta) ← depends on price data
-  └── Technical scoring logic
-  └── This phase has NO LLM dependency — pure computation
-
-Phase 4: Fundamental Analysis
-  └── Financial report crawler (vnstock Finance)
-  └── Ratio calculations (P/E, EPS, ROE)
-  └── Fundamental scoring logic
-  └── Also NO LLM dependency
-
-Phase 5: AI Integration
-  └── Ollama client wrapper
-  └── Sentiment analysis (news crawler + LLM classification)
-  └── Prompt templates
-  └── This is the first phase requiring Ollama running
-
-Phase 6: Scoring & Synthesis
-  └── Score aggregator (combines all dimensions)
-  └── Ranking engine
-  └── LLM report generation (top stocks only)
-  └── Macro analysis (can be added here or deferred)
-
-Phase 7: Presentation
-  └── FastAPI REST API
-  └── Web dashboard
-  └── Telegram notifications
-
-Phase 8: Automation
-  └── APScheduler integration
-  └── Pipeline coordinator (full daily run)
-  └── Error handling & monitoring
+export const useTheme = () => useContext(ThemeContext);
 ```
 
-**Build order rationale:**
-- DB first because everything reads/writes to it.
-- Price data first because technical analysis (Phase 3) needs it immediately — and technical analysis is the quickest win (no LLM needed).
-- Fundamental analysis (Phase 4) is independent of technical — could be parallel, but sequencing gives early usable output.
-- AI integration (Phase 5) is deferred because it's the most complex and least predictable component. By this point, you already have a useful tool (technical + fundamental scoring).
-- Dashboard comes late because you need data to display. Building UI before the pipeline is running is wasted effort.
-- Scheduler comes last because manual triggering works fine during development.
+```tsx
+// src/components/theme/theme-script.tsx
+// Server component — renders inline script to prevent FOWT
+export function ThemeScript() {
+  const script = `
+    (function() {
+      var t = localStorage.getItem('localstock-theme');
+      if (t === 'dark') document.documentElement.classList.add('dark');
+    })();
+  `;
+  return <script dangerouslySetInnerHTML={{ __html: script }} />;
+}
+```
+
+---
+
+## Feature 2: Stock Page Redesign (AI Report Center + Right Drawer)
+
+### Architecture Pattern: Report-Centric Layout with Slide-Over Drawer
+
+**Current layout** (vertical scroll, top-to-bottom):
+```
+┌─────────────────────────────────┐
+│ Header (← Back, Symbol, Grade)  │
+├─────────────────────────────────┤
+│ Price Chart (400px)             │
+├─────────────────────────────────┤
+│ Timeframe Selector              │
+├─────────────────────────────────┤
+│ MACD Sub-panel                  │
+├─────────────────────────────────┤
+│ RSI Sub-panel                   │
+├─────────────────────────────────┤
+│ AI Report Card (max-h 400px)    │  ← buried at bottom
+├─────────────────────────────────┤
+│ Score Breakdown Card            │
+└─────────────────────────────────┘
+```
+
+**New layout** (AI report centered, data in drawer):
+```
+┌─────────────────────────────────────────────┐
+│ Header (← Back, Symbol, Grade) [📊 Data]    │  ← Data button opens drawer
+├─────────────────────────────────────────────┤
+│                                             │
+│  AI Report (full-width, unlimited scroll)   │  ← The main content
+│  - Structured sections                      │
+│  - Glossary-linked terms (Feature 4)        │
+│                                             │
+├─────────────────────────────────────────────┤
+│ Score Breakdown (compact, always visible)    │
+└─────────────────────────────────────────────┘
+
+           Right Drawer (opened by [📊 Data] button)
+           ┌──────────────────────┐
+           │ Tabs: Chart │ Data   │
+           ├──────────────────────┤
+           │ Price Chart          │
+           │ Timeframe Selector   │
+           │ MACD / RSI           │
+           │ ─── or ───           │
+           │ Technical Data Table │
+           │ Fundamental Data     │
+           └──────────────────────┘
+```
+
+### Components to Create
+
+| Component | Path | Purpose |
+|-----------|------|---------|
+| `Sheet` (shadcn/ui) | `src/components/ui/sheet.tsx` | Install from shadcn/ui. Right-side slide-over panel. |
+| `Tabs` (shadcn/ui) | `src/components/ui/tabs.tsx` | Install from shadcn/ui. Tab switching within drawer. |
+| `StockDataDrawer` | `src/components/stock/data-drawer.tsx` | Composition component: Sheet + Tabs containing charts and data tables. |
+| `AIReportView` | `src/components/stock/ai-report-view.tsx` | Structured rendering of AI report with glossary term highlighting (Feature 4 hook). |
+| `ScoreBreakdown` | `src/components/stock/score-breakdown.tsx` | Extracted from current stock page — compact score grid. |
+| `TechnicalDataTable` | `src/components/stock/technical-data-table.tsx` | Table view of latest technical indicators (new — currently only chart view). |
+| `FundamentalDataTable` | `src/components/stock/fundamental-data-table.tsx` | Table view of fundamental ratios (new — uses existing `useStockFundamental` hook). |
+
+### Components to Modify
+
+| Component | File | What Changes |
+|-----------|------|-------------|
+| Stock page | `src/app/stock/[symbol]/page.tsx` | **Major restructure**: Move charts into `StockDataDrawer`. Move AI report to center. Extract score breakdown to `ScoreBreakdown`. Add drawer toggle button. |
+| AppShell | `src/components/layout/app-shell.tsx` | No changes needed — main content area accommodates the new layout. |
+
+### Data Flow: No New API Calls
+
+The redesign uses the **exact same 4 TanStack Query hooks** that exist today:
+- `useStockPrices(symbol, days)` → moves into drawer's Chart tab
+- `useStockIndicators(symbol, days)` → moves into drawer's Chart tab
+- `useStockScore(symbol)` → stays in main area (ScoreBreakdown)
+- `useStockReport(symbol)` → elevated to main area (AIReportView)
+
+Plus two existing hooks currently unused on the stock page:
+- `useStockTechnical(symbol)` → drawer's Data tab
+- `useStockFundamental(symbol)` → drawer's Data tab
+
+### Critical Integration Points
+
+1. **Drawer width**: The drawer should be ~480-600px wide to give charts enough room. On screens <1024px, it should be full-width overlay.
+
+2. **Chart re-initialization**: Moving charts into a Sheet means they mount/unmount with drawer open/close. The existing `useEffect` cleanup in `PriceChart` already handles this correctly (`chart.remove()` in cleanup). No issue.
+
+3. **Timeframe state**: Currently `days` state lives in the stock page. After redesign, it should live in `StockDataDrawer` since the timeframe selector is drawer-internal.
+
+4. **Report rendering upgrade**: The current `whitespace-pre-wrap` plain text rendering should be upgraded to parse the `summary` string into structured sections (headers, bullet points) for better readability. This is also the hook point for glossary linking (Feature 4).
+
+5. **Sheet from shadcn/ui v4 (base-nova)**: Need to install via `npx shadcn@latest add sheet`. This pulls in `@base-ui/react` Dialog primitive (already in deps as `@base-ui/react`).
+
+### shadcn/ui Components to Install
+
+```bash
+cd apps/helios
+npx shadcn@latest add sheet
+npx shadcn@latest add tabs
+npx shadcn@latest add tooltip   # needed for Feature 4 glossary
+npx shadcn@latest add popover   # alternative for glossary definitions
+```
+
+---
+
+## Feature 3: Academic/Learning Page
+
+### Architecture Pattern: Static Content Page with Category Navigation
+
+This is a **new route** with educational content. No backend API needed — content is static (or MDX if desired, but plain TSX is simpler for v1.1).
+
+### Route Structure
+
+```
+src/app/learn/
+├── page.tsx                    ← Landing: category cards linking to sub-pages
+├── layout.tsx                  ← Optional: sidebar or breadcrumb navigation for learn section
+├── technical/
+│   └── page.tsx                ← Technical indicators explained (RSI, MACD, SMA, BB, etc.)
+├── fundamental/
+│   └── page.tsx                ← Financial ratios explained (P/E, ROE, EPS, etc.)
+└── macro/
+    └── page.tsx                ← Macro concepts explained (CPI, interest rates, GDP, etc.)
+```
+
+### Components to Create
+
+| Component | Path | Purpose |
+|-----------|------|---------|
+| `ConceptCard` | `src/components/learn/concept-card.tsx` | Card with term name, short description, formula (if applicable), interpretation guide. Reusable for all concept types. |
+| `CategoryNav` | `src/components/learn/category-nav.tsx` | Horizontal tab navigation or card grid for the 3 categories. |
+| `FormulaBlock` | `src/components/learn/formula-block.tsx` | Styled block for displaying mathematical formulas (e.g., RSI formula). Uses monospace + custom styling, no need for LaTeX/KaTeX. |
+| `InterpretationGuide` | `src/components/learn/interpretation-guide.tsx` | Visual guide showing ranges (e.g., RSI: 0-30 oversold, 30-70 neutral, 70-100 overbought) with color-coded bars. |
+
+### Components to Modify
+
+| Component | File | What Changes |
+|-----------|------|-------------|
+| `Sidebar` | `src/components/layout/sidebar.tsx` | Add "Học Thuật" nav item with `BookOpen` icon from lucide-react. |
+
+### Content Architecture
+
+The educational content should be defined as **typed data arrays** (not hardcoded JSX) so the glossary system (Feature 4) can reference the same data:
+
+```typescript
+// src/lib/glossary-data.ts — SINGLE SOURCE OF TRUTH for both Learn pages and glossary linking
+
+export interface GlossaryTerm {
+  id: string;                    // URL-safe slug: "rsi-14", "pe-ratio"
+  name: string;                  // Display: "RSI (14)"
+  nameVi: string;                // Vietnamese: "Chỉ số sức mạnh tương đối"
+  category: "technical" | "fundamental" | "macro";
+  shortDescription: string;      // 1-2 sentences
+  fullDescription: string;       // Detailed explanation (Vietnamese)
+  formula?: string;              // e.g., "RSI = 100 - (100 / (1 + RS))"
+  interpretation?: {             // Ranges for visual guide
+    ranges: { min: number; max: number; label: string; sentiment: "positive" | "neutral" | "negative" }[];
+  };
+  relatedTerms?: string[];       // IDs of related terms
+  keywords: string[];            // Strings to match in AI reports for glossary linking
+}
+
+export const GLOSSARY_TERMS: GlossaryTerm[] = [
+  {
+    id: "rsi-14",
+    name: "RSI (14)",
+    nameVi: "Chỉ số sức mạnh tương đối",
+    category: "technical",
+    shortDescription: "Đo lường tốc độ và mức thay đổi của giá trong 14 phiên gần nhất.",
+    fullDescription: "RSI (Relative Strength Index) là chỉ báo động lượng...",
+    formula: "RSI = 100 - (100 / (1 + RS)), RS = Avg Gain / Avg Loss",
+    interpretation: {
+      ranges: [
+        { min: 0, max: 30, label: "Quá bán", sentiment: "positive" },
+        { min: 30, max: 70, label: "Trung tính", sentiment: "neutral" },
+        { min: 70, max: 100, label: "Quá mua", sentiment: "negative" },
+      ],
+    },
+    keywords: ["RSI", "rsi", "quá mua", "quá bán", "overbought", "oversold"],
+  },
+  // ... more terms
+];
+```
+
+### Data Flow
+
+```
+GLOSSARY_TERMS (static data)
+    ↓ (import)
+Learn pages ← render ConceptCard for each term in category
+    ↓ (same import)
+AIReportView ← scan report text for keywords → create links to /learn/technical#rsi-14
+```
+
+### Critical Integration Points
+
+1. **No MDX needed**: The educational content is structured data, not freeform prose. TypeScript arrays are easier to maintain and type-safe. Each `ConceptCard` renders from the data. If content grows large later, MDX can be added — but for ~30-40 financial terms, typed arrays are simpler.
+
+2. **Anchor-based navigation**: Each term on its category page gets an `id` attribute matching the term's `id` field. Glossary links from AI reports navigate to `/learn/technical#rsi-14` for direct scroll-to-term.
+
+3. **SEO/SSR**: Learn pages are static content → can be Server Components (no `"use client"`). This makes them fast and SEO-friendly.
+
+4. **Sidebar nav expansion**: Currently 2 items (Xếp Hạng, Thị Trường). Adding "Học Thuật" is trivial — add to the `navItems` array in `sidebar.tsx`.
+
+---
+
+## Feature 4: Interactive Glossary Linking
+
+### Architecture Pattern: Client-Side Text Processing + Popover/Navigate
+
+The AI report text (currently plain string from `reportQuery.data.summary`) needs to be scanned for glossary terms and those terms converted to interactive elements (links or popover triggers).
+
+### Processing Pipeline
+
+```
+Raw report text (string)
+    ↓
+glossaryLinkify(text, GLOSSARY_TERMS)   ← pure function
+    ↓
+Array of React nodes: [string, <GlossaryLink>, string, <GlossaryLink>, ...]
+    ↓
+Render in AIReportView
+```
+
+### Components to Create
+
+| Component | Path | Purpose |
+|-----------|------|---------|
+| `GlossaryLink` | `src/components/glossary/glossary-link.tsx` | Inline styled span/link that: (1) shows a Popover with short description on hover/click, (2) has a "Tìm hiểu thêm" link to the full Learn page. |
+| `GlossaryPopover` | `src/components/glossary/glossary-popover.tsx` | Popover content: term name (Vi), short description, link to full definition. Uses shadcn/ui Popover. |
+| `glossary-linkify.ts` | `src/lib/glossary-linkify.ts` | Pure function: takes a string + GlossaryTerm[] → returns ReactNode[]. Scans text for keyword matches and wraps them in `<GlossaryLink>`. |
+
+### Components to Modify
+
+| Component | File | What Changes |
+|-----------|------|-------------|
+| `AIReportView` | `src/components/stock/ai-report-view.tsx` | (New component from Feature 2) Uses `glossaryLinkify()` to render report text with interactive terms instead of plain `whitespace-pre-wrap`. |
+
+### Text Processing Strategy
+
+```typescript
+// src/lib/glossary-linkify.ts
+import { GLOSSARY_TERMS, type GlossaryTerm } from "./glossary-data";
+
+/**
+ * Build a sorted keyword → term lookup (longest keywords first to avoid
+ * partial matches like "SMA" matching before "SMA 20").
+ */
+function buildKeywordMap(): Map<string, GlossaryTerm> {
+  const map = new Map<string, GlossaryTerm>();
+  for (const term of GLOSSARY_TERMS) {
+    for (const kw of term.keywords) {
+      map.set(kw, term);
+    }
+  }
+  return map;
+}
+
+/**
+ * Scan text and split into segments: plain strings and matched terms.
+ * Returns array of { type: "text", value } | { type: "term", term, matched }.
+ * 
+ * Uses a compiled regex from all keywords (sorted longest-first).
+ * Each keyword is matched only once (first occurrence) to avoid over-linking.
+ */
+export function glossaryLinkify(text: string): GlossarySegment[] {
+  // Implementation: build regex, scan, split, dedup
+}
+```
+
+### Critical Integration Points
+
+1. **Performance**: AI report text is typically 500-2000 characters. Scanning against ~50-100 keywords is negligible. No memoization needed beyond standard React re-render avoidance.
+
+2. **First-occurrence-only linking**: Link only the first occurrence of each term in a report to avoid visual clutter. If "RSI" appears 5 times, only the first becomes a link.
+
+3. **Vietnamese text matching**: Keywords include both English terms ("RSI", "P/E") and Vietnamese equivalents ("quá mua", "đường trung bình"). The `keywords` array in each `GlossaryTerm` handles this — no NLP needed, just string matching.
+
+4. **Popover vs Navigate**: Use a **Popover** (hover/click → short description) rather than navigating away. The popover includes a "Xem chi tiết →" link to `/learn/technical#rsi-14` for users who want the full explanation. This keeps the user on the stock page.
+
+5. **No backend needed**: The glossary data is static TypeScript. The text scanning is client-side. This avoids adding complexity to the Python backend for what is fundamentally a UI enhancement.
+
+---
+
+## Cross-Feature Dependencies
+
+```
+Feature 1: Theme System ─────────────────────────┐
+    (must be done first — all other features      │
+     render differently per theme)                 │
+                                                   ↓
+Feature 2: Stock Page Redesign ──────────→ Feature 4: Glossary Linking
+    (creates AIReportView component)         (hooks into AIReportView)
+                                                   ↑
+Feature 3: Academic/Learning Page ───────→ Feature 4: Glossary Linking
+    (defines glossary-data.ts)               (imports glossary-data.ts)
+```
+
+### Dependency Chain
+
+1. **Theme System** → independent, no deps. Must be first because it changes `globals.css`, `layout.tsx`, and color handling — which every subsequent feature touches.
+
+2. **Academic Page** → depends on Theme (to look correct in both themes). Produces `glossary-data.ts` which Feature 4 consumes.
+
+3. **Stock Page Redesign** → depends on Theme (drawer theming, chart colors). Produces `AIReportView` component which Feature 4 hooks into.
+
+4. **Glossary Linking** → depends on both Feature 2 (AIReportView exists) and Feature 3 (glossary-data.ts exists). Must be last.
+
+---
+
+## Suggested Build Order
+
+### Phase 1: Theme System
+**Files touched:** `globals.css`, `layout.tsx`, `chart-colors.ts`, `utils.ts`, `grade-badge.tsx`, new `theme-provider.tsx`, `theme-toggle.tsx`, `theme-script.tsx`, `sidebar.tsx`
+**Risk:** LOW — CSS variable theming is a well-understood pattern with shadcn/ui
+**New components:** 3
+**Modified components:** 6
+
+### Phase 2: Academic/Learning Page + Glossary Data
+**Files touched:** New `src/app/learn/` route tree, new `src/components/learn/` directory, new `src/lib/glossary-data.ts`, `sidebar.tsx`
+**Risk:** LOW — static content pages, no API integration
+**New components:** 5 + route pages
+**Modified components:** 1 (sidebar)
+
+### Phase 3: Stock Page Redesign
+**Files touched:** `stock/[symbol]/page.tsx` (major rewrite), new `src/components/stock/` directory, install Sheet + Tabs from shadcn/ui
+**Risk:** MEDIUM — chart re-initialization in drawer, responsive drawer width, UX testing needed
+**New components:** 5
+**Modified components:** 1 (stock page — major)
+**New shadcn/ui installs:** Sheet, Tabs
+
+### Phase 4: Glossary Linking
+**Files touched:** New `src/lib/glossary-linkify.ts`, new `src/components/glossary/` directory, modify `AIReportView` from Phase 3
+**Risk:** LOW — text processing is straightforward, but Vietnamese keyword matching needs testing
+**New components:** 2
+**Modified components:** 1 (AIReportView)
+**New shadcn/ui installs:** Popover (or Tooltip)
+
+---
+
+## Component Inventory Summary
+
+### New Components (15 total)
+
+| # | Component | Feature | Type |
+|---|-----------|---------|------|
+| 1 | `ThemeProvider` | Theme | Client Context |
+| 2 | `ThemeToggle` | Theme | Client UI |
+| 3 | `ThemeScript` | Theme | Server Script |
+| 4 | `ConceptCard` | Learn | Server Component |
+| 5 | `CategoryNav` | Learn | Server/Client |
+| 6 | `FormulaBlock` | Learn | Server Component |
+| 7 | `InterpretationGuide` | Learn | Client Component |
+| 8 | `StockDataDrawer` | Stock Redesign | Client Component |
+| 9 | `AIReportView` | Stock Redesign | Client Component |
+| 10 | `ScoreBreakdown` | Stock Redesign | Client Component |
+| 11 | `TechnicalDataTable` | Stock Redesign | Client Component |
+| 12 | `FundamentalDataTable` | Stock Redesign | Client Component |
+| 13 | `GlossaryLink` | Glossary | Client Component |
+| 14 | `GlossaryPopover` | Glossary | Client Component |
+| 15 | `glossary-linkify.ts` | Glossary | Pure Function |
+
+### Modified Components (8 total, some modified in multiple phases)
+
+| # | Component | Modified By | Severity |
+|---|-----------|-------------|----------|
+| 1 | `globals.css` | Theme | Major — new color palette |
+| 2 | `layout.tsx` | Theme | Major — remove hardcoded dark, add providers |
+| 3 | `sidebar.tsx` | Theme + Learn | Minor — add toggle + nav item |
+| 4 | `chart-colors.ts` | Theme | Major — make theme-aware |
+| 5 | `utils.ts` | Theme | Minor — update gradeColors |
+| 6 | `grade-badge.tsx` | Theme | Minor — use theme-aware colors |
+| 7 | `stock/[symbol]/page.tsx` | Stock Redesign | **Major rewrite** — entire layout change |
+| 8 | `price-chart.tsx` | Theme | Minor — use theme-aware colors from context |
+
+### New shadcn/ui Components to Install (3)
+
+| Component | Used By |
+|-----------|---------|
+| `Sheet` | Stock page drawer |
+| `Tabs` | Drawer tab navigation |
+| `Popover` | Glossary term definitions |
+
+### New Route Pages (4)
+
+| Route | Purpose |
+|-------|---------|
+| `/learn` | Learning hub landing |
+| `/learn/technical` | Technical indicators |
+| `/learn/fundamental` | Financial ratios |
+| `/learn/macro` | Macro concepts |
+
+### New Data Files (1)
+
+| File | Purpose | Consumed By |
+|------|---------|-------------|
+| `src/lib/glossary-data.ts` | Term definitions + keywords | Learn pages, glossary linkify |
+
+---
+
+## Anti-Patterns to Avoid
+
+### Anti-Pattern 1: next-themes Package
+**What:** Installing `next-themes` package for theme switching.
+**Why bad:** Adds unnecessary dependency. The app already has the CSS variable infrastructure from shadcn/ui. `next-themes` is ~5KB and adds complexity (system theme detection, forced-color-scheme, multiple theme support) that this app doesn't need. Two themes (light/dark) with a simple context + localStorage is <50 lines of code.
+**Instead:** Build the 3 thin components (ThemeProvider, ThemeToggle, ThemeScript) directly.
+
+### Anti-Pattern 2: MDX for Educational Content
+**What:** Setting up MDX pipeline for learn pages.
+**Why bad:** MDX requires `@next/mdx`, `remark`, `rehype` plugins, build config changes, and adds 100KB+ to dev deps. For ~30-40 financial terms with formulaic structure (name, description, formula, interpretation ranges), typed TypeScript data is simpler, faster, and gives you type safety + ability to query/filter terms programmatically.
+**Instead:** Use `GlossaryTerm[]` data + React components. If content outgrows this later, migrate to MDX then.
+
+### Anti-Pattern 3: Backend Glossary API
+**What:** Creating a `/api/glossary` endpoint to serve term definitions from PostgreSQL.
+**Why bad:** The glossary is ~30-40 terms that change never (or once a quarter at most). Shipping this as static TypeScript data means zero API latency, zero backend work, and offline capability. Database storage adds migration, seeding, CRUD endpoints, and caching overhead for data that fits in 10KB of TypeScript.
+**Instead:** Static `glossary-data.ts`. If user-contributed content is ever needed (v2+), migrate then.
+
+### Anti-Pattern 4: Global State for Drawer
+**What:** Using Zustand/Redux/Context for drawer open/close state.
+**Why bad:** Drawer state is local to the stock page. It doesn't need to survive navigation or be accessible from other routes. React `useState` in the page component is sufficient.
+**Instead:** `const [drawerOpen, setDrawerOpen] = useState(false)` in stock page.
+
+### Anti-Pattern 5: CSS-in-JS for Theme Colors
+**What:** Using styled-components, emotion, or inline styles for theme-specific colors.
+**Why bad:** The entire shadcn/ui system is built on CSS custom properties + Tailwind classes. Mixing in CSS-in-JS breaks the consistency and adds bundle size.
+**Instead:** Everything through CSS variables in `globals.css` + Tailwind utility classes.
+
+---
+
+## Scalability Considerations
+
+| Concern | Current (v1.1) | Future (v2+) |
+|---------|----------------|--------------|
+| Glossary size | ~30-40 terms, static TS | Could grow to 100+. If so, consider MDX or CMS. Data structure supports it. |
+| Theme count | 2 (warm-light, dark) | Could add more (high contrast, etc.). CSS variable system supports N themes. |
+| AI report structure | Plain text string | Could become structured JSON (sections, scores, charts). `AIReportView` is designed to handle either. |
+| Learn content depth | Short explanations per term | Could expand to full articles with examples, charts. Route structure supports sub-pages. |
+| Report text length | ~500-2000 chars | If reports grow to 5000+ chars, glossary regex scan might need optimization (compile once, cache). |
+
+---
 
 ## Sources
 
-- vnstock v3.5.1 — PyPI metadata + GitHub README (https://github.com/thinh-vu/vnstock) — **HIGH confidence**
-- Ollama Python client v0.6.1 — PyPI + GitHub README (https://github.com/ollama/ollama-python) — **HIGH confidence**
-- Ollama API structured output — Official API docs (https://github.com/ollama/ollama/blob/main/docs/api.md) — **HIGH confidence** — `format` parameter supports JSON Schema
-- pandas-ta — PyPI description, 150+ indicators, numba-accelerated — **HIGH confidence**
-- APScheduler v3.11.2 — PyPI — **HIGH confidence** — standard Python scheduling library
-- FastAPI v0.135.3 — PyPI — **HIGH confidence** — standard async Python web framework
-- python-telegram-bot v22.7 — PyPI — **HIGH confidence**
-- SQLAlchemy v2.0.49 — PyPI — **HIGH confidence**
-- Architecture patterns — training data synthesis of financial data pipeline best practices — **MEDIUM confidence** (general patterns, not Vietnamese-market-specific case studies)
+- **shadcn/ui v4 theming**: Based on codebase analysis of `globals.css` CSS variable pattern, `components.json` config (`style: "base-nova"`, `cssVariables: true`). HIGH confidence.
+- **Tailwind v4 dark mode**: `@custom-variant dark (&:is(.dark *))` pattern confirmed in existing `globals.css`. HIGH confidence.
+- **lightweight-charts v5 API**: Based on codebase analysis of `price-chart.tsx` and `sub-panel.tsx` — `createChart()`, `applyOptions()`, color configuration at chart creation time. HIGH confidence.
+- **Next.js 16 App Router**: Based on existing route structure in `src/app/`. RSC + client component boundaries. HIGH confidence.
+- **Sheet/Tabs/Popover availability in shadcn/ui v4**: shadcn v4 (base-nova style) ships these components. Uses `@base-ui/react` primitives which are already in `package.json`. HIGH confidence.
+- **Theme persistence pattern**: Standard `localStorage` + inline script approach, widely documented in Next.js community. HIGH confidence.
 
 ---
-*Architecture research for: Vietnamese Stock Analysis AI Agent (LocalStock)*
-*Researched: 2025-07-18*
+
+*Research completed: 2026-04-17*
+*Scope: v1.1 integration architecture only — no backend changes*
