@@ -11,7 +11,7 @@ export function ErrorState({
 }: ErrorStateProps) {
   return (
     <div className="flex flex-col items-center justify-center py-20">
-      <AlertCircle className="h-12 w-12 text-red-400" />
+      <AlertCircle className="h-12 w-12 text-red-700 dark:text-red-400" />
       <h2 className="mt-4 text-lg font-semibold text-foreground">{heading}</h2>
       <p className="mt-2 text-sm text-muted-foreground text-center max-w-md">{body}</p>
     </div>
