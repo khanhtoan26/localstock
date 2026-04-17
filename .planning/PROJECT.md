@@ -39,7 +39,7 @@ Agent tự động phân tích và xếp hạng cổ phiếu HOSE — cho tôi d
 
 ### Active
 
-- [ ] Theme system: Claude warm-light (cream + orange) default + dark toggle, preference persist — v1.1
+- ✓ Theme system: Claude warm-light (cream + orange) default + dark toggle, preference persist — Validated in Phase 7
 - [ ] Stock page redesign: center AI report + right-drawer data-on-demand — v1.1
 - [ ] Academic/Learning page: giải thích technical indicators, fundamental ratios, macro concepts — v1.1
 - [ ] Interactive glossary linking từ chỉ số trong AI report → định nghĩa — v1.1
