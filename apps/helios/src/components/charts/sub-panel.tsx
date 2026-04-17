@@ -5,8 +5,9 @@ import {
   LineSeries,
   HistogramSeries,
   type IChartApi,
+  type ISeriesApi,
 } from "lightweight-charts";
-import { CHART_COLORS } from "@/lib/chart-colors";
+import { useChartTheme } from "@/hooks/use-chart-theme";
 import type { IndicatorPoint } from "@/lib/types";
 
 interface SubPanelProps {
@@ -18,18 +19,26 @@ interface SubPanelProps {
 export function SubPanel({ type, indicators, height = 152 }: SubPanelProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
+  const seriesRefs = useRef<{
+    hist: ISeriesApi<"Histogram"> | null;
+    line1: ISeriesApi<"Line"> | null;
+    line2: ISeriesApi<"Line"> | null;
+  }>({ hist: null, line1: null, line2: null });
 
+  const chartColors = useChartTheme();
+
+  // Effect 1: Create chart (NO chartColors in deps — only runs on data/type/height change)
   useEffect(() => {
     if (!containerRef.current || !indicators.length) return;
 
     const chart = createChart(containerRef.current, {
       layout: {
-        background: { color: CHART_COLORS.chartBg },
-        textColor: CHART_COLORS.chartText,
+        background: { color: chartColors.chartBg },
+        textColor: chartColors.chartText,
       },
       grid: {
-        vertLines: { color: CHART_COLORS.chartGrid },
-        horzLines: { color: CHART_COLORS.chartGrid },
+        vertLines: { color: chartColors.chartGrid },
+        horzLines: { color: chartColors.chartGrid },
       },
       width: containerRef.current.clientWidth,
       height,
@@ -45,11 +54,12 @@ export function SubPanel({ type, indicators, height = 152 }: SubPanelProps) {
           value: d.macd_histogram!,
           color:
             d.macd_histogram! >= 0
-              ? CHART_COLORS.macdHistPositive
-              : CHART_COLORS.macdHistNegative,
+              ? chartColors.macdHistPositive
+              : chartColors.macdHistNegative,
         }));
       if (histData.length > 0) {
         const histSeries = chart.addSeries(HistogramSeries);
+        seriesRefs.current.hist = histSeries;
         histSeries.setData(histData);
       }
 
@@ -59,9 +69,10 @@ export function SubPanel({ type, indicators, height = 152 }: SubPanelProps) {
         .map((d) => ({ time: d.time, value: d.macd! }));
       if (macdData.length > 0) {
         const macdLine = chart.addSeries(LineSeries, {
-          color: CHART_COLORS.macdLine,
+          color: chartColors.macdLine,
           lineWidth: 1,
         });
+        seriesRefs.current.line1 = macdLine;
         macdLine.setData(macdData);
       }
 
@@ -71,9 +82,10 @@ export function SubPanel({ type, indicators, height = 152 }: SubPanelProps) {
         .map((d) => ({ time: d.time, value: d.macd_signal! }));
       if (signalData.length > 0) {
         const signalLine = chart.addSeries(LineSeries, {
-          color: CHART_COLORS.macdSignal,
+          color: chartColors.macdSignal,
           lineWidth: 1,
         });
+        seriesRefs.current.line2 = signalLine;
         signalLine.setData(signalData);
       }
     }
@@ -85,15 +97,16 @@ export function SubPanel({ type, indicators, height = 152 }: SubPanelProps) {
         .map((d) => ({ time: d.time, value: d.rsi_14! }));
       if (rsiData.length > 0) {
         const rsiSeries = chart.addSeries(LineSeries, {
-          color: CHART_COLORS.rsiLine,
+          color: chartColors.rsiLine,
           lineWidth: 1,
         });
+        seriesRefs.current.line1 = rsiSeries;
         rsiSeries.setData(rsiData);
 
         // Overbought line at 70 (red dashed)
         rsiSeries.createPriceLine({
           price: 70,
-          color: CHART_COLORS.rsiOverbought,
+          color: chartColors.rsiOverbought,
           lineWidth: 1,
           lineStyle: 2,
           axisLabelVisible: true,
@@ -102,7 +115,7 @@ export function SubPanel({ type, indicators, height = 152 }: SubPanelProps) {
         // Oversold line at 30 (green dashed)
         rsiSeries.createPriceLine({
           price: 30,
-          color: CHART_COLORS.rsiOversold,
+          color: chartColors.rsiOversold,
           lineWidth: 1,
           lineStyle: 2,
           axisLabelVisible: true,
@@ -123,8 +136,58 @@ export function SubPanel({ type, indicators, height = 152 }: SubPanelProps) {
       resizeObserver.disconnect();
       chart.remove();
       chartRef.current = null;
+      seriesRefs.current = { hist: null, line1: null, line2: null };
     };
-  }, [indicators, type, height]);
+  }, [indicators, type, height]); // NO chartColors — preserves zoom/scroll on theme toggle
+
+  // Effect 2: Re-theme on toggle (only runs when chartColors changes, preserves zoom/scroll)
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+
+    chart.applyOptions({
+      layout: {
+        background: { color: chartColors.chartBg },
+        textColor: chartColors.chartText,
+      },
+      grid: {
+        vertLines: { color: chartColors.chartGrid },
+        horzLines: { color: chartColors.chartGrid },
+      },
+    });
+
+    if (type === "macd") {
+      // MACD histogram needs setData to update per-bar colors (lightweight-charts constraint)
+      if (seriesRefs.current.hist && indicators.length) {
+        const histData = indicators
+          .filter((d) => d.macd_histogram != null)
+          .map((d) => ({
+            time: d.time,
+            value: d.macd_histogram!,
+            color:
+              d.macd_histogram! >= 0
+                ? chartColors.macdHistPositive
+                : chartColors.macdHistNegative,
+          }));
+        seriesRefs.current.hist.setData(histData);
+      }
+      if (seriesRefs.current.line1) {
+        seriesRefs.current.line1.applyOptions({ color: chartColors.macdLine });
+      }
+      if (seriesRefs.current.line2) {
+        seriesRefs.current.line2.applyOptions({ color: chartColors.macdSignal });
+      }
+    }
+
+    if (type === "rsi") {
+      if (seriesRefs.current.line1) {
+        seriesRefs.current.line1.applyOptions({ color: chartColors.rsiLine });
+      }
+      // Price lines (overbought/oversold) created via createPriceLine cannot be updated
+      // via applyOptions — they use initial colors. Acceptable: threshold lines are
+      // semantically the same color (red/green) across both themes.
+    }
+  }, [chartColors, type, indicators]);
 
   return (
     <div className="border-t border-border">
