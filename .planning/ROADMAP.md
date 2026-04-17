@@ -40,7 +40,7 @@
 **Plans:** 2 plans
 Plans:
 - [x] 07-01-PLAN.md — Theme infrastructure + warm palette + color fixes (THEME-01, THEME-02, THEME-03, THEME-05)
-- [ ] 07-02-PLAN.md — Chart theme integration + visual verification (THEME-04)
+- [x] 07-02-PLAN.md — Chart theme integration + visual verification (THEME-04)
 **UI hint**: yes
 
 ### Phase 8: Stock Page Reading-First Redesign
