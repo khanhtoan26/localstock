@@ -8,6 +8,18 @@ LocalStock là một AI Stock Agent cá nhân cho thị trường chứng khoán
 
 Agent tự động phân tích và xếp hạng cổ phiếu HOSE — cho tôi danh sách gợi ý đáng mua kèm lý do rõ ràng, cập nhật hàng ngày, không tốn phí API.
 
+## Current Milestone: v1.1 UX Polish & Educational Depth
+
+**Goal:** Tinh chỉnh UX để đặt insight AI làm trung tâm, thêm theme ấm (Claude-style) và nội dung học thuật giải thích chỉ số — không thêm chức năng data/analysis mới.
+
+**Target features:**
+
+- Theme system với Claude warm-light (cream + orange) làm default, dark theme giữ lại dưới dạng toggle, preference persist
+- Stock page redesign: center scroll là AI report full-width, right drawer mở chart / raw data / news khi cần
+- Trang Học thuật (Academic/Learning) giải thích technical indicators, fundamental ratios, macro concepts, với interactive linking từ stock report → định nghĩa
+
+**Triết lý:** Service tập trung vào **insight & góc nhìn**, không phải bảng điện truyền thống — AI report là trang chủ của mỗi mã, data is secondary.
+
 ## Requirements
 
 ### Validated
@@ -27,7 +39,10 @@ Agent tự động phân tích và xếp hạng cổ phiếu HOSE — cho tôi d
 
 ### Active
 
-(None — all v1 requirements validated. Use `/gsd-new-milestone` to define v2 requirements.)
+- [ ] Theme system: Claude warm-light (cream + orange) default + dark toggle, preference persist — v1.1
+- [ ] Stock page redesign: center AI report + right-drawer data-on-demand — v1.1
+- [ ] Academic/Learning page: giải thích technical indicators, fundamental ratios, macro concepts — v1.1
+- [ ] Interactive glossary linking từ chỉ số trong AI report → định nghĩa — v1.1
 
 ### Out of Scope
 
@@ -91,4 +106,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-16 after v1.0 milestone completion*
+*Last updated: 2026-04-17 after milestone v1.1 kickoff*
