@@ -5,8 +5,8 @@ This is the master script that runs everything in sequence.
 Requires: Supabase DB configured, Ollama running (optional for reports).
 
 Usage:
-    uv run python bin/run_daily.py
-    uv run python bin/run_daily.py --skip-reports    # Skip LLM reports
+    uv run python apps/prometheus/bin/run_daily.py
+    uv run python apps/prometheus/bin/run_daily.py --skip-reports    # Skip LLM reports
 """
 
 import asyncio

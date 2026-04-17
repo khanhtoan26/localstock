@@ -4,7 +4,7 @@
 Requires: Data already crawled (run crawl_all.py or crawl_single.py first).
 
 Usage:
-    uv run python bin/run_analysis.py
+    uv run python apps/prometheus/bin/run_analysis.py
 """
 
 import asyncio

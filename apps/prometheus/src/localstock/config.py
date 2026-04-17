@@ -1,8 +1,20 @@
 """Application configuration loaded from .env file."""
 
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic_settings import BaseSettings
+
+
+def _find_env_file() -> str:
+    """Search up from CWD for .env file (monorepo support)."""
+    current = Path.cwd()
+    for parent in [current, *current.parents]:
+        if (parent / ".env").exists():
+            return str(parent / ".env")
+        if (parent / ".git").exists():
+            break
+    return ".env"
 
 
 class Settings(BaseSettings):
@@ -50,7 +62,7 @@ class Settings(BaseSettings):
     # Score change alert threshold (per D-03)
     score_change_threshold: float = 15.0
 
-    model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
+    model_config = {"env_file": _find_env_file(), "env_file_encoding": "utf-8"}
 
 
 @lru_cache

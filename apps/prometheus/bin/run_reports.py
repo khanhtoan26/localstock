@@ -4,8 +4,8 @@
 Requires: Ollama running, scoring data exists.
 
 Usage:
-    uv run python bin/run_reports.py
-    uv run python bin/run_reports.py --top 5
+    uv run python apps/prometheus/bin/run_reports.py
+    uv run python apps/prometheus/bin/run_reports.py --top 5
 """
 
 import asyncio

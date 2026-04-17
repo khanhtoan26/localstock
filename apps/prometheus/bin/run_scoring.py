@@ -4,7 +4,7 @@
 Requires: Analysis and sentiment data exist.
 
 Usage:
-    uv run python bin/run_scoring.py
+    uv run python apps/prometheus/bin/run_scoring.py
 """
 
 import asyncio

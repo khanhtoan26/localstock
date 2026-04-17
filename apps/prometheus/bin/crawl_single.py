@@ -2,8 +2,8 @@
 """Crawl a single stock symbol — prices, financials, company, events.
 
 Usage:
-    uv run python bin/crawl_single.py ACB
-    uv run python bin/crawl_single.py VNM
+    uv run python apps/prometheus/bin/crawl_single.py ACB
+    uv run python apps/prometheus/bin/crawl_single.py VNM
 """
 
 import asyncio
@@ -39,8 +39,8 @@ async def main(symbol: str) -> None:
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: uv run python bin/crawl_single.py <SYMBOL>")
-        print("Example: uv run python bin/crawl_single.py ACB")
+        print("Usage: uv run python apps/prometheus/bin/crawl_single.py <SYMBOL>")
+        print("Example: uv run python apps/prometheus/bin/crawl_single.py ACB")
         sys.exit(1)
 
     symbol = sys.argv[1].upper()

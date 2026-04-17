@@ -35,13 +35,13 @@ DATABASE_URL_MIGRATION=postgresql+asyncpg://postgres.YOUR_PROJECT_REF:YOUR_PASSW
 
 ```bash
 # Áp dụng tất cả migrations
-uv run alembic upgrade head
+cd apps/prometheus && uv run alembic upgrade head
 
 # Kiểm tra migration hiện tại
-uv run alembic current
+cd apps/prometheus && uv run alembic current
 
 # Rollback 1 step (nếu cần)
-uv run alembic downgrade -1
+cd apps/prometheus && uv run alembic downgrade -1
 ```
 
 Migrations tạo các bảng:
@@ -151,7 +151,7 @@ Truy cập:
 ### Cài đặt
 
 ```bash
-cd web
+cd apps/helios
 npm install
 ```
 
@@ -295,7 +295,7 @@ curl http://localhost:8000/api/reports/VNM
 ## Troubleshooting
 
 ### `relation "composite_scores" does not exist`
-→ Chưa chạy migrations. Chạy `uv run alembic upgrade head`
+→ Chưa chạy migrations. Chạy `cd apps/prometheus && uv run alembic upgrade head`
 
 ### `Connection refused` khi truy cập API
 → Backend chưa chạy. Chạy `uv run uvicorn localstock.api.app:app --reload`

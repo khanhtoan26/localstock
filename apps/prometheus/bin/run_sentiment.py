@@ -4,7 +4,7 @@
 Requires: Ollama running with model configured in .env
 
 Usage:
-    uv run python bin/run_sentiment.py
+    uv run python apps/prometheus/bin/run_sentiment.py
 """
 
 import asyncio

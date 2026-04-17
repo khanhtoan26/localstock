@@ -52,7 +52,7 @@ Xem [docs/SETUP.md](docs/SETUP.md) để biết chi tiết cấu hình từng se
 
 ```bash
 # Chạy migrations (BẮT BUỘC trước khi chạy backend)
-uv run alembic upgrade head
+uv run python apps/prometheus/bin/init_db.py
 ```
 
 ### 4. Khởi động
@@ -62,7 +62,7 @@ uv run alembic upgrade head
 uv run uvicorn localstock.api.app:app --reload
 
 # Terminal 2: Frontend (port 3000)
-cd web && npm install && npm run dev
+cd apps/helios && npm install && npm run dev
 
 # Terminal 3: Ollama LLM (nếu cần AI features)
 ollama serve
@@ -103,24 +103,31 @@ curl -X POST http://localhost:8000/api/automation/run
 ## Cấu trúc dự án
 
 ```
-localstock/
-├── src/localstock/           # Backend Python
-│   ├── api/routes/           # FastAPI endpoints (9 routers, ~30 routes)
-│   ├── ai/                   # Ollama LLM client & prompts
-│   ├── crawlers/             # Data crawlers (price, finance, news)
-│   ├── db/                   # SQLAlchemy models & repositories
-│   ├── services/             # Business logic (scoring, analysis, reports)
-│   ├── notifications/        # Telegram bot
-│   ├── scheduler/            # APScheduler daily pipeline
-│   └── config.py             # Pydantic settings
-├── web/                      # Frontend Next.js
-│   └── src/
-│       ├── app/              # Pages (rankings, market, stock/[symbol])
-│       ├── components/       # UI components (charts, tables, layout)
-│       └── lib/              # API client, types, React Query hooks
-├── alembic/                  # Database migrations
-├── tests/                    # 326 unit tests
-└── docs/                     # Documentation
+localstock/                          # Monorepo root
+├── apps/
+│   ├── prometheus/                  # 🔥 Backend — AI engine & data processing
+│   │   ├── src/localstock/          # Python package
+│   │   │   ├── api/routes/          # FastAPI endpoints (9 routers, ~30 routes)
+│   │   │   ├── ai/                  # Ollama LLM client & prompts
+│   │   │   ├── crawlers/            # Data crawlers (price, finance, news)
+│   │   │   ├── db/                  # SQLAlchemy models & repositories
+│   │   │   ├── services/            # Business logic (scoring, analysis, reports)
+│   │   │   ├── notifications/       # Telegram bot
+│   │   │   ├── scheduler/           # APScheduler daily pipeline
+│   │   │   └── config.py            # Pydantic settings
+│   │   ├── alembic/                 # Database migrations
+│   │   ├── bin/                     # CLI scripts (crawl, analyze, score)
+│   │   ├── tests/                   # 326 unit tests
+│   │   └── pyproject.toml           # Python dependencies
+│   └── helios/                      # ☀️ Frontend — Web dashboard
+│       ├── src/
+│       │   ├── app/                 # Pages (rankings, market, stock/[symbol])
+│       │   ├── components/          # UI components (charts, tables, layout)
+│       │   └── lib/                 # API client, types, React Query hooks
+│       └── package.json             # Node.js dependencies
+├── docs/                            # Documentation
+├── .env.example                     # Environment template
+└── pyproject.toml                   # uv workspace config
 ```
 
 ## License

@@ -71,7 +71,7 @@ Crawl (vnstock) → Store (PostgreSQL) → Analyze (pandas-ta)
 ### Khi chạy `uv run uvicorn localstock.api.app:app`
 
 ```python
-# src/localstock/api/app.py
+# apps/prometheus/src/localstock/api/app.py
 
 def create_app() -> FastAPI:
     app = FastAPI(title="LocalStock API", lifespan=get_lifespan)
@@ -145,7 +145,7 @@ Step 9: Gửi thông báo Telegram
 ### Chi tiết code:
 
 ```python
-# src/localstock/services/automation_service.py
+# apps/prometheus/src/localstock/services/automation_service.py
 
 class AutomationService:
     async def run_daily_pipeline(self, force=False):
@@ -211,7 +211,7 @@ _pipeline_lock = asyncio.Lock()  # Module-level
 ### Pipeline Orchestrator (Step 1 chi tiết)
 
 ```python
-# src/localstock/services/pipeline.py
+# apps/prometheus/src/localstock/services/pipeline.py
 
 class Pipeline:
     async def run_full(self, run_type="daily"):
@@ -243,7 +243,7 @@ class Pipeline:
 vnstock là thư viện **synchronous** → phải dùng `run_in_executor` để không block event loop:
 
 ```python
-# src/localstock/crawlers/price_crawler.py
+# apps/prometheus/src/localstock/crawlers/price_crawler.py
 
 class PriceCrawler(BaseCrawler):
     async def fetch(self, symbol, **kwargs):
@@ -293,7 +293,7 @@ for symbol in symbols:
 ### Technical Analysis (11 indicators)
 
 ```python
-# src/localstock/analysis/technical.py
+# apps/prometheus/src/localstock/analysis/technical.py
 
 class TechnicalAnalyzer:
     def compute_indicators(self, df):
@@ -345,7 +345,7 @@ class TechnicalAnalyzer:
 Khi pipeline chạy Step 4, với mỗi bài tin tức:
 
 ```python
-# src/localstock/ai/client.py
+# apps/prometheus/src/localstock/ai/client.py
 
 class OllamaClient:
     async def classify_sentiment(self, article_text, symbol):
@@ -416,7 +416,7 @@ Nếu Ollama không chạy:
 ### Composite Score (0-100)
 
 ```python
-# src/localstock/scoring/engine.py
+# apps/prometheus/src/localstock/scoring/engine.py
 
 def compute_composite(tech, fund, sent, macro, config):
     """
@@ -483,7 +483,7 @@ Debt leverage (D/E): 0-15 điểm (D/E<0.5=15, <1.0=10)
 ### Cách hoạt động
 
 ```python
-# src/localstock/notifications/telegram.py
+# apps/prometheus/src/localstock/notifications/telegram.py
 
 class TelegramNotifier:
     async def send_message(self, text):
@@ -517,7 +517,7 @@ await notification_repo.log_notification(today, "daily_digest", "sent")
 ### APScheduler CronTrigger
 
 ```python
-# src/localstock/scheduler/scheduler.py
+# apps/prometheus/src/localstock/scheduler/scheduler.py
 
 scheduler.add_job(
     daily_job,
@@ -533,7 +533,7 @@ scheduler.add_job(
 ### Trading Day Calendar
 
 ```python
-# src/localstock/scheduler/calendar.py
+# apps/prometheus/src/localstock/scheduler/calendar.py
 import holidays
 
 def is_trading_day(check_date=None):
@@ -618,7 +618,7 @@ async with session_factory() as session:
 ### Architecture
 
 ```
-web/src/
+apps/helios/src/
 ├── app/                    # Pages (App Router)
 │   ├── layout.tsx          # Root layout (dark theme, Vietnamese)
 │   ├── page.tsx            # Home → redirect to /rankings
@@ -654,7 +654,7 @@ React Component → useTopScores() hook → React Query cache
 ### React Query Hooks
 
 ```typescript
-// web/src/lib/queries.ts
+// apps/helios/src/lib/queries.ts
 
 useTopScores(limit=20)           // GET /api/scores/top
 useStockScore(symbol)            // GET /api/scores/{symbol}
@@ -671,7 +671,7 @@ useTriggerPipeline()             // POST /api/automation/run (mutation)
 ### Chart Implementation
 
 ```typescript
-// web/src/components/charts/price-chart.tsx
+// apps/helios/src/components/charts/price-chart.tsx
 // Dùng lightweight-charts v5 (TradingView library)
 
 const chart = createChart(container, { width, height });
@@ -689,7 +689,7 @@ candleSeries.setData(priceData);  // OHLCV from API
 ### Pydantic Settings
 
 ```python
-# src/localstock/config.py
+# apps/prometheus/src/localstock/config.py
 
 class Settings(BaseSettings):
     # Tự load từ .env file

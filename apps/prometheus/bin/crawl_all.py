@@ -2,8 +2,8 @@
 """Run the full pipeline for all ~400 HOSE stocks.
 
 Usage:
-    uv run python bin/crawl_all.py
-    uv run python bin/crawl_all.py --type backfill
+    uv run python apps/prometheus/bin/crawl_all.py
+    uv run python apps/prometheus/bin/crawl_all.py --type backfill
 """
 
 import asyncio
