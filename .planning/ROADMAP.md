@@ -39,7 +39,7 @@
   4. Financial color indicators (grade badges, stock up/down) remain clearly legible on both theme backgrounds
 **Plans:** 2 plans
 Plans:
-- [ ] 07-01-PLAN.md — Theme infrastructure + warm palette + color fixes (THEME-01, THEME-02, THEME-03, THEME-05)
+- [x] 07-01-PLAN.md — Theme infrastructure + warm palette + color fixes (THEME-01, THEME-02, THEME-03, THEME-05)
 - [ ] 07-02-PLAN.md — Chart theme integration + visual verification (THEME-04)
 **UI hint**: yes
 
