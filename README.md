@@ -97,6 +97,7 @@ curl -X POST http://localhost:8000/api/automation/run
 ## Tài liệu
 
 - [**SETUP.md**](docs/SETUP.md) — Hướng dẫn cài đặt chi tiết
+- [**ARCHITECTURE.md**](docs/ARCHITECTURE.md) — Kiến trúc, workflow, giải thích toàn bộ codebase
 - [**API.md**](docs/API.md) — Tài liệu API endpoints
 
 ## Cấu trúc dự án
