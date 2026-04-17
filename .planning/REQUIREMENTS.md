@@ -71,21 +71,21 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| THEME-01 | — | Pending |
-| THEME-02 | — | Pending |
-| THEME-03 | — | Pending |
-| THEME-04 | — | Pending |
-| THEME-05 | — | Pending |
-| STOCK-01 | — | Pending |
-| STOCK-02 | — | Pending |
-| STOCK-03 | — | Pending |
-| STOCK-04 | — | Pending |
-| STOCK-05 | — | Pending |
-| LEARN-01 | — | Pending |
-| LEARN-02 | — | Pending |
-| LEARN-03 | — | Pending |
-| LEARN-04 | — | Pending |
-| GLOSS-01 | — | Pending |
-| GLOSS-02 | — | Pending |
-| GLOSS-03 | — | Pending |
-| GLOSS-04 | — | Pending |
+| THEME-01 | Phase 7 | Pending |
+| THEME-02 | Phase 7 | Pending |
+| THEME-03 | Phase 7 | Pending |
+| THEME-04 | Phase 7 | Pending |
+| THEME-05 | Phase 7 | Pending |
+| STOCK-01 | Phase 8 | Pending |
+| STOCK-02 | Phase 8 | Pending |
+| STOCK-03 | Phase 8 | Pending |
+| STOCK-04 | Phase 8 | Pending |
+| STOCK-05 | Phase 8 | Pending |
+| LEARN-01 | Phase 9 | Pending |
+| LEARN-02 | Phase 9 | Pending |
+| LEARN-03 | Phase 9 | Pending |
+| LEARN-04 | Phase 9 | Pending |
+| GLOSS-01 | Phase 10 | Pending |
+| GLOSS-02 | Phase 10 | Pending |
+| GLOSS-03 | Phase 10 | Pending |
+| GLOSS-04 | Phase 10 | Pending |
