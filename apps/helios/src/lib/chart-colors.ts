@@ -35,9 +35,9 @@ const LIGHT_COLORS: ChartColorSet = {
   rsiLine: "#7c3aed",
   rsiOverbought: "#b91c1c",
   rsiOversold: "#15803d",
-  chartBg: "#faf8f5",        // warm cream (matches --background)
-  chartGrid: "#e7e0d5",      // warm light grid
-  chartText: "#57534e",      // stone-600
+  chartBg: "#faf9f5",        // Claude bg-100 (matches --background)
+  chartGrid: "#e8e6dc",      // Claude bg-400 (matches --border)
+  chartText: "#73726c",      // Claude text-400 (matches --muted-foreground)
 };
 
 const DARK_COLORS: ChartColorSet = {
@@ -55,9 +55,9 @@ const DARK_COLORS: ChartColorSet = {
   rsiLine: "#a855f7",
   rsiOverbought: "#ef4444",
   rsiOversold: "#22c55e",
-  chartBg: "#0f172a",
-  chartGrid: "#1e293b",
-  chartText: "#94a3b8",
+  chartBg: "#262624",        // Claude bg-100 dark (warm dark gray)
+  chartGrid: "#1f1e1d",      // Claude bg-200 dark
+  chartText: "#c2c0b6",      // Claude text-200 dark
 };
 
 /** Get chart colors for the given theme */
