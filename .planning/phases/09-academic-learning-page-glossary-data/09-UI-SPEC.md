@@ -1,7 +1,8 @@
 ---
 phase: 9
 slug: academic-learning-page-glossary-data
-status: draft
+status: approved
+reviewed_at: 2025-07-18
 shadcn_initialized: true
 preset: base-nova
 created: 2026-04-20
