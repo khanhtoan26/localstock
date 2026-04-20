@@ -67,7 +67,10 @@ Plans:
   2. Each category has its own URL (/learn/technical, /learn/fundamental, /learn/macro) loading as a dedicated page
   3. Glossary data module contains ≥15 typed entries serving as the single source of truth for learn pages and glossary linking
   4. User can search and filter entries with Vietnamese diacritic-insensitive matching (e.g., typing "chi so" finds "chỉ số")
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 09-01-PLAN.md — Glossary data module (25 typed entries + helpers) & sidebar navigation
+- [ ] 09-02-PLAN.md — Learn hub page, category pages, search & expandable entry components
 **UI hint**: yes
 
 ### Phase 10: Interactive Glossary Linking
@@ -94,5 +97,5 @@ Plans:
 | 6. Web Dashboard | v1.0 | 4/4 | Complete | 2026-04-16 |
 | 7. Theme Foundation & Visual Identity | v1.1 | 2/4 | Executing | - |
 | 8. Stock Page Reading-First Redesign | v1.1 | 0/0 | Not started | - |
-| 9. Academic/Learning Page & Glossary Data | v1.1 | 0/0 | Not started | - |
+| 9. Academic/Learning Page & Glossary Data | v1.1 | 0/2 | Planned | - |
 | 10. Interactive Glossary Linking | v1.1 | 0/0 | Not started | - |
