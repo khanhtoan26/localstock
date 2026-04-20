@@ -41,7 +41,7 @@ Declared values (must be multiples of 4). Inherited from Phase 7 — no changes.
 | 2xl | 48px | Major section breaks, hub page category card gap |
 | 3xl | 64px | Page-level vertical padding |
 
-Exceptions: Search input height 40px (10px vertical padding + 20px text). Category card on hub page uses 24px internal padding for breathing room.
+Exceptions: Search input uses `h-10` (40px) — browser centers text via line-height; no explicit internal padding specified. Category card on hub page uses 24px internal padding for breathing room.
 
 ---
 
@@ -52,9 +52,9 @@ Existing scale from Phase 7 preserved. Phase 9 adds specific role usage for educ
 | Role | Size | Weight | Line Height | Phase 9 Usage |
 |------|------|--------|-------------|---------------|
 | Body | 14px (`text-sm`) | 400 (regular) | 1.5 | Entry short definitions, search placeholder |
-| Label | 12px (`text-xs`) | 500 (medium) | 1.4 | Category badges, entry count labels, formula labels |
+| Label | 12px (`text-xs`) | 400 (regular) | 1.4 | Category badges, entry count labels, formula labels |
 | Heading | 18px (`text-lg`) | 600 (semibold) | 1.2 | Category page title, hub page section headings |
-| Display | 24px (`text-2xl`) | 700 (bold) | 1.2 | Hub page title "Học — Kiến Thức Đầu Tư" |
+| Display | 24px (`text-2xl`) | 600 (semibold) | 1.2 | Hub page title "Học — Kiến Thức Đầu Tư" |
 
 ### Article Content Typography (via `@tailwindcss/typography` prose)
 
@@ -105,6 +105,8 @@ Each category uses a distinct `Badge variant="outline"` with category-specific i
 
 ### Hub Page (`/learn`)
 
+**Focal point:** The 3-column category card grid — each card's icon and Vietnamese title draw the eye and invite exploration.
+
 ```
 ┌─────────────────────────────────────────┐
 │ Display: "Học — Kiến Thức Đầu Tư"      │
@@ -125,6 +127,8 @@ Each category uses a distinct `Badge variant="outline"` with category-specific i
 - Card contains: category icon (32×32px, `text-primary`), Vietnamese title (18px semibold), English subtitle (12px muted), entry count badge, 1-line description
 
 ### Category Page (`/learn/[category]`)
+
+**Focal point:** The search input at the top followed by the vertically stacked glossary entry cards — the search bar anchors user attention and the entry list is the primary content.
 
 ```
 ┌─────────────────────────────────────────┐
