@@ -1,7 +1,6 @@
 "use client";
 
 import Markdown from "react-markdown";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { StockReport } from "@/lib/types";
 
@@ -15,7 +14,6 @@ export function AIReportPanel({ report, isLoading, isError }: AIReportPanelProps
   if (isLoading) {
     return (
       <div className="space-y-3">
-        <Skeleton className="h-6 w-48" />
         <Skeleton className="h-4 w-full" />
         <Skeleton className="h-4 w-full" />
         <Skeleton className="h-4 w-3/4" />
@@ -37,30 +35,26 @@ export function AIReportPanel({ report, isLoading, isError }: AIReportPanelProps
   const content = report.summary || null;
   const fallbackJson = report.content_json;
 
-  return (
-    <ScrollArea className="max-h-[calc(100vh-12rem)]">
-      {content ? (
-        <div className="prose dark:prose-invert prose-sm max-w-none">
-          <Markdown>{content}</Markdown>
+  return content ? (
+    <div className="prose dark:prose-invert prose-sm max-w-none">
+      <Markdown>{content}</Markdown>
+    </div>
+  ) : fallbackJson ? (
+    <div className="space-y-4">
+      {Object.entries(fallbackJson).map(([key, value]) => (
+        <div key={key}>
+          <h3 className="text-sm font-semibold capitalize mb-1">
+            {key.replace(/_/g, " ")}
+          </h3>
+          <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+            {typeof value === "string" ? value : JSON.stringify(value, null, 2)}
+          </p>
         </div>
-      ) : fallbackJson ? (
-        <div className="space-y-4">
-          {Object.entries(fallbackJson).map(([key, value]) => (
-            <div key={key}>
-              <h3 className="text-sm font-semibold capitalize mb-1">
-                {key.replace(/_/g, " ")}
-              </h3>
-              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                {typeof value === "string" ? value : JSON.stringify(value, null, 2)}
-              </p>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p className="text-sm text-muted-foreground">
-          Báo cáo không có nội dung.
-        </p>
-      )}
-    </ScrollArea>
+      ))}
+    </div>
+  ) : (
+    <p className="text-sm text-muted-foreground">
+      Báo cáo không có nội dung.
+    </p>
   );
 }
