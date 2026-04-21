@@ -48,14 +48,14 @@ async def main(skip_reports: bool = False) -> None:
     async with factory() as session:
         logger.info("Step 3/6: Crawling news...")
         news = NewsService(session)
-        news_result = await news.crawl_all()
-        print(f"✅ News: {news_result.get('articles_saved', 0)} articles")
+        news_result = await news.crawl_and_store()
+        print(f"✅ News: {news_result.get('articles_stored', 0)} articles")
 
     async with factory() as session:
         logger.info("Step 4/6: Sentiment analysis...")
         sentiment = SentimentService(session)
         sent_result = await sentiment.run_full()
-        print(f"✅ Sentiment: {sent_result.get('analyzed', 0)} analyzed")
+        print(f"✅ Sentiment: {sent_result.get('articles_processed', 0)} analyzed")
 
     async with factory() as session:
         logger.info("Step 5/6: Scoring...")

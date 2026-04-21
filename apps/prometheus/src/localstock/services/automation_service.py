@@ -106,7 +106,7 @@ class AutomationService:
             try:
                 async with self.session_factory() as session:
                     news = NewsService(session)
-                    news_result = await news.crawl_all()
+                    news_result = await news.crawl_and_store()
                     summary["steps"]["news"] = news_result
                     logger.info("Step 3/6: News crawl complete")
             except Exception as e:
