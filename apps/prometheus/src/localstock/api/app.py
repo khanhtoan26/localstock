@@ -1,7 +1,8 @@
 """FastAPI application setup."""
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from localstock.api.routes.analysis import router as analysis_router
 from localstock.api.routes.automation import router as automation_router
@@ -34,6 +35,15 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    @app.exception_handler(Exception)
+    async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+        """Ensure unhandled exceptions return JSON with CORS headers."""
+        return JSONResponse(
+            status_code=500,
+            content={"detail": "Internal Server Error"},
+        )
+
     app.include_router(health_router, tags=["health"])
     app.include_router(analysis_router, tags=["analysis"])
     app.include_router(news_router, tags=["news"])
