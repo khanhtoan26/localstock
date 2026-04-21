@@ -3,7 +3,7 @@
 ## Milestones
 
 - ✅ **v1.0 MVP** — Phases 1-6 (shipped 2026-04-16) — [Archive](milestones/v1.0-ROADMAP.md)
-- 🚧 **v1.1 UX Polish & Educational Depth** — Phases 7-10 (in progress)
+- ✅ **v1.1 UX Polish & Educational Depth** — Phases 7-10 (shipped 2026-04-21) — [Archive](milestones/v1.1-ROADMAP.md)
 
 ## Phases
 
@@ -21,9 +21,9 @@
 
 ### 🚧 v1.1 UX Polish & Educational Depth
 
-- [ ] **Phase 7: Theme Foundation & Visual Identity** - Warm-light default theme + dark toggle, FOUC-free switching, chart re-theming, WCAG-passing financial tokens
-- [ ] **Phase 8: Stock Page Reading-First Redesign** - AI report full-width center scroll, right drawer for charts/data on demand, structured Markdown rendering
-- [ ] **Phase 9: Academic/Learning Page & Glossary Data** - Educational pages for technical/fundamental/macro concepts, typed glossary data module, diacritic-insensitive search
+- [x] **Phase 7: Theme Foundation & Visual Identity** - Warm-light default theme + dark toggle, FOUC-free switching, chart re-theming, WCAG-passing financial tokens
+- [x] **Phase 8: Stock Page Reading-First Redesign** - AI report full-width center scroll, right drawer for charts/data on demand, structured Markdown rendering
+- [x] **Phase 9: Academic/Learning Page & Glossary Data** - Educational pages for technical/fundamental/macro concepts, typed glossary data module, diacritic-insensitive search
 - [x] **Phase 10: Interactive Glossary Linking** - Auto-link terms in AI reports to definitions, hover card previews, deep-link navigation to learn pages
 
 ## Phase Details
@@ -41,8 +41,8 @@
 Plans:
 - [x] 07-01-PLAN.md — Theme infrastructure + warm palette + color fixes (THEME-01, THEME-02, THEME-03, THEME-05)
 - [x] 07-02-PLAN.md — Chart theme integration + visual verification (THEME-04)
-- [ ] 07-03-PLAN.md — Dependencies + AI report panel + score breakdown components (STOCK-02)
-- [ ] 07-04-PLAN.md — Stock page side-by-side layout + tabbed data panel (STOCK-01, STOCK-02)
+- [x] 07-03-PLAN.md — Dependencies + AI report panel + score breakdown components (STOCK-02)
+- [x] 07-04-PLAN.md — Stock page side-by-side layout + tabbed data panel (STOCK-01, STOCK-02)
 **UI hint**: yes
 
 ### Phase 8: Stock Page Reading-First Redesign
@@ -98,7 +98,7 @@ Plans:
 | 4. AI Reports, Macro Context & T+3 | v1.0 | 4/4 | Complete | 2026-04-15 |
 | 5. Automation & Notifications | v1.0 | 3/3 | Complete | 2026-04-15 |
 | 6. Web Dashboard | v1.0 | 4/4 | Complete | 2026-04-16 |
-| 7. Theme Foundation & Visual Identity | v1.1 | 2/4 | Executing | - |
-| 8. Stock Page Reading-First Redesign | v1.1 | 0/0 | Not started | - |
+| 7. Theme Foundation & Visual Identity | v1.1 | 4/4 | Complete | 2026-04-20 |
+| 8. Stock Page Reading-First Redesign | v1.1 | - | Complete (merged into Phase 7) | 2026-04-20 |
 | 9. Academic/Learning Page & Glossary Data | v1.1 | 2/2 | Complete | 2026-04-20 |
 | 10. Interactive Glossary Linking | v1.1 | 2/2 | Complete | 2026-04-21 |
