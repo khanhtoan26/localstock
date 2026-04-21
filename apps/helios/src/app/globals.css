@@ -148,3 +148,13 @@
     @apply font-sans;
   }
 }
+
+/* Collapsible height animation for @base-ui/react */
+[data-slot="collapsible-content"] {
+  overflow: hidden;
+  transition: height 200ms ease-out;
+}
+
+[data-slot="collapsible-content"][data-closed] {
+  height: 0;
+}
