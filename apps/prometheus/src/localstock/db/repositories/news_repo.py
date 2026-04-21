@@ -20,7 +20,14 @@ class NewsRepository:
         """Upsert news articles. Dedup on URL (unique constraint)."""
         if not rows:
             return 0
-        stmt = pg_insert(NewsArticle).values(rows)
+        # Deduplicate rows by URL — PostgreSQL ON CONFLICT can't
+        # update the same row twice in one statement
+        seen: dict[str, dict] = {}
+        for row in rows:
+            seen[row["url"]] = row
+        unique_rows = list(seen.values())
+
+        stmt = pg_insert(NewsArticle).values(unique_rows)
         update_cols = {
             col.name: getattr(stmt.excluded, col.name)
             for col in NewsArticle.__table__.columns
@@ -32,8 +39,8 @@ class NewsRepository:
         )
         await self.session.execute(stmt)
         await self.session.commit()
-        logger.info(f"Upserted {len(rows)} news articles")
-        return len(rows)
+        logger.info(f"Upserted {len(unique_rows)} news articles (from {len(rows)} total)")
+        return len(unique_rows)
 
     async def get_recent(self, days: int = 7, limit: int = 200) -> list[NewsArticle]:
         """Fetch recent articles within N days."""

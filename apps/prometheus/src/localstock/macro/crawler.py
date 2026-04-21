@@ -13,6 +13,8 @@ import httpx
 from bs4 import BeautifulSoup
 from loguru import logger
 
+from localstock.config import get_settings
+
 VCB_EXCHANGE_RATE_URL = (
     "https://portal.vietcombank.com.vn/Usercontrols/TVPortal.TyGia/pXML.aspx"
 )
@@ -38,7 +40,7 @@ class MacroCrawler:
             None if fetch or parse fails.
         """
         try:
-            async with httpx.AsyncClient(timeout=15) as client:
+            async with httpx.AsyncClient(timeout=15, verify=get_settings().ssl_verify) as client:
                 response = await client.get(VCB_EXCHANGE_RATE_URL)
                 response.raise_for_status()
 

@@ -17,6 +17,8 @@ import httpx
 from bs4 import BeautifulSoup
 from loguru import logger
 
+from localstock.config import get_settings
+
 # Verified working RSS feeds (Research 2026-04-15)
 CAFEF_RSS_FEEDS = [
     "https://cafef.vn/thi-truong-chung-khoan.rss",  # 50 items
@@ -240,7 +242,11 @@ class NewsCrawler:
 
         all_articles: list[dict] = []
 
-        async with httpx.AsyncClient(headers=DEFAULT_HEADERS, timeout=30.0) as client:
+        async with httpx.AsyncClient(
+            headers=DEFAULT_HEADERS,
+            timeout=30.0,
+            verify=get_settings().ssl_verify,
+        ) as client:
             for feed_url in feeds:
                 try:
                     resp = await client.get(feed_url)

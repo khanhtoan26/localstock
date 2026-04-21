@@ -26,13 +26,13 @@ async def main() -> None:
         logger.info("Crawling news from CafeF + VnExpress...")
         news_service = NewsService(session)
         news_result = await news_service.crawl_and_store()
-        print(f"News: {news_result.get('articles_saved', 0)} articles saved")
+        print(f"News: {news_result.get('articles_stored', 0)} articles saved")
 
         # Step 2: Run sentiment analysis
         logger.info("Running sentiment analysis via Ollama...")
         sentiment_service = SentimentService(session)
         sent_result = await sentiment_service.run_full()
-        print(f"Sentiment: {sent_result.get('analyzed', 0)} articles analyzed")
+        print(f"Sentiment: {sent_result.get('articles_processed', 0)} articles analyzed")
         print(f"Failed: {sent_result.get('failed', 0)}")
 
 
