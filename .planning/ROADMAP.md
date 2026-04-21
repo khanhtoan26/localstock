@@ -82,7 +82,10 @@ Plans:
   2. Hovering a linked term shows a preview card with the short definition and a link to the full learn page
   3. Clicking through from a hover card navigates to /learn/[category]#[term] with the entry scrolled into view
   4. Multiple surface forms of the same term (e.g., "RSI", "chỉ số RSI", "Relative Strength Index") all resolve to the same glossary entry
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 10-01-PLAN.md — Glossary text scanner & interactive components (GLOSS-01, GLOSS-02, GLOSS-03, GLOSS-04)
+- [ ] 10-02-PLAN.md — Wire into AI report panel & visual verification (GLOSS-01, GLOSS-03)
 **UI hint**: yes
 
 ## Progress
@@ -98,4 +101,4 @@ Plans:
 | 7. Theme Foundation & Visual Identity | v1.1 | 2/4 | Executing | - |
 | 8. Stock Page Reading-First Redesign | v1.1 | 0/0 | Not started | - |
 | 9. Academic/Learning Page & Glossary Data | v1.1 | 0/2 | Planned | - |
-| 10. Interactive Glossary Linking | v1.1 | 0/0 | Not started | - |
+| 10. Interactive Glossary Linking | v1.1 | 0/2 | Planned | - |
