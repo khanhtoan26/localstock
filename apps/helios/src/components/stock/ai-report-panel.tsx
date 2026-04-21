@@ -1,6 +1,6 @@
 "use client";
 
-import Markdown from "react-markdown";
+import { GlossaryMarkdown } from "@/components/glossary/glossary-markdown";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { StockReport } from "@/lib/types";
 
@@ -37,7 +37,7 @@ export function AIReportPanel({ report, isLoading, isError }: AIReportPanelProps
 
   return content ? (
     <div className="prose dark:prose-invert prose-sm max-w-none">
-      <Markdown>{content}</Markdown>
+      <GlossaryMarkdown content={content} />
     </div>
   ) : fallbackJson ? (
     <div className="space-y-4">
