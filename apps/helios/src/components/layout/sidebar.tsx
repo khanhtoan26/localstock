@@ -1,12 +1,13 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Globe } from "lucide-react";
+import { BarChart3, Globe, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/rankings", label: "Xếp Hạng", icon: BarChart3 },
   { href: "/market", label: "Thị Trường", icon: Globe },
+  { href: "/learn", label: "Học", icon: BookOpen },
 ];
 
 export function Sidebar() {
