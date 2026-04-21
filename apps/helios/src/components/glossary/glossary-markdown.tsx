@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, isValidElement, Children, cloneElement } from "react";
+import { isValidElement, Children, cloneElement } from "react";
 import Markdown from "react-markdown";
 import {
   buildAliasMap,
@@ -18,20 +18,17 @@ interface GlossaryMarkdownProps {
 }
 
 export function GlossaryMarkdown({ content }: GlossaryMarkdownProps) {
-  // Track linked IDs across all elements in this render (shared ref per Pitfall 6)
-  const linkedIdsRef = useRef(new Set<string>());
-
-  // Reset linked IDs when content changes
-  useMemo(() => {
-    linkedIdsRef.current = new Set<string>();
-  }, [content]);
+  // Fresh linked IDs set per render — NOT useRef (useRef persists across
+  // React strict mode double-renders in dev, causing zero matches on the
+  // committed render)
+  const linkedIds = new Set<string>();
 
   function processChildren(children: ReactNode): ReactNode {
     if (typeof children === "string") {
       const segments: TextSegment[] = scanText(
         children,
         aliasMap,
-        linkedIdsRef.current,
+        linkedIds,
       );
       return segments.map((seg, i) =>
         typeof seg === "string" ? (
@@ -51,7 +48,6 @@ export function GlossaryMarkdown({ content }: GlossaryMarkdownProps) {
         }
         if (isValidElement(child)) {
           const el = child as ReactElement<{ children?: ReactNode }>;
-          // Skip code elements — don't scan for glossary terms inside code (per RESEARCH A2)
           if (el.type === "code") {
             return child;
           }
@@ -65,7 +61,6 @@ export function GlossaryMarkdown({ content }: GlossaryMarkdownProps) {
 
     if (isValidElement(children)) {
       const el = children as ReactElement<{ children?: ReactNode }>;
-      // Skip code elements
       if (el.type === "code") {
         return children;
       }
