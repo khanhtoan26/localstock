@@ -24,7 +24,7 @@
 - [ ] **Phase 7: Theme Foundation & Visual Identity** - Warm-light default theme + dark toggle, FOUC-free switching, chart re-theming, WCAG-passing financial tokens
 - [ ] **Phase 8: Stock Page Reading-First Redesign** - AI report full-width center scroll, right drawer for charts/data on demand, structured Markdown rendering
 - [ ] **Phase 9: Academic/Learning Page & Glossary Data** - Educational pages for technical/fundamental/macro concepts, typed glossary data module, diacritic-insensitive search
-- [ ] **Phase 10: Interactive Glossary Linking** - Auto-link terms in AI reports to definitions, hover card previews, deep-link navigation to learn pages
+- [x] **Phase 10: Interactive Glossary Linking** - Auto-link terms in AI reports to definitions, hover card previews, deep-link navigation to learn pages
 
 ## Phase Details
 
@@ -82,10 +82,10 @@ Plans:
   2. Hovering a linked term shows a preview card with the short definition and a link to the full learn page
   3. Clicking through from a hover card navigates to /learn/[category]#[term] with the entry scrolled into view
   4. Multiple surface forms of the same term (e.g., "RSI", "chỉ số RSI", "Relative Strength Index") all resolve to the same glossary entry
-**Plans:** 2 plans
+**Plans:** 2/2 plans executed
 Plans:
-- [ ] 10-01-PLAN.md — Glossary text scanner & interactive components (GLOSS-01, GLOSS-02, GLOSS-03, GLOSS-04)
-- [ ] 10-02-PLAN.md — Wire into AI report panel & visual verification (GLOSS-01, GLOSS-03)
+- [x] 10-01-PLAN.md — Glossary text scanner & interactive components (GLOSS-01, GLOSS-02, GLOSS-03, GLOSS-04)
+- [x] 10-02-PLAN.md — Wire into AI report panel & visual verification (GLOSS-01, GLOSS-03)
 **UI hint**: yes
 
 ## Progress
@@ -100,5 +100,5 @@ Plans:
 | 6. Web Dashboard | v1.0 | 4/4 | Complete | 2026-04-16 |
 | 7. Theme Foundation & Visual Identity | v1.1 | 2/4 | Executing | - |
 | 8. Stock Page Reading-First Redesign | v1.1 | 0/0 | Not started | - |
-| 9. Academic/Learning Page & Glossary Data | v1.1 | 0/2 | Planned | - |
-| 10. Interactive Glossary Linking | v1.1 | 0/2 | Planned | - |
+| 9. Academic/Learning Page & Glossary Data | v1.1 | 2/2 | Complete | 2026-04-20 |
+| 10. Interactive Glossary Linking | v1.1 | 2/2 | Complete | 2026-04-21 |
