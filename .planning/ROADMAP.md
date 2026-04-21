@@ -69,8 +69,8 @@ Plans:
   4. User can search and filter entries with Vietnamese diacritic-insensitive matching (e.g., typing "chi so" finds "chỉ số")
 **Plans:** 2 plans
 Plans:
-- [ ] 09-01-PLAN.md — Glossary data module (25 typed entries + helpers) & sidebar navigation
-- [ ] 09-02-PLAN.md — Learn hub page, category pages, search & expandable entry components
+- [x] 09-01-PLAN.md — Glossary data module (25 typed entries + helpers) & sidebar navigation
+- [x] 09-02-PLAN.md — Learn hub page, category pages, search & expandable entry components
 **UI hint**: yes
 
 ### Phase 10: Interactive Glossary Linking
