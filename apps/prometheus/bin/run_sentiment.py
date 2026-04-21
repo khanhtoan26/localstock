@@ -25,7 +25,7 @@ async def main() -> None:
         # Step 1: Crawl news
         logger.info("Crawling news from CafeF + VnExpress...")
         news_service = NewsService(session)
-        news_result = await news_service.crawl_all()
+        news_result = await news_service.crawl_and_store()
         print(f"News: {news_result.get('articles_saved', 0)} articles saved")
 
         # Step 2: Run sentiment analysis
