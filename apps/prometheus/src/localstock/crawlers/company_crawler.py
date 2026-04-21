@@ -1,7 +1,7 @@
 """Company profile crawler using vnstock Company.overview().
 
-Uses VCI source — provides richer company data than KBS
-(GraphQL endpoint with ICB classification, shareholders, events).
+Uses KBS source directly — VCI source broken (Company.__init__ crash
+in vnstock 3.5.1). KBS provides company overview, officers, events.
 
 All vnstock calls are synchronous — wrapped in ``run_in_executor``
 to avoid blocking the async event loop.
@@ -11,15 +11,16 @@ import asyncio
 
 import pandas as pd
 from loguru import logger
-from vnstock import Vnstock
 
 from localstock.config import get_settings
+from localstock.crawlers import suppress_vnstock_output
 from localstock.crawlers.base import BaseCrawler
 
 
 class CompanyCrawler(BaseCrawler):
     """Crawls company profile data from vnstock Company.overview().
 
+    Uses KBS direct module access (bypasses broken Vnstock.stock()).
     Populates the stocks table with:
     - ICB industry classification (icb_name3 = sector, icb_name4 = subsector)
     - issue_shares (outstanding shares count)
@@ -33,32 +34,27 @@ class CompanyCrawler(BaseCrawler):
             if delay_seconds is not None
             else settings.crawl_delay_seconds,
         )
-        self.source: str = settings.vnstock_source
 
     async def fetch(self, symbol: str, **kwargs) -> pd.DataFrame:
         """Fetch company overview for a single symbol from vnstock.
 
-        Uses VCI source (richer company data than KBS per research).
+        Uses KBS direct module access (VCI broken in v3.5.1).
 
         Args:
             symbol: Stock ticker (e.g., 'ACB').
 
-        Keyword Args:
-            source: Override default source (default: 'VCI').
-
         Returns:
-            DataFrame with columns: symbol, company_name, exchange,
-            icb_name3, icb_name4, issue_share, charter_capital, ...
+            DataFrame with company overview data.
 
         Raises:
             ValueError: If vnstock returns empty or None data.
         """
-        source = kwargs.get("source", self.source)
 
         def _sync_fetch():
-            client = Vnstock(source=source)
-            stock = client.stock(symbol=symbol, source=source)
-            return stock.company.overview()
+            with suppress_vnstock_output():
+                from vnstock.explorer.kbs.company import Company as KBSCompany
+                company = KBSCompany(symbol)
+                return company.overview()
 
         loop = asyncio.get_event_loop()
         df = await loop.run_in_executor(None, _sync_fetch)

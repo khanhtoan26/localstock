@@ -17,19 +17,16 @@ def mock_settings():
     with patch("localstock.crawlers.company_crawler.get_settings") as mock:
         settings = MagicMock()
         settings.crawl_delay_seconds = 0.0
-        settings.vnstock_source = "KBS"
         mock.return_value = settings
         yield settings
 
 
 @pytest.fixture
-def mock_vnstock_company(mock_settings, sample_company_overview):
-    """Mock vnstock to return company overview data."""
-    with patch("localstock.crawlers.company_crawler.Vnstock") as mock_cls:
+def mock_kbs_company(mock_settings, sample_company_overview):
+    """Mock KBS Company to return company overview data."""
+    with patch("vnstock.explorer.kbs.company.Company") as mock_cls:
         mock_instance = MagicMock()
-        mock_stock = MagicMock()
-        mock_stock.company.overview.return_value = sample_company_overview
-        mock_instance.stock.return_value = mock_stock
+        mock_instance.overview.return_value = sample_company_overview
         mock_cls.return_value = mock_instance
         yield mock_cls
 
@@ -37,7 +34,7 @@ def mock_vnstock_company(mock_settings, sample_company_overview):
 # ── Fetch tests ──────────────────────────────────────────────────────
 
 
-async def test_fetch_company_overview(mock_vnstock_company):
+async def test_fetch_company_overview(mock_kbs_company):
     """CompanyCrawler.fetch() returns DataFrame with company overview data."""
     crawler = CompanyCrawler(delay_seconds=0)
     df = await crawler.fetch("ACB")
@@ -45,21 +42,11 @@ async def test_fetch_company_overview(mock_vnstock_company):
     assert "symbol" in df.columns
 
 
-async def test_fetch_uses_configured_source(mock_vnstock_company, mock_settings):
-    """CompanyCrawler uses vnstock_source from settings."""
-    mock_settings.vnstock_source = "KBS"
-    crawler = CompanyCrawler(delay_seconds=0)
-    await crawler.fetch("ACB")
-    mock_vnstock_company.assert_called_with(source="KBS")
-
-
 async def test_fetch_raises_on_empty(mock_settings):
     """CompanyCrawler.fetch() raises ValueError on empty response."""
-    with patch("localstock.crawlers.company_crawler.Vnstock") as mock_cls:
+    with patch("vnstock.explorer.kbs.company.Company") as mock_cls:
         mock_instance = MagicMock()
-        mock_stock = MagicMock()
-        mock_stock.company.overview.return_value = pd.DataFrame()
-        mock_instance.stock.return_value = mock_stock
+        mock_instance.overview.return_value = pd.DataFrame()
         mock_cls.return_value = mock_instance
 
         crawler = CompanyCrawler(delay_seconds=0)
@@ -69,11 +56,9 @@ async def test_fetch_raises_on_empty(mock_settings):
 
 async def test_fetch_raises_on_none(mock_settings):
     """CompanyCrawler.fetch() raises ValueError when vnstock returns None."""
-    with patch("localstock.crawlers.company_crawler.Vnstock") as mock_cls:
+    with patch("vnstock.explorer.kbs.company.Company") as mock_cls:
         mock_instance = MagicMock()
-        mock_stock = MagicMock()
-        mock_stock.company.overview.return_value = None
-        mock_instance.stock.return_value = mock_stock
+        mock_instance.overview.return_value = None
         mock_cls.return_value = mock_instance
 
         crawler = CompanyCrawler(delay_seconds=0)
@@ -141,7 +126,7 @@ def test_overview_to_stock_dict_handles_none_values(mock_settings):
 
 async def test_fetch_batch_skips_failed(mock_settings, sample_company_overview):
     """CompanyCrawler inherits BaseCrawler.fetch_batch() — skips failed symbols per D-02."""
-    with patch("localstock.crawlers.company_crawler.Vnstock") as mock_cls:
+    with patch("vnstock.explorer.kbs.company.Company") as mock_cls:
         call_count = 0
 
         def overview_side_effect():
@@ -152,9 +137,7 @@ async def test_fetch_batch_skips_failed(mock_settings, sample_company_overview):
             return sample_company_overview
 
         mock_instance = MagicMock()
-        mock_stock = MagicMock()
-        mock_stock.company.overview.side_effect = overview_side_effect
-        mock_instance.stock.return_value = mock_stock
+        mock_instance.overview.side_effect = overview_side_effect
         mock_cls.return_value = mock_instance
 
         crawler = CompanyCrawler(delay_seconds=0)

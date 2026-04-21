@@ -96,28 +96,41 @@ class StockRepository:
     async def fetch_and_store_listings(self, source: str = "VCI") -> int:
         """Fetch all symbols from vnstock and store HOSE listings in DB.
 
-        Uses vnstock: Vnstock(source=source).stock().listing.all_symbols()
-        Filters to HOSE exchange, upserts into stocks table.
+        Uses VCI Listing.symbols_by_exchange() directly to avoid the
+        broken Vnstock.stock() initializer (VCI Company.__init__ crashes).
+        Filters to HSX exchange (VCI's name for HOSE), maps to 'HOSE'.
 
         Args:
-            source: vnstock data source ('VCI' or 'KBS').
+            source: vnstock data source (currently only VCI has exchange data).
 
         Returns:
             Count of HOSE stocks stored.
         """
-        from vnstock import Vnstock
+        import asyncio
 
-        client = Vnstock(source=source)
-        listing = client.stock().listing
-        all_symbols_df = listing.all_symbols()
+        from localstock.crawlers import suppress_vnstock_output
 
-        # Filter to HOSE exchange
-        hose_df = all_symbols_df[all_symbols_df["exchange"] == "HOSE"].copy()
+        def _sync_fetch():
+            with suppress_vnstock_output():
+                from vnstock.explorer.vci.listing import Listing as VCIListing
+                listing = VCIListing()
+                return listing.symbols_by_exchange()
+
+        loop = asyncio.get_event_loop()
+        all_symbols_df = await loop.run_in_executor(None, _sync_fetch)
+
+        # VCI uses 'HSX' for HOSE exchange
+        hose_df = all_symbols_df[all_symbols_df["exchange"] == "HSX"].copy()
+        hose_df["exchange"] = "HOSE"
+
+        # Map VCI columns to expected format
+        if "organ_name" not in hose_df.columns and "organ_short_name" in hose_df.columns:
+            hose_df["organ_name"] = hose_df["organ_short_name"]
 
         if hose_df.empty:
             logger.warning("No HOSE symbols found from vnstock listing")
             return 0
 
         count = await self.upsert_stocks(hose_df)
-        logger.info(f"Fetched and stored {count} HOSE listings from vnstock ({source})")
+        logger.info(f"Fetched and stored {count} HOSE listings from vnstock (VCI)")
         return count

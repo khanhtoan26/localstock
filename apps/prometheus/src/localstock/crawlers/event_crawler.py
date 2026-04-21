@@ -1,7 +1,8 @@
 """Corporate event crawler using vnstock Company.events().
 
-Fetches corporate actions (splits, stock dividends, rights issues)
-needed for backward price adjustment (DATA-05).
+Uses KBS source directly — VCI source broken (Company.__init__ crash
+in vnstock 3.5.1). Fetches corporate actions (splits, stock dividends,
+rights issues) needed for backward price adjustment (DATA-05).
 
 All vnstock calls are synchronous — wrapped in ``run_in_executor``
 to avoid blocking the async event loop.
@@ -11,15 +12,15 @@ import asyncio
 
 import pandas as pd
 from loguru import logger
-from vnstock import Vnstock
 
-from localstock.config import get_settings
+from localstock.crawlers import suppress_vnstock_output
 from localstock.crawlers.base import BaseCrawler
 
 
 class EventCrawler(BaseCrawler):
     """Crawls corporate events from vnstock Company.events().
 
+    Uses KBS direct module access (bypasses broken Vnstock.stock()).
     Unlike other crawlers, returns empty DataFrame (not raising ValueError)
     when no events exist — most stocks have few or no corporate events,
     and that's normal.
@@ -36,40 +37,32 @@ class EventCrawler(BaseCrawler):
 
     def __init__(self, delay_seconds: float = 1.0):
         super().__init__(delay_seconds=delay_seconds)
-        self.source: str = get_settings().vnstock_source
 
     async def fetch(self, symbol: str, **kwargs) -> pd.DataFrame:
         """Fetch corporate events for a symbol from vnstock.
 
-        Returns DataFrame with: event_title, exright_date, record_date,
-        event_list_code, ratio, value, public_date.
+        Uses KBS direct module access (VCI broken in v3.5.1).
 
         Args:
             symbol: Stock ticker (e.g., 'ACB').
 
-        Keyword Args:
-            source: Override default source (default: 'VCI').
-
         Returns:
             DataFrame with corporate events. Empty DataFrame if no events
             (this is normal — not an error).
-
-        Raises:
-            Exception: Only if vnstock API itself errors (network, auth, etc.)
         """
-        source = kwargs.get("source", self.source)
 
         def _sync_fetch():
-            client = Vnstock(source=source)
-            stock = client.stock(symbol=symbol, source=source)
-            return stock.company.events()
+            with suppress_vnstock_output():
+                from vnstock.explorer.kbs.company import Company as KBSCompany
+                company = KBSCompany(symbol)
+                return company.events()
 
         loop = asyncio.get_event_loop()
         df = await loop.run_in_executor(None, _sync_fetch)
 
         if df is None or df.empty:
             logger.info(f"No corporate events for {symbol}")
-            return pd.DataFrame()  # No events is normal, not an error
+            return pd.DataFrame()
 
         logger.info(f"Fetched {len(df)} corporate events for {symbol}")
         return df

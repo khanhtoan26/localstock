@@ -1,19 +1,20 @@
 """Financial statement crawler using vnstock Finance API.
 
-Uses KBS source first (more stable per research issue #218),
-falls back to VCI if KBS fails. Fetches balance sheet, income
-statement, and cash flow for any HOSE ticker.
+Uses direct module access (KBS/VCI Finance classes) to bypass the
+broken Vnstock.stock() initializer. Fetches each report type
+independently so partial results are returned on failure.
 
 All vnstock calls are synchronous — wrapped in ``run_in_executor``
 to avoid blocking the async event loop.
 """
 
 import asyncio
+import importlib
 
 import pandas as pd
 from loguru import logger
-from vnstock import Vnstock
 
+from localstock.crawlers import suppress_vnstock_output
 from localstock.crawlers.base import BaseCrawler
 
 
@@ -25,12 +26,12 @@ class FinanceCrawler(BaseCrawler):
     - income_statement
     - cash_flow
 
-    Source priority: KBS first (more stable for financials per
-    research), then VCI as fallback.
+    Uses direct module access (bypasses broken Vnstock.stock()).
+    Tries KBS first, then VCI. Each report type is fetched
+    independently — partial results are returned on failure.
     """
 
     REPORT_TYPES = ["balance_sheet", "income_statement", "cash_flow"]
-    SOURCES = ["KBS", "VCI"]  # KBS first — more stable for financials
 
     def __init__(self, delay_seconds: float = 1.0):
         super().__init__(delay_seconds=delay_seconds)
@@ -38,7 +39,9 @@ class FinanceCrawler(BaseCrawler):
     async def fetch(self, symbol: str, **kwargs) -> dict[str, pd.DataFrame]:
         """Fetch all financial statements for a symbol.
 
-        Tries KBS source first, falls back to VCI (per research issue #218).
+        Tries KBS and VCI sources with direct module access.
+        Each report type is fetched independently so partial
+        results are returned even if some fail.
 
         Args:
             symbol: Stock ticker (e.g., 'ACB').
@@ -47,55 +50,72 @@ class FinanceCrawler(BaseCrawler):
             period: 'quarter' or 'year' (default: 'quarter').
 
         Returns:
-            Dict mapping report type names to DataFrames:
-            ``{"balance_sheet": df, "income_statement": df, "cash_flow": df}``
-
-        Raises:
-            ValueError: If all sources fail for this symbol.
+            Dict mapping report type names to DataFrames.
+            May be empty if all sources fail.
         """
         period = kwargs.get("period", "quarter")
+        results: dict[str, pd.DataFrame] = {}
 
-        for source in self.SOURCES:
+        # Try each source with direct module access
+        sources = [
+            ("KBS", "vnstock.explorer.kbs.financial", "Finance"),
+            ("VCI", "vnstock.explorer.vci.financial", "Finance"),
+        ]
+
+        for source_name, module_path, class_name in sources:
             try:
-                results = await self._fetch_from_source(symbol, source, period)
-                if results:
-                    logger.info(
-                        f"Fetched {len(results)} financial reports for {symbol} "
-                        f"from {source} (period={period})"
-                    )
-                    return results
+                source_results = await self._fetch_from_source(
+                    symbol, source_name, module_path, class_name, period
+                )
+                # Merge: keep first successful result for each report type
+                for rtype, df in source_results.items():
+                    if rtype not in results:
+                        results[rtype] = df
+                if len(results) == len(self.REPORT_TYPES):
+                    break  # Got all 3 report types
             except Exception as e:
-                logger.warning(f"{source} failed for {symbol} financials: {e}")
-                continue
+                logger.warning(f"{source_name} failed for {symbol} financials: {e}")
 
-        raise ValueError(f"All sources failed for {symbol} financials")
+        if results:
+            logger.info(
+                f"Fetched {len(results)} financial reports for {symbol} "
+                f"(types: {list(results.keys())})"
+            )
+        else:
+            raise ValueError(f"All sources failed for {symbol} financials")
+
+        return results
 
     async def _fetch_from_source(
-        self, symbol: str, source: str, period: str
+        self, symbol: str, source_name: str, module_path: str,
+        class_name: str, period: str
     ) -> dict[str, pd.DataFrame]:
-        """Fetch all 3 report types from a single source.
+        """Fetch report types independently from a single source.
 
-        Wraps synchronous vnstock calls in ``run_in_executor`` to avoid
-        blocking the async event loop.
-
-        Args:
-            symbol: Stock ticker.
-            source: Data source ('KBS' or 'VCI').
-            period: 'quarter' or 'year'.
+        Each report type is fetched in its own try/catch so partial
+        results are returned.
 
         Returns:
-            Dict of report type to DataFrame.
+            Dict of report type to DataFrame (may be partial).
         """
-
         def _sync_fetch():
-            client = Vnstock(source=source)
-            stock = client.stock(symbol=symbol, source=source)
-            fin = stock.finance
-            return {
-                "balance_sheet": fin.balance_sheet(period=period),
-                "income_statement": fin.income_statement(period=period),
-                "cash_flow": fin.cash_flow(period=period),
-            }
+            with suppress_vnstock_output():
+                mod = importlib.import_module(module_path)
+                FinanceClass = getattr(mod, class_name)
+                fin = FinanceClass(symbol)
+
+                results = {}
+                for rtype in self.REPORT_TYPES:
+                    try:
+                        method = getattr(fin, rtype)
+                        df = method(period=period)
+                        if df is not None and not df.empty:
+                            results[rtype] = df
+                    except Exception as e:
+                        logger.debug(
+                            f"{source_name} {rtype} failed for {symbol}: {e}"
+                        )
+                return results
 
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(None, _sync_fetch)

@@ -1,37 +1,35 @@
-"""OHLCV price crawler using vnstock v3.5.1 (per D-01)."""
+"""OHLCV price crawler using vnstock v3.5.1 (per D-01).
+
+Uses KBS source directly — VCI source broken (Company.__init__ crash).
+"""
 
 import asyncio
 from datetime import date, timedelta
 
 import pandas as pd
 from loguru import logger
-from vnstock import Vnstock
 
 from localstock.config import get_settings
+from localstock.crawlers import suppress_vnstock_output
 from localstock.crawlers.base import BaseCrawler
 
 
 class PriceCrawler(BaseCrawler):
     """Crawls OHLCV price data from vnstock Quote.history().
 
-    Uses VCI source by default (per D-01). Configurable via settings.
-    Implements incremental crawling: only fetches data after the latest
-    date already in the database.
+    Uses KBS source (VCI broken in v3.5.1). Implements incremental
+    crawling: only fetches data after the latest date already in DB.
 
-    The vnstock library is synchronous — all calls are wrapped in
-    ``run_in_executor`` to avoid blocking the async event loop.
+    All vnstock calls are synchronous — wrapped in ``run_in_executor``
+    to avoid blocking the async event loop.
     """
 
     def __init__(self, delay_seconds: float | None = None):
         settings = get_settings()
         super().__init__(delay_seconds=delay_seconds if delay_seconds is not None else settings.crawl_delay_seconds)
-        self.source: str = settings.vnstock_source  # 'VCI' or 'KBS'
 
     async def fetch(self, symbol: str, **kwargs) -> pd.DataFrame:
         """Fetch OHLCV data for a single symbol from vnstock.
-
-        Wraps synchronous vnstock call in ``run_in_executor`` (T-01-05
-        compliant — respects crawl delay between batch requests).
 
         Args:
             symbol: Stock ticker (e.g., ``'ACB'``).
@@ -39,7 +37,6 @@ class PriceCrawler(BaseCrawler):
         Keyword Args:
             start_date: ``YYYY-MM-DD`` string. Default: 2 years ago.
             end_date: ``YYYY-MM-DD`` string. Default: today.
-            source: Override default data source (``'VCI'`` or ``'KBS'``).
 
         Returns:
             DataFrame with columns: time, open, high, low, close, volume.
@@ -49,14 +46,12 @@ class PriceCrawler(BaseCrawler):
         """
         start = kwargs.get("start_date", self.get_backfill_start_date())
         end = kwargs.get("end_date", date.today().isoformat())
-        source = kwargs.get("source", self.source)
 
-        # vnstock is synchronous — run in thread pool to avoid blocking
         def _fetch_sync() -> pd.DataFrame:
-            client = Vnstock(source=source)
-            stock = client.stock(symbol=symbol, source=source)
-            df = stock.quote.history(start=start, end=end, interval="1D")
-            return df
+            with suppress_vnstock_output():
+                from vnstock.explorer.kbs.quote import Quote as KBSQuote
+                quote = KBSQuote(symbol)
+                return quote.history(start=start, end=end, interval="1D")
 
         loop = asyncio.get_event_loop()
         df = await loop.run_in_executor(None, _fetch_sync)
