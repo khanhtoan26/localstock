@@ -17,75 +17,76 @@ interface GlossaryMarkdownProps {
   content: string;
 }
 
-export function GlossaryMarkdown({ content }: GlossaryMarkdownProps) {
-  // Fresh linked IDs set per render — NOT useRef (useRef persists across
-  // React strict mode double-renders in dev, causing zero matches on the
-  // committed render)
+// Process ReactNode children, scanning text for glossary terms.
+// Each call creates a fresh linkedIds set to avoid React strict mode
+// and react-markdown internal memoization issues.
+function processChildren(children: ReactNode): ReactNode {
   const linkedIds = new Set<string>();
+  return processNode(children, linkedIds);
+}
 
-  function processChildren(children: ReactNode): ReactNode {
-    if (typeof children === "string") {
-      const segments: TextSegment[] = scanText(
-        children,
-        aliasMap,
-        linkedIds,
-      );
-      return segments.map((seg, i) =>
-        typeof seg === "string" ? (
-          seg
-        ) : (
-          <GlossaryTerm key={`${seg.entry.id}-${i}`} entry={seg.entry}>
-            {seg.matchedText}
-          </GlossaryTerm>
-        ),
-      );
-    }
-
-    if (Array.isArray(children)) {
-      return Children.map(children, (child) => {
-        if (typeof child === "string") {
-          return processChildren(child);
-        }
-        if (isValidElement(child)) {
-          const el = child as ReactElement<{ children?: ReactNode }>;
-          if (el.type === "code") {
-            return child;
-          }
-          return cloneElement(el, {
-            children: processChildren(el.props.children),
-          });
-        }
-        return child;
-      });
-    }
-
-    if (isValidElement(children)) {
-      const el = children as ReactElement<{ children?: ReactNode }>;
-      if (el.type === "code") {
-        return children;
-      }
-      return cloneElement(el, {
-        children: processChildren(el.props.children),
-      });
-    }
-
-    return children;
+function processNode(children: ReactNode, linkedIds: Set<string>): ReactNode {
+  if (typeof children === "string") {
+    const segments: TextSegment[] = scanText(children, aliasMap, linkedIds);
+    return segments.map((seg, i) =>
+      typeof seg === "string" ? (
+        seg
+      ) : (
+        <GlossaryTerm key={`${seg.entry.id}-${i}`} entry={seg.entry}>
+          {seg.matchedText}
+        </GlossaryTerm>
+      ),
+    );
   }
 
+  if (Array.isArray(children)) {
+    return Children.map(children, (child) => {
+      if (typeof child === "string") {
+        return processNode(child, linkedIds);
+      }
+      if (isValidElement(child)) {
+        const el = child as ReactElement<{ children?: ReactNode }>;
+        if (el.type === "code") return child;
+        return cloneElement(el, {
+          children: processNode(el.props.children, linkedIds),
+        });
+      }
+      return child;
+    });
+  }
+
+  if (isValidElement(children)) {
+    const el = children as ReactElement<{ children?: ReactNode }>;
+    if (el.type === "code") return children;
+    return cloneElement(el, {
+      children: processNode(el.props.children, linkedIds),
+    });
+  }
+
+  return children;
+}
+
+// Filter out react-markdown's `node` prop to avoid DOM attribute warnings
+function filterProps(props: Record<string, unknown>) {
+  const { node, ...domProps } = props;
+  return domProps;
+}
+
+export function GlossaryMarkdown({ content }: GlossaryMarkdownProps) {
   return (
     <Markdown
       components={{
         p: ({ children, ...props }) => (
-          <p {...props}>{processChildren(children)}</p>
+          <p {...filterProps(props)}>{processChildren(children)}</p>
         ),
         li: ({ children, ...props }) => (
-          <li {...props}>{processChildren(children)}</li>
+          <li {...filterProps(props)}>{processChildren(children)}</li>
         ),
         td: ({ children, ...props }) => (
-          <td {...props}>{processChildren(children)}</td>
+          <td {...filterProps(props)}>{processChildren(children)}</td>
         ),
         th: ({ children, ...props }) => (
-          <th {...props}>{processChildren(children)}</th>
+          <th {...filterProps(props)}>{processChildren(children)}</th>
         ),
       }}
     >
