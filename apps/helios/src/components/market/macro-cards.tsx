@@ -1,14 +1,8 @@
+"use client";
+import { useTranslations } from "next-intl";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { MacroIndicator } from "@/lib/types";
-
-/** Map indicator_type to Vietnamese label */
-const MACRO_LABELS: Record<string, string> = {
-  interest_rate: "Lãi Suất SBV",
-  exchange_rate_usd_vnd: "Tỷ Giá USD/VND",
-  cpi: "CPI",
-  gdp: "GDP",
-};
 
 /** Format indicator value based on type */
 function formatMacroValue(type: string, value: number): string {
@@ -24,7 +18,7 @@ interface MacroCardsProps {
 }
 
 export function MacroCards({ indicators, isLoading }: MacroCardsProps) {
-  // Order: interest_rate, exchange_rate, cpi, gdp
+  const t = useTranslations("market.macroLabels");
   const orderedTypes = ["interest_rate", "exchange_rate_usd_vnd", "cpi", "gdp"];
 
   if (isLoading) {
@@ -42,7 +36,6 @@ export function MacroCards({ indicators, isLoading }: MacroCardsProps) {
     );
   }
 
-  // Build lookup from indicators array
   const lookup = new Map(indicators.map((ind) => [ind.indicator_type, ind]));
 
   return (
@@ -53,7 +46,7 @@ export function MacroCards({ indicators, isLoading }: MacroCardsProps) {
           <Card key={type} className="border border-border">
             <CardContent className="p-4">
               <p className="text-xs text-muted-foreground">
-                {MACRO_LABELS[type] || type}
+                {t(type as "interest_rate" | "exchange_rate_usd_vnd" | "cpi" | "gdp")}
               </p>
               <p className="text-xl font-semibold font-mono text-foreground mt-1">
                 {ind ? formatMacroValue(type, ind.value) : "—"}

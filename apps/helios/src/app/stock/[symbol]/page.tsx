@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { ArrowLeft, TrendingUp, TrendingDown } from "lucide-react";
@@ -39,6 +40,8 @@ export default function StockDetailPage() {
   const params = useParams();
   const symbol = (params.symbol as string)?.toUpperCase() || "";
   const [days, setDays] = useState(365);
+  const t = useTranslations("stock");
+  const td = useTranslations("stock.dimensions");
 
   const scoreQuery = useStockScore(symbol);
   const reportQuery = useStockReport(symbol);
@@ -63,7 +66,7 @@ export default function StockDetailPage() {
           className="text-muted-foreground hover:text-foreground text-sm flex items-center gap-1 w-fit"
         >
           <ArrowLeft className="h-4 w-4" />
-          Quay lại
+          {t("back")}
         </Link>
 
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -104,7 +107,7 @@ export default function StockDetailPage() {
                 </span>
               )}
               <span className="text-xs text-muted-foreground">
-                KL: {formatVolume(latest.volume)}
+                {t("volume")}: {formatVolume(latest.volume)}
               </span>
             </div>
           )}
@@ -114,25 +117,25 @@ export default function StockDetailPage() {
         {scoreQuery.data && (
           <div className="flex gap-4 text-xs text-muted-foreground">
             <span>
-              KT:{" "}
+              {td("technical")}:{" "}
               <strong className="text-foreground">
                 {formatScore(scoreQuery.data.technical_score)}
               </strong>
             </span>
             <span>
-              CB:{" "}
+              {td("fundamental")}:{" "}
               <strong className="text-foreground">
                 {formatScore(scoreQuery.data.fundamental_score)}
               </strong>
             </span>
             <span>
-              TT:{" "}
+              {td("sentiment")}:{" "}
               <strong className="text-foreground">
                 {formatScore(scoreQuery.data.sentiment_score)}
               </strong>
             </span>
             <span>
-              VM:{" "}
+              {td("macro")}:{" "}
               <strong className="text-foreground">
                 {formatScore(scoreQuery.data.macro_score)}
               </strong>
@@ -144,16 +147,16 @@ export default function StockDetailPage() {
       {/* ─── Chart Section (full width) ─── */}
       <Card>
         <CardHeader className="flex-row items-center justify-between">
-          <CardTitle>Biểu đồ giá</CardTitle>
+          <CardTitle>{t("priceChart")}</CardTitle>
           <TimeframeSelector selectedDays={days} onChange={setDays} />
         </CardHeader>
         <CardContent>
           {priceQuery.isLoading ? (
             <Skeleton className="h-[400px] w-full" />
           ) : priceQuery.isError ? (
-            <ErrorState body="Không thể tải dữ liệu giá." />
+            <ErrorState body={t("data.priceError")} />
           ) : !prices || prices.length === 0 ? (
-            <EmptyState body="Chưa có dữ liệu giá." />
+            <EmptyState body={t("data.noPrice")} />
           ) : (
             <PriceChart
               prices={prices}
@@ -192,7 +195,7 @@ export default function StockDetailPage() {
         {/* Score breakdown */}
         <Card>
           <CardHeader>
-            <CardTitle>Phân tích điểm</CardTitle>
+            <CardTitle>{t("scoreAnalysis")}</CardTitle>
           </CardHeader>
           <CardContent>
             {scoreQuery.isLoading ? (
@@ -200,7 +203,7 @@ export default function StockDetailPage() {
             ) : scoreQuery.data ? (
               <ScoreBreakdown score={scoreQuery.data} />
             ) : (
-              <EmptyState body="Chưa có dữ liệu điểm." />
+              <EmptyState body={t("data.noScore")} />
             )}
           </CardContent>
         </Card>
@@ -208,7 +211,7 @@ export default function StockDetailPage() {
         {/* AI Report */}
         <Card>
           <CardHeader>
-            <CardTitle>Báo cáo AI</CardTitle>
+            <CardTitle>{t("aiReport")}</CardTitle>
           </CardHeader>
           <CardContent>
             <AIReportPanel

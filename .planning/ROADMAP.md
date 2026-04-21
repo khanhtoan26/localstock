@@ -4,6 +4,7 @@
 
 - ✅ **v1.0 MVP** — Phases 1-6 (shipped 2026-04-16) — [Archive](milestones/v1.0-ROADMAP.md)
 - ✅ **v1.1 UX Polish & Educational Depth** — Phases 7-10 (shipped 2026-04-21) — [Archive](milestones/v1.1-ROADMAP.md)
+- 🚧 **v1.2 Admin Console** — Phases 11-13 (in progress)
 
 ## Phases
 
@@ -19,73 +20,62 @@
 
 </details>
 
-### 🚧 v1.1 UX Polish & Educational Depth
+<details>
+<summary>✅ v1.1 UX Polish & Educational Depth (Phases 7-10) — SHIPPED 2026-04-21</summary>
 
-- [x] **Phase 7: Theme Foundation & Visual Identity** - Warm-light default theme + dark toggle, FOUC-free switching, chart re-theming, WCAG-passing financial tokens
-- [x] **Phase 8: Stock Page Reading-First Redesign** - AI report full-width center scroll, right drawer for charts/data on demand, structured Markdown rendering
-- [x] **Phase 9: Academic/Learning Page & Glossary Data** - Educational pages for technical/fundamental/macro concepts, typed glossary data module, diacritic-insensitive search
-- [x] **Phase 10: Interactive Glossary Linking** - Auto-link terms in AI reports to definitions, hover card previews, deep-link navigation to learn pages
+- [x] Phase 7: Theme Foundation & Visual Identity (4/4 plans) — completed 2026-04-20
+- [x] Phase 8: Stock Page Reading-First Redesign (merged into Phase 7) — completed 2026-04-20
+- [x] Phase 9: Academic/Learning Page & Glossary Data (2/2 plans) — completed 2026-04-20
+- [x] Phase 10: Interactive Glossary Linking (2/2 plans) — completed 2026-04-21
+
+</details>
+
+### 🚧 v1.2 Admin Console
+
+- [ ] **Phase 11: Admin API Endpoints** - Backend routes for stock management, pipeline control, job history
+- [ ] **Phase 12: Admin Console UI** - Admin page with stock management, pipeline trigger, job monitoring
+- [ ] **Phase 13: AI Report Generation UI** - Generate AI reports for specific stocks from the admin console
 
 ## Phase Details
 
-### Phase 7: Theme Foundation & Visual Identity
-**Goal**: Users experience a warm, professional visual identity with persistent theme choice
-**Depends on**: Phase 6 (existing dashboard)
-**Requirements**: THEME-01, THEME-02, THEME-03, THEME-04, THEME-05
+### Phase 11: Admin API Endpoints
+**Goal**: Backend exposes REST endpoints for admin operations (stock CRUD, pipeline trigger, job status)
+**Depends on**: Phase 5 (automation service), Phase 1 (pipeline)
+**Requirements**: ADMIN-01, ADMIN-02, ADMIN-03, ADMIN-04
 **Success Criteria** (what must be TRUE):
-  1. App loads with warm-light cream+orange theme by default — no dark flash on first visit
-  2. User can toggle between warm-light and dark themes via a visible control, and preference persists across browser sessions
-  3. Charts (candlestick, volume, indicators) automatically update their colors when theme changes — no page reload needed
-  4. Financial color indicators (grade badges, stock up/down) remain clearly legible on both theme backgrounds
-**Plans:** 4 plans
-Plans:
-- [x] 07-01-PLAN.md — Theme infrastructure + warm palette + color fixes (THEME-01, THEME-02, THEME-03, THEME-05)
-- [x] 07-02-PLAN.md — Chart theme integration + visual verification (THEME-04)
-- [x] 07-03-PLAN.md — Dependencies + AI report panel + score breakdown components (STOCK-02)
-- [x] 07-04-PLAN.md — Stock page side-by-side layout + tabbed data panel (STOCK-01, STOCK-02)
-**UI hint**: yes
+  1. POST /api/admin/stocks — add a stock symbol to the watch list
+  2. DELETE /api/admin/stocks/{symbol} — remove a stock from the watch list
+  3. POST /api/admin/crawl — trigger crawl for 1 or more symbols (returns job ID)
+  4. POST /api/admin/analyze — trigger analysis + scoring for 1 or more symbols
+  5. POST /api/admin/pipeline — trigger full daily pipeline
+  6. POST /api/admin/report — generate AI report for a specific symbol
+  7. GET /api/admin/jobs — list recent pipeline/job history with status
+  8. GET /api/admin/jobs/{id} — get detailed job status + errors
+**Plans**: TBD
+**UI hint**: no
 
-### Phase 8: Stock Page Reading-First Redesign
-**Goal**: Users read AI analysis as the primary stock page experience, with charts and data available on demand
-**Depends on**: Phase 7
-**Requirements**: STOCK-01, STOCK-02, STOCK-03, STOCK-04, STOCK-05
+### Phase 12: Admin Console UI
+**Goal**: Users can manage stocks, trigger pipeline operations, and monitor jobs from a web UI
+**Depends on**: Phase 11
+**Requirements**: ADMIN-05, ADMIN-06, ADMIN-07
 **Success Criteria** (what must be TRUE):
-  1. Stock page opens with AI report as full-width center content — charts and raw data are not visible by default
-  2. AI report renders structured sections (headers, paragraphs, tables, lists) with proper typography — not raw text or JSON dump
-  3. User can open a right-side drawer with Chart and Raw Data tabs to view supplementary data
-  4. Opening and closing the drawer preserves the user's scroll position in the main report
-  5. Drawer state is reflected in URL search params — shareable links preserve drawer tab, browser back closes drawer
+  1. /admin page accessible from sidebar navigation
+  2. Stock Management section: table of tracked stocks with add/remove buttons
+  3. Pipeline Control section: buttons to trigger crawl, analyze, full pipeline for selected stocks
+  4. Job Monitor section: table of recent jobs with status (running/completed/failed), duration, errors
+  5. Real-time job status updates (polling or SSE)
 **Plans**: TBD
 **UI hint**: yes
 
-### Phase 9: Academic/Learning Page & Glossary Data
-**Goal**: Users can browse and search educational content explaining the financial indicators used in AI reports
-**Depends on**: Phase 7
-**Requirements**: LEARN-01, LEARN-02, LEARN-03, LEARN-04
+### Phase 13: AI Report Generation UI
+**Goal**: Users can generate and preview AI reports for any tracked stock from the admin console
+**Depends on**: Phase 12
+**Requirements**: ADMIN-08
 **Success Criteria** (what must be TRUE):
-  1. User can navigate to /learn and browse entries across three categories: Technical Indicators, Fundamental Ratios, and Macro Concepts
-  2. Each category has its own URL (/learn/technical, /learn/fundamental, /learn/macro) loading as a dedicated page
-  3. Glossary data module contains ≥15 typed entries serving as the single source of truth for learn pages and glossary linking
-  4. User can search and filter entries with Vietnamese diacritic-insensitive matching (e.g., typing "chi so" finds "chỉ số")
-**Plans:** 2 plans
-Plans:
-- [x] 09-01-PLAN.md — Glossary data module (25 typed entries + helpers) & sidebar navigation
-- [x] 09-02-PLAN.md — Learn hub page, category pages, search & expandable entry components
-**UI hint**: yes
-
-### Phase 10: Interactive Glossary Linking
-**Goal**: Users can discover term definitions inline while reading AI reports, bridging analysis and education
-**Depends on**: Phase 8, Phase 9
-**Requirements**: GLOSS-01, GLOSS-02, GLOSS-03, GLOSS-04
-**Success Criteria** (what must be TRUE):
-  1. Known glossary terms in AI report text are automatically highlighted as interactive links — visually distinct from regular text
-  2. Hovering a linked term shows a preview card with the short definition and a link to the full learn page
-  3. Clicking through from a hover card navigates to /learn/[category]#[term] with the entry scrolled into view
-  4. Multiple surface forms of the same term (e.g., "RSI", "chỉ số RSI", "Relative Strength Index") all resolve to the same glossary entry
-**Plans:** 2/2 plans executed
-Plans:
-- [x] 10-01-PLAN.md — Glossary text scanner & interactive components (GLOSS-01, GLOSS-02, GLOSS-03, GLOSS-04)
-- [x] 10-02-PLAN.md — Wire into AI report panel & visual verification (GLOSS-01, GLOSS-03)
+  1. Generate Report button available per stock in admin console
+  2. Report generation shows progress indicator while LLM is processing
+  3. Generated report is immediately visible in the stock detail page
+**Plans**: TBD
 **UI hint**: yes
 
 ## Progress
@@ -102,3 +92,6 @@ Plans:
 | 8. Stock Page Reading-First Redesign | v1.1 | - | Complete (merged into Phase 7) | 2026-04-20 |
 | 9. Academic/Learning Page & Glossary Data | v1.1 | 2/2 | Complete | 2026-04-20 |
 | 10. Interactive Glossary Linking | v1.1 | 2/2 | Complete | 2026-04-21 |
+| 11. Admin API Endpoints | v1.2 | 0/0 | Not started | - |
+| 12. Admin Console UI | v1.2 | 0/0 | Not started | - |
+| 13. AI Report Generation UI | v1.2 | 0/0 | Not started | - |

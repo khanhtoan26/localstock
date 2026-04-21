@@ -1,5 +1,6 @@
 "use client";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   Table,
   TableBody,
@@ -22,6 +23,7 @@ interface StockTableProps {
 
 export function StockTable({ data }: StockTableProps) {
   const router = useRouter();
+  const t = useTranslations("rankings.columns");
   const [sortKey, setSortKey] = useState<SortKey>("total_score");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
 
@@ -46,14 +48,14 @@ export function StockTable({ data }: StockTableProps) {
     sortKey === key ? (sortDir === "asc" ? " ↑" : " ↓") : "";
 
   const columns: { key: SortKey; header: string; width: string }[] = [
-    { key: "rank", header: "#", width: "w-[50px]" },
-    { key: "symbol", header: "Mã CK", width: "w-[80px]" },
-    { key: "total_score", header: "Điểm", width: "w-[70px]" },
-    { key: "grade", header: "Hạng", width: "w-[60px]" },
-    { key: "technical_score", header: "Kỹ Thuật", width: "w-[80px]" },
-    { key: "fundamental_score", header: "Cơ Bản", width: "w-[80px]" },
-    { key: "sentiment_score", header: "Tin Tức", width: "w-[80px]" },
-    { key: "macro_score", header: "Vĩ Mô", width: "w-[80px]" },
+    { key: "rank", header: t("rank"), width: "w-[50px]" },
+    { key: "symbol", header: t("symbol"), width: "w-[80px]" },
+    { key: "total_score", header: t("score"), width: "w-[70px]" },
+    { key: "grade", header: t("grade"), width: "w-[60px]" },
+    { key: "technical_score", header: t("technical"), width: "w-[80px]" },
+    { key: "fundamental_score", header: t("fundamental"), width: "w-[80px]" },
+    { key: "sentiment_score", header: t("sentiment"), width: "w-[80px]" },
+    { key: "macro_score", header: t("macro"), width: "w-[80px]" },
   ];
 
   return (

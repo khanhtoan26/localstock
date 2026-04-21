@@ -1,17 +1,20 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { BarChart3, Globe, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const navItems = [
-  { href: "/rankings", label: "Xếp Hạng", icon: BarChart3 },
-  { href: "/market", label: "Thị Trường", icon: Globe },
-  { href: "/learn", label: "Học", icon: BookOpen },
-];
-
 export function Sidebar() {
   const pathname = usePathname();
+  const t = useTranslations("nav");
+
+  const navItems = [
+    { href: "/rankings", label: t("rankings"), icon: BarChart3 },
+    { href: "/market", label: t("market"), icon: Globe },
+    { href: "/learn", label: t("learn"), icon: BookOpen },
+  ];
+
   return (
     <aside className="fixed left-0 top-0 h-screen w-60 border-r border-border bg-card flex flex-col">
       <div className="p-4 border-b border-border">

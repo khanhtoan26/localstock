@@ -1,3 +1,5 @@
+"use client";
+import { useTranslations } from "next-intl";
 import {
   Table,
   TableBody,
@@ -24,14 +26,16 @@ interface SectorTableProps {
 }
 
 export function SectorTable({ sectors }: SectorTableProps) {
+  const t = useTranslations("market.sectorColumns");
+
   return (
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead className="text-xs">Ngành</TableHead>
-          <TableHead className="text-xs w-[80px]">Điểm TB</TableHead>
-          <TableHead className="text-xs w-[60px]">Số Mã</TableHead>
-          <TableHead className="text-xs w-[60px]">Hạng</TableHead>
+          <TableHead className="text-xs">{t("sector")}</TableHead>
+          <TableHead className="text-xs w-[80px]">{t("avgScore")}</TableHead>
+          <TableHead className="text-xs w-[60px]">{t("stockCount")}</TableHead>
+          <TableHead className="text-xs w-[60px]">{t("grade")}</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { GlossaryMarkdown } from "@/components/glossary/glossary-markdown";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { StockReport } from "@/lib/types";
@@ -11,6 +12,8 @@ interface AIReportPanelProps {
 }
 
 export function AIReportPanel({ report, isLoading, isError }: AIReportPanelProps) {
+  const t = useTranslations("stock.report");
+
   if (isLoading) {
     return (
       <div className="space-y-3">
@@ -27,7 +30,7 @@ export function AIReportPanel({ report, isLoading, isError }: AIReportPanelProps
   if (isError || !report) {
     return (
       <p className="text-sm text-muted-foreground">
-        Chưa có báo cáo — chạy pipeline để tạo báo cáo AI.
+        {t("noReport")}
       </p>
     );
   }
@@ -54,7 +57,7 @@ export function AIReportPanel({ report, isLoading, isError }: AIReportPanelProps
     </div>
   ) : (
     <p className="text-sm text-muted-foreground">
-      Báo cáo không có nội dung.
+      {t("emptyContent")}
     </p>
   );
 }

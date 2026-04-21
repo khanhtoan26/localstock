@@ -1,36 +1,36 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.1
-milestone_name: UX Polish & Educational Depth
-status: complete
-stopped_at: v1.1 milestone shipped
-last_updated: "2026-04-21T17:30:00Z"
-last_activity: 2026-04-21 -- v1.1 milestone complete, all phases done
+milestone: v1.2
+milestone_name: Admin Console
+status: planning
+stopped_at: Milestone kickoff
+last_updated: "2026-04-21T17:35:00Z"
+last_activity: 2026-04-21 -- v1.2 milestone created with 3 phases
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 8
-  completed_plans: 8
-  percent: 100
+  total_phases: 3
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-17)
+See: .planning/PROJECT.md (updated 2026-04-21)
 
 **Core value:** Agent tự động phân tích và xếp hạng cổ phiếu HOSE — cho tôi danh sách gợi ý đáng mua kèm lý do rõ ràng, cập nhật hàng ngày, không tốn phí API.
-**Current focus:** v1.1 milestone COMPLETE — ready for v1.2
+**Current focus:** v1.2 Admin Console — quản trị từ UI thay vì CLI
 
 ## Current Position
 
-Phase: All complete
-Plan: All done
-Status: v1.1 shipped
-Last activity: 2026-04-21 -- All phases done, vnstock fixes applied
+Phase: 11 (admin-api-endpoints) — Not started
+Plan: TBD
+Status: Planning
+Last activity: 2026-04-21 -- v1.2 milestone created
 
-Progress: [██████████] 100%
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 

@@ -1,5 +1,6 @@
 "use client";
 import { useTopScores, useTriggerPipeline } from "@/lib/queries";
+import { useTranslations } from "next-intl";
 import { StockTable } from "@/components/rankings/stock-table";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
@@ -8,11 +9,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function RankingsPage() {
   const { data, isLoading, isError } = useTopScores(50);
   const triggerPipeline = useTriggerPipeline();
+  const t = useTranslations("rankings");
+  const tc = useTranslations("common");
 
   if (isLoading) {
     return (
       <div>
-        <h1 className="text-xl font-semibold mb-6">Xếp Hạng Cổ Phiếu</h1>
+        <h1 className="text-xl font-semibold mb-6">{t("title")}</h1>
         <div className="space-y-3">
           {Array.from({ length: 8 }).map((_, i) => (
             <Skeleton key={i} className="h-10 w-full" />
@@ -25,7 +28,7 @@ export default function RankingsPage() {
   if (isError) {
     return (
       <div>
-        <h1 className="text-xl font-semibold mb-6">Xếp Hạng Cổ Phiếu</h1>
+        <h1 className="text-xl font-semibold mb-6">{t("title")}</h1>
         <ErrorState />
       </div>
     );
@@ -34,10 +37,10 @@ export default function RankingsPage() {
   if (!data || data.count === 0) {
     return (
       <div>
-        <h1 className="text-xl font-semibold mb-6">Xếp Hạng Cổ Phiếu</h1>
+        <h1 className="text-xl font-semibold mb-6">{t("title")}</h1>
         <EmptyState
-          body="Chưa có kết quả xếp hạng. Chạy pipeline phân tích để bắt đầu."
-          ctaLabel="Chạy Pipeline"
+          body={t("emptyBody")}
+          ctaLabel={tc("runPipeline")}
           onCtaClick={() => triggerPipeline.mutate()}
         />
       </div>
@@ -46,7 +49,7 @@ export default function RankingsPage() {
 
   return (
     <div>
-      <h1 className="text-xl font-semibold mb-6">Xếp Hạng Cổ Phiếu</h1>
+      <h1 className="text-xl font-semibold mb-6">{t("title")}</h1>
       <StockTable data={data.stocks} />
     </div>
   );

@@ -1,0 +1,132 @@
+{
+  "metadata": {
+    "title": "LocalStock — AI Stock Agent",
+    "description": "AI Stock Agent cho Thị Trường Việt Nam (HOSE)"
+  },
+  "app": {
+    "tagline": "AI Stock Agent"
+  },
+  "nav": {
+    "rankings": "Xếp Hạng",
+    "market": "Thị Trường",
+    "learn": "Học"
+  },
+  "language": {
+    "switchLabel": "Chuyển ngôn ngữ"
+  },
+  "theme": {
+    "switchToLight": "Chuyển sang giao diện sáng",
+    "switchToDark": "Chuyển sang giao diện tối"
+  },
+  "common": {
+    "noData": "Chưa có dữ liệu",
+    "loadError": "Không thể tải dữ liệu",
+    "connectionError": "Lỗi kết nối đến backend. Kiểm tra server đang chạy tại localhost:8000.",
+    "runPipeline": "Chạy Pipeline",
+    "back": "Quay lại"
+  },
+  "rankings": {
+    "title": "Xếp Hạng Cổ Phiếu",
+    "emptyBody": "Chưa có kết quả xếp hạng. Chạy pipeline phân tích để bắt đầu.",
+    "columns": {
+      "rank": "#",
+      "symbol": "Mã CK",
+      "score": "Điểm",
+      "grade": "Hạng",
+      "technical": "Kỹ Thuật",
+      "fundamental": "Cơ Bản",
+      "sentiment": "Tin Tức",
+      "macro": "Vĩ Mô"
+    }
+  },
+  "market": {
+    "title": "Tổng Quan Thị Trường",
+    "macroTitle": "Chỉ Số Vĩ Mô",
+    "sectorTitle": "Hiệu Suất Ngành",
+    "macroError": "Không thể tải dữ liệu vĩ mô.",
+    "sectorError": "Không thể tải dữ liệu ngành.",
+    "emptyBody": "Chưa có dữ liệu vĩ mô. Chạy pipeline để thu thập dữ liệu thị trường.",
+    "macroLabels": {
+      "interest_rate": "Lãi Suất SBV",
+      "exchange_rate_usd_vnd": "Tỷ Giá USD/VND",
+      "cpi": "CPI",
+      "gdp": "GDP"
+    },
+    "sectorColumns": {
+      "sector": "Ngành",
+      "avgScore": "Điểm TB",
+      "stockCount": "Số Mã",
+      "grade": "Hạng"
+    }
+  },
+  "stock": {
+    "back": "Quay lại",
+    "priceChart": "Biểu đồ giá",
+    "scoreAnalysis": "Phân tích điểm",
+    "aiReport": "Báo cáo AI",
+    "volume": "KL",
+    "dimensions": {
+      "technical": "KT",
+      "fundamental": "CB",
+      "sentiment": "TT",
+      "macro": "VM"
+    },
+    "tabs": {
+      "chart": "Biểu đồ",
+      "indicators": "Chỉ số",
+      "score": "Điểm số"
+    },
+    "accordion": {
+      "chart": "Biểu đồ",
+      "indicators": "Chỉ số kỹ thuật",
+      "score": "Điểm số"
+    },
+    "report": {
+      "noReport": "Chưa có báo cáo — chạy pipeline để tạo báo cáo AI.",
+      "emptyContent": "Báo cáo không có nội dung."
+    },
+    "data": {
+      "priceError": "Không thể tải dữ liệu giá.",
+      "noPrice": "Chưa có dữ liệu giá.",
+      "noIndicators": "Chưa có dữ liệu chỉ số kỹ thuật.",
+      "noScore": "Chưa có dữ liệu điểm."
+    },
+    "score": {
+      "technical": "Kỹ Thuật",
+      "fundamental": "Cơ Bản",
+      "sentiment": "Tin Tức",
+      "macro": "Vĩ Mô"
+    }
+  },
+  "timeframe": {
+    "1m": "1T",
+    "3m": "3T",
+    "6m": "6T",
+    "1y": "1N",
+    "2y": "2N"
+  },
+  "learn": {
+    "title": "Học — Kiến Thức Đầu Tư",
+    "subtitle": "Tìm hiểu các chỉ báo kỹ thuật, tỷ số cơ bản và yếu tố vĩ mô được sử dụng trong phân tích AI",
+    "searchPlaceholder": "Tìm kiếm thuật ngữ...",
+    "entries": "mục",
+    "noResults": "Không tìm thấy kết quả.",
+    "categories": {
+      "technical": {
+        "title": "Chỉ Báo Kỹ Thuật",
+        "titleEn": "Technical Indicators",
+        "desc": "Các chỉ báo phân tích xu hướng và động lượng giá cổ phiếu"
+      },
+      "fundamental": {
+        "title": "Tỷ Số Cơ Bản",
+        "titleEn": "Fundamental Ratios",
+        "desc": "Các chỉ số đánh giá sức khỏe tài chính và định giá doanh nghiệp"
+      },
+      "macro": {
+        "title": "Yếu Tố Vĩ Mô",
+        "titleEn": "Macro Concepts",
+        "desc": "Các chỉ số kinh tế vĩ mô ảnh hưởng đến thị trường chứng khoán"
+      }
+    }
+  }
+}

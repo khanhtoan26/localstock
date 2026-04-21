@@ -1,0 +1,132 @@
+{
+  "metadata": {
+    "title": "LocalStock — AI Stock Agent",
+    "description": "AI Stock Agent for Vietnamese Market (HOSE)"
+  },
+  "app": {
+    "tagline": "AI Stock Agent"
+  },
+  "nav": {
+    "rankings": "Rankings",
+    "market": "Market",
+    "learn": "Learn"
+  },
+  "language": {
+    "switchLabel": "Switch language"
+  },
+  "theme": {
+    "switchToLight": "Switch to light theme",
+    "switchToDark": "Switch to dark theme"
+  },
+  "common": {
+    "noData": "No data available",
+    "loadError": "Unable to load data",
+    "connectionError": "Backend connection error. Check that server is running at localhost:8000.",
+    "runPipeline": "Run Pipeline",
+    "back": "Back"
+  },
+  "rankings": {
+    "title": "Stock Rankings",
+    "emptyBody": "No ranking results yet. Run the analysis pipeline to get started.",
+    "columns": {
+      "rank": "#",
+      "symbol": "Symbol",
+      "score": "Score",
+      "grade": "Grade",
+      "technical": "Technical",
+      "fundamental": "Fundamental",
+      "sentiment": "Sentiment",
+      "macro": "Macro"
+    }
+  },
+  "market": {
+    "title": "Market Overview",
+    "macroTitle": "Macro Indicators",
+    "sectorTitle": "Sector Performance",
+    "macroError": "Unable to load macro data.",
+    "sectorError": "Unable to load sector data.",
+    "emptyBody": "No macro data available. Run pipeline to collect market data.",
+    "macroLabels": {
+      "interest_rate": "SBV Interest Rate",
+      "exchange_rate_usd_vnd": "USD/VND Exchange Rate",
+      "cpi": "CPI",
+      "gdp": "GDP"
+    },
+    "sectorColumns": {
+      "sector": "Sector",
+      "avgScore": "Avg Score",
+      "stockCount": "Stocks",
+      "grade": "Grade"
+    }
+  },
+  "stock": {
+    "back": "Back",
+    "priceChart": "Price Chart",
+    "scoreAnalysis": "Score Analysis",
+    "aiReport": "AI Report",
+    "volume": "Vol",
+    "dimensions": {
+      "technical": "TA",
+      "fundamental": "FA",
+      "sentiment": "ST",
+      "macro": "MA"
+    },
+    "tabs": {
+      "chart": "Chart",
+      "indicators": "Indicators",
+      "score": "Score"
+    },
+    "accordion": {
+      "chart": "Chart",
+      "indicators": "Technical Indicators",
+      "score": "Score"
+    },
+    "report": {
+      "noReport": "No report available — run pipeline to generate AI report.",
+      "emptyContent": "Report has no content."
+    },
+    "data": {
+      "priceError": "Unable to load price data.",
+      "noPrice": "No price data available.",
+      "noIndicators": "No technical indicator data available.",
+      "noScore": "No score data available."
+    },
+    "score": {
+      "technical": "Technical",
+      "fundamental": "Fundamental",
+      "sentiment": "Sentiment",
+      "macro": "Macro"
+    }
+  },
+  "timeframe": {
+    "1m": "1M",
+    "3m": "3M",
+    "6m": "6M",
+    "1y": "1Y",
+    "2y": "2Y"
+  },
+  "learn": {
+    "title": "Learn — Investment Knowledge",
+    "subtitle": "Explore technical indicators, fundamental ratios, and macro factors used in AI analysis",
+    "searchPlaceholder": "Search terms...",
+    "entries": "entries",
+    "noResults": "No results found.",
+    "categories": {
+      "technical": {
+        "title": "Technical Indicators",
+        "titleEn": "Technical Indicators",
+        "desc": "Indicators for analyzing stock price trends and momentum"
+      },
+      "fundamental": {
+        "title": "Fundamental Ratios",
+        "titleEn": "Fundamental Ratios",
+        "desc": "Ratios for evaluating financial health and business valuation"
+      },
+      "macro": {
+        "title": "Macro Factors",
+        "titleEn": "Macro Concepts",
+        "desc": "Macroeconomic indicators affecting the stock market"
+      }
+    }
+  }
+}

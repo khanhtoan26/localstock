@@ -8,17 +8,21 @@ LocalStock là một AI Stock Agent cá nhân cho thị trường chứng khoán
 
 Agent tự động phân tích và xếp hạng cổ phiếu HOSE — cho tôi danh sách gợi ý đáng mua kèm lý do rõ ràng, cập nhật hàng ngày, không tốn phí API.
 
-## Current Milestone: v1.1 UX Polish & Educational Depth
+## Current Milestone: v1.2 Admin Console
 
-**Goal:** Tinh chỉnh UX để đặt insight AI làm trung tâm, thêm theme ấm (Claude-style) và nội dung học thuật giải thích chỉ số — không thêm chức năng data/analysis mới.
+**Goal:** Trang quản trị (admin console) để quản lý mã cổ phiếu, chạy crawl/phân tích/scoring/report từ UI — thay thế CLI scripts.
 
 **Target features:**
 
-- Theme system với Claude warm-light (cream + orange) làm default, dark theme giữ lại dưới dạng toggle, preference persist
-- Stock page redesign: center scroll là AI report full-width, right drawer mở chart / raw data / news khi cần
-- Trang Học thuật (Academic/Learning) giải thích technical indicators, fundamental ratios, macro concepts, với interactive linking từ stock report → định nghĩa
+- Admin Console page (/admin) với các chức năng quản trị
+- Quản lý danh sách mã cổ phiếu theo dõi (thêm/xóa mã từ UI)
+- Chạy crawl dữ liệu (giá, tài chính, tin tức) cho 1 hoặc nhiều mã
+- Chạy phân tích kỹ thuật + scoring cho 1 mã hoặc batch
+- Trigger daily pipeline từ UI
+- Generate AI report cho mã cụ thể
+- Dashboard trạng thái: pipeline status, job history, errors
 
-**Triết lý:** Service tập trung vào **insight & góc nhìn**, không phải bảng điện truyền thống — AI report là trang chủ của mỗi mã, data is secondary.
+**Triết lý:** Tự động hóa hoàn toàn — người dùng không cần mở terminal để vận hành hệ thống.
 
 ## Requirements
 
@@ -40,9 +44,13 @@ Agent tự động phân tích và xếp hạng cổ phiếu HOSE — cho tôi d
 ### Active
 
 - ✓ Theme system: Claude warm-light (cream + orange) default + dark toggle, preference persist — Validated in Phase 7
-- [ ] Stock page redesign: center AI report + right-drawer data-on-demand — v1.1
-- [ ] Academic/Learning page: giải thích technical indicators, fundamental ratios, macro concepts — v1.1
-- [ ] Interactive glossary linking từ chỉ số trong AI report → định nghĩa — v1.1
+- ✓ Stock page redesign: AI report + score breakdown + chart components — Validated in Phase 7
+- ✓ Academic/Learning page: giải thích technical indicators, fundamental ratios, macro concepts — Validated in Phase 9
+- ✓ Interactive glossary linking từ chỉ số trong AI report → định nghĩa — Validated in Phase 10
+- [ ] Admin Console: trang quản trị để quản lý mã, chạy crawl/analysis/report từ UI — v1.2
+- [ ] Stock management: thêm/xóa mã cổ phiếu theo dõi từ web UI — v1.2
+- [ ] Pipeline control: trigger crawl/analysis/scoring/report từ UI — v1.2
+- [ ] Job monitoring: xem trạng thái pipeline, lịch sử chạy, errors — v1.2
 
 ### Out of Scope
 
@@ -56,14 +64,14 @@ Agent tự động phân tích và xếp hạng cổ phiếu HOSE — cho tôi d
 
 ## Context
 
-- **Current version:** v1.0 MVP shipped 2026-04-16
+- **Current version:** v1.1 shipped 2026-04-21
 - **Codebase:** ~8,500 LOC Python (backend) + ~41,200 LOC TypeScript (frontend) + ~4,100 LOC CSS
 - **Backend:** Python + FastAPI + SQLAlchemy + Alembic + PostgreSQL (Supabase)
 - **Frontend:** Next.js 16 + shadcn/ui + Tailwind v4 + lightweight-charts v5
 - **AI:** Ollama local LLM (RTX 3060, 12GB VRAM) for sentiment analysis and report generation
 - **Notifications:** Telegram bot via python-telegram-bot
 - **Automation:** APScheduler daily pipeline after market close (15:30)
-- **Tests:** 326 backend unit tests passing
+- **Tests:** 324 backend unit tests + 28 E2E Playwright tests passing
 - **Thị trường mục tiêu:** Sàn HOSE (~400 mã có thanh khoản cao)
 
 ## Constraints
@@ -106,4 +114,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-17 after milestone v1.1 kickoff*
+*Last updated: 2026-04-21 after milestone v1.2 kickoff*
