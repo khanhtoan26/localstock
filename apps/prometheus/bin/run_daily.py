@@ -43,7 +43,7 @@ async def main(skip_reports: bool = False) -> None:
         logger.info("Step 2/6: Running analysis...")
         analysis = AnalysisService(session)
         anal_result = await analysis.run_full()
-        print(f"✅ Analysis: {anal_result.get('analyzed', 0)} stocks")
+        print(f"✅ Analysis: {anal_result.get('technical_success', 0)} stocks")
 
     async with factory() as session:
         logger.info("Step 3/6: Crawling news...")
@@ -61,7 +61,7 @@ async def main(skip_reports: bool = False) -> None:
         logger.info("Step 5/6: Scoring...")
         scoring = ScoringService(session)
         score_result = await scoring.run_full()
-        print(f"✅ Scoring: {score_result.get('scored', 0)} stocks ranked")
+        print(f"✅ Scoring: {score_result.get('stocks_scored', 0)} stocks ranked")
 
     if not skip_reports:
         async with factory() as session:

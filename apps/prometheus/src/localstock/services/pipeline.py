@@ -65,9 +65,12 @@ class Pipeline:
         await self.session.commit()
 
         try:
-            # Step 1: Fetch stock listings
-            count = await self.stock_repo.fetch_and_store_listings()
-            logger.info(f"Step 1: Stored {count} HOSE stock listings")
+            # Step 1: Fetch stock listings (non-critical — fall back to DB)
+            try:
+                count = await self.stock_repo.fetch_and_store_listings()
+                logger.info(f"Step 1: Stored {count} HOSE stock listings")
+            except Exception as e:
+                logger.warning(f"Step 1: Listing fetch failed ({e}), using existing DB stocks")
 
             # Step 2: Get all HOSE symbols
             symbols = await self.stock_repo.get_all_hose_symbols()
