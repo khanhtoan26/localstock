@@ -1,7 +1,8 @@
 ---
 phase: 10
 slug: interactive-glossary-linking
-status: draft
+status: approved
+reviewed_at: 2025-07-18
 shadcn_initialized: true
 preset: base-nova
 created: 2025-07-18
