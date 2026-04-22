@@ -87,9 +87,14 @@ export interface SectorsLatestResponse {
 
 export interface StockReport {
   symbol: string;
-  report_type: string;
+  report_type?: string;
   content_json: Record<string, unknown> | null;
   summary: string | null;
+  recommendation: string | null;
+  t3_prediction: string | null;
+  total_score: number | null;
+  grade: string | null;
+  model_used?: string;
   generated_at: string;
 }
 
