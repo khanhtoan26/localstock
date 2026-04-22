@@ -211,6 +211,21 @@ class AdminService:
                     results["score"] = await service.run_full(symbols=symbols)
                 logger.info("Pipeline score done")
 
+                # Step 4: Report
+                results["report"] = {}
+                target_symbols = symbols or []
+                for symbol in target_symbols:
+                    try:
+                        async with self.session_factory() as session:
+                            from localstock.services.report_service import ReportService
+                            service = ReportService(session)
+                            r = await service.generate_for_symbol(symbol)
+                            results["report"][symbol] = r
+                    except Exception as e:
+                        results["report"][symbol] = {"error": str(e)}
+                        logger.warning(f"Pipeline report failed for {symbol}: {e}")
+                logger.info(f"Pipeline report done: {len(target_symbols)} symbols")
+
                 await self._update_job(job_id, "completed", result=results)
             except Exception as e:
                 logger.error(f"Pipeline job {job_id} failed: {e}")
