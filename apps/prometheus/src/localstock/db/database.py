@@ -10,23 +10,35 @@ from sqlalchemy.ext.asyncio import (
 
 from localstock.config import get_settings
 
+# Singleton engine and session factory — avoids creating duplicate connection pools
+_engine = None
+_session_factory = None
+
 
 def get_engine():
-    """Create async SQLAlchemy engine from settings."""
-    settings = get_settings()
-    return create_async_engine(
-        settings.database_url,
-        echo=False,
-        pool_size=5,
-        max_overflow=10,
-    )
+    """Get or create the singleton async SQLAlchemy engine."""
+    global _engine
+    if _engine is None:
+        settings = get_settings()
+        _engine = create_async_engine(
+            settings.database_url,
+            echo=False,
+            pool_size=3,
+            max_overflow=5,
+            pool_recycle=300,
+            pool_pre_ping=True,
+        )
+    return _engine
 
 
 def get_session_factory(engine=None) -> async_sessionmaker[AsyncSession]:
-    """Create async session factory."""
-    if engine is None:
-        engine = get_engine()
-    return async_sessionmaker(engine, expire_on_commit=False)
+    """Get or create the singleton async session factory."""
+    global _session_factory
+    if engine is not None:
+        return async_sessionmaker(engine, expire_on_commit=False)
+    if _session_factory is None:
+        _session_factory = async_sessionmaker(get_engine(), expire_on_commit=False)
+    return _session_factory
 
 
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
