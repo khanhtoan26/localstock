@@ -19,6 +19,9 @@ from localstock.db.repositories.job_repo import JobRepository
 # Module-level lock to prevent concurrent admin operations
 _admin_lock = asyncio.Lock()
 
+# Must keep strong references to background tasks to prevent GC
+_background_tasks: set[asyncio.Task] = set()
+
 
 async def process_pending_jobs() -> None:
     """Poll DB for pending jobs and execute the oldest one.
@@ -42,23 +45,48 @@ async def process_pending_jobs() -> None:
 
     logger.info(f"Worker picked up job {job_id}: type={job_type}")
 
+    # Mark as running immediately to prevent re-pickup on next poll
+    async with session_factory() as session:
+        repo = JobRepository(session)
+        await repo.update_status(job_id, "running")
+
+    # Execute in background task so the poller returns immediately.
+    # Must save reference to prevent garbage collection before completion.
+    task = asyncio.create_task(_execute_job(job_id, job_type, params))
+    _background_tasks.add(task)
+    task.add_done_callback(_background_tasks.discard)
+
+
+async def _execute_job(job_id: int, job_type: str, params: dict) -> None:
+    """Execute a single admin job (called via create_task from the poller)."""
     service = AdminService()
-    match job_type:
-        case "crawl":
-            await service.run_crawl(job_id, params.get("symbols", []))
-        case "analyze":
-            await service.run_analyze(job_id, params.get("symbols"))
-        case "score":
-            await service.run_score(job_id)
-        case "report":
-            await service.run_report(job_id, params.get("symbol", ""))
-        case "pipeline":
-            await service.run_pipeline(job_id)
-        case _:
-            logger.warning(f"Unknown job type: {job_type}")
+    try:
+        match job_type:
+            case "crawl":
+                await service.run_crawl(job_id, params.get("symbols", []))
+            case "analyze":
+                await service.run_analyze(job_id, params.get("symbols"))
+            case "score":
+                await service.run_score(job_id)
+            case "report":
+                await service.run_report(job_id, params.get("symbol", ""))
+            case "pipeline":
+                await service.run_pipeline(job_id)
+            case _:
+                logger.warning(f"Unknown job type: {job_type}")
+                session_factory = get_session_factory()
+                async with session_factory() as session:
+                    repo = JobRepository(session)
+                    await repo.update_status(job_id, "failed", error=f"Unknown job type: {job_type}")
+    except Exception as e:
+        logger.error(f"Job {job_id} ({job_type}) unhandled error: {e}")
+        try:
+            session_factory = get_session_factory()
             async with session_factory() as session:
                 repo = JobRepository(session)
-                await repo.update_status(job_id, "failed", error=f"Unknown job type: {job_type}")
+                await repo.update_status(job_id, "failed", error=str(e))
+        except Exception:
+            logger.error(f"Failed to mark job {job_id} as failed")
 
 
 class AdminService:
