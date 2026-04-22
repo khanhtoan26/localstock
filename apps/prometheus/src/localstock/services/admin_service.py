@@ -71,7 +71,7 @@ async def _execute_job(job_id: int, job_type: str, params: dict) -> None:
             case "report":
                 await service.run_report(job_id, params.get("symbol", ""))
             case "pipeline":
-                await service.run_pipeline(job_id)
+                await service.run_pipeline(job_id, params.get("symbols"))
             case _:
                 logger.warning(f"Unknown job type: {job_type}")
                 session_factory = get_session_factory()
@@ -165,15 +165,53 @@ class AdminService:
                 logger.error(f"Report job {job_id} failed: {e}")
                 await self._update_job(job_id, "failed", error=str(e))
 
-    async def run_pipeline(self, job_id: int) -> None:
-        """Background: run full daily pipeline (crawl→analyze→score→report)."""
+    async def run_pipeline(self, job_id: int, symbols: list[str] | None = None) -> None:
+        """Background: run pipeline (crawl→analyze→score) for specified symbols."""
         async with _admin_lock:
             await self._update_job(job_id, "running")
             try:
-                from localstock.services.automation_service import AutomationService
-                service = AutomationService()
-                result = await service.run_daily_pipeline(force=True)
-                await self._update_job(job_id, "completed", result=result)
+                results: dict = {"crawl": {}, "analyze": {}, "score": {}}
+
+                # Step 1: Crawl
+                async with self.session_factory() as session:
+                    from localstock.services.pipeline import Pipeline
+                    pipeline = Pipeline(session)
+                    target = symbols or []
+                    for symbol in target:
+                        try:
+                            result = await pipeline.run_single(symbol)
+                            results["crawl"][symbol] = result
+                        except Exception as e:
+                            results["crawl"][symbol] = {"error": str(e)}
+                            logger.warning(f"Pipeline crawl failed for {symbol}: {e}")
+                logger.info(f"Pipeline crawl done: {len(target)} symbols")
+
+                # Step 2: Analyze
+                async with self.session_factory() as session:
+                    from localstock.services.analysis_service import AnalysisService
+                    service = AnalysisService(session)
+                    if symbols and len(symbols) == 1:
+                        results["analyze"] = await service.run_single(symbols[0])
+                    elif symbols:
+                        for symbol in symbols:
+                            try:
+                                r = await service.run_single(symbol)
+                                results["analyze"][symbol] = r
+                            except Exception as e:
+                                results["analyze"][symbol] = {"error": str(e)}
+                                logger.warning(f"Pipeline analyze failed for {symbol}: {e}")
+                    else:
+                        results["analyze"] = await service.run_full()
+                logger.info("Pipeline analyze done")
+
+                # Step 3: Score
+                async with self.session_factory() as session:
+                    from localstock.services.scoring_service import ScoringService
+                    service = ScoringService(session)
+                    results["score"] = await service.run_full(symbols=symbols)
+                logger.info("Pipeline score done")
+
+                await self._update_job(job_id, "completed", result=results)
             except Exception as e:
                 logger.error(f"Pipeline job {job_id} failed: {e}")
                 await self._update_job(job_id, "failed", error=str(e))

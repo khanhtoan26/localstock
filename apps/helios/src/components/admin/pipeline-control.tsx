@@ -215,9 +215,9 @@ export function PipelineControl({ onOperationTriggered }: PipelineControlProps) 
         </Button>
 
         <Button
-          disabled={triggerPipeline.isPending || anyPending}
+          disabled={validSelected.size === 0 || triggerPipeline.isPending || anyPending}
           onClick={() =>
-            triggerPipeline.mutate(undefined, {
+            triggerPipeline.mutate([...validSelected], {
               onSuccess: () => handleSuccess(t("pipeline.runAll")),
               onError: handleMutationError,
             })

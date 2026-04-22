@@ -162,12 +162,13 @@ async def trigger_report(
 
 @router.post("/pipeline")
 async def trigger_pipeline(
+    request: SymbolsRequest,
     session: AsyncSession = Depends(get_session),
 ):
-    """Queue full daily pipeline (crawl→analyze→score→report). Returns job ID (ADMIN-03)."""
+    """Queue pipeline (crawl→analyze→score) for specified symbols. Returns job ID (ADMIN-03)."""
     job_repo = JobRepository(session)
-    job = await job_repo.create_job(job_type="pipeline")
-    return {"job_id": job.id, "status": "pending", "job_type": "pipeline"}
+    job = await job_repo.create_job(job_type="pipeline", params={"symbols": request.symbols})
+    return {"job_id": job.id, "status": "pending", "job_type": "pipeline", "symbols": request.symbols}
 
 
 # --- Job Monitoring Endpoints (ADMIN-04) ---
