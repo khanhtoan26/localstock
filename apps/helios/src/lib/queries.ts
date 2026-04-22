@@ -107,7 +107,7 @@ export function useTrackedStocks() {
   return useQuery({
     queryKey: ["admin", "stocks"],
     queryFn: () => apiFetch<TrackedStocksResponse>("/api/admin/stocks"),
-    staleTime: 30 * 1000,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -219,7 +219,7 @@ export function useAdminJobs(limit = 50) {
     queryFn: () => apiFetch<AdminJobsResponse>(`/api/admin/jobs?limit=${limit}`),
     refetchInterval: (query) => {
       const data = query.state.data;
-      if (!data) return 3000;
+      if (!data) return false;
       const hasActive = data.jobs.some(
         (j) => j.status === "running" || j.status === "pending"
       );

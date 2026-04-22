@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useMemo, type FormEvent } from "react";
+import { useState, useMemo, useCallback, type FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { Plus, X, Loader2, Search, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, X, Loader2, Search, ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { useTrackedStocks, useAddStock, useRemoveStock } from "@/lib/queries";
 import type { TrackedStock } from "@/lib/types";
 import {
@@ -23,6 +23,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 type SortKey = "symbol" | "name" | "exchange" | "industry";
 type SortDir = "asc" | "desc";
 
+const PAGE_SIZE = 50;
+
 export function StockTable() {
   const t = useTranslations("admin");
   const { data, isLoading, isError } = useTrackedStocks();
@@ -32,15 +34,19 @@ export function StockTable() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("symbol");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const [page, setPage] = useState(0);
 
-  function toggleSort(key: SortKey) {
-    if (sortKey === key) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    } else {
-      setSortKey(key);
+  const toggleSort = useCallback((key: SortKey) => {
+    setSortKey((prev) => {
+      if (prev === key) {
+        setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+        return prev;
+      }
       setSortDir("asc");
-    }
-  }
+      return key;
+    });
+    setPage(0);
+  }, []);
 
   const stocks = data?.stocks;
 
@@ -65,7 +71,16 @@ export function StockTable() {
     });
   }, [stocks, searchQuery, sortKey, sortDir]);
 
-  function handleSubmit(e: FormEvent) {
+  const totalPages = Math.max(1, Math.ceil(filteredAndSorted.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages - 1);
+  const pageSlice = filteredAndSorted.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
+
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+    setPage(0);
+  }, []);
+
+  const handleSubmit = useCallback((e: FormEvent) => {
     e.preventDefault();
     const trimmed = symbolInput.trim();
     if (!trimmed || !/^[A-Z0-9]+$/.test(trimmed)) return;
@@ -82,9 +97,9 @@ export function StockTable() {
         }
       },
     });
-  }
+  }, [symbolInput, addStock, t]);
 
-  function handleRemove(symbol: string) {
+  const handleRemove = useCallback((symbol: string) => {
     removeStock.mutate(symbol, {
       onSuccess: () => {
         toast(t("toast.stockRemoved", { symbol }));
@@ -93,7 +108,7 @@ export function StockTable() {
         toast.error(t("toast.error", { detail: error.message }));
       },
     });
-  }
+  }, [removeStock, t]);
 
   if (isLoading) {
     return (
@@ -133,7 +148,7 @@ export function StockTable() {
           <Input
             placeholder={t("stocks.search")}
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={handleSearchChange}
             className="pl-8 max-w-xs"
           />
         </div>
@@ -149,54 +164,88 @@ export function StockTable() {
           {t("stocks.noResults")}
         </p>
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              {(["symbol", "name", "exchange", "industry"] as SortKey[]).map(
-                (key) => (
-                  <TableHead key={key}>
-                    <button
-                      className="flex items-center gap-1 hover:text-foreground transition-colors"
-                      onClick={() => toggleSort(key)}
-                    >
-                      {t(`stocks.columns.${key}`)}
-                      {sortKey === key ? (
-                        sortDir === "asc" ? (
-                          <ArrowUp className="h-3 w-3" />
+        <>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                {(["symbol", "name", "exchange", "industry"] as SortKey[]).map(
+                  (key) => (
+                    <TableHead key={key}>
+                      <button
+                        className="flex items-center gap-1 hover:text-foreground transition-colors"
+                        onClick={() => toggleSort(key)}
+                      >
+                        {t(`stocks.columns.${key}`)}
+                        {sortKey === key ? (
+                          sortDir === "asc" ? (
+                            <ArrowUp className="h-3 w-3" />
+                          ) : (
+                            <ArrowDown className="h-3 w-3" />
+                          )
                         ) : (
-                          <ArrowDown className="h-3 w-3" />
-                        )
-                      ) : (
-                        <ArrowUpDown className="h-3 w-3 opacity-30" />
-                      )}
-                    </button>
-                  </TableHead>
-                ),
-              )}
-              <TableHead className="w-10" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredAndSorted.map((stock) => (
-              <TableRow key={stock.symbol}>
-                <TableCell className="font-medium">{stock.symbol}</TableCell>
-                <TableCell>{stock.name ?? "—"}</TableCell>
-                <TableCell>{stock.exchange ?? "—"}</TableCell>
-                <TableCell>{stock.industry ?? "—"}</TableCell>
-                <TableCell>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleRemove(stock.symbol)}
-                    aria-label={t("stocks.remove")}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </TableCell>
+                          <ArrowUpDown className="h-3 w-3 opacity-30" />
+                        )}
+                      </button>
+                    </TableHead>
+                  ),
+                )}
+                <TableHead className="w-10" />
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {pageSlice.map((stock) => (
+                <TableRow key={stock.symbol}>
+                  <TableCell className="font-medium">{stock.symbol}</TableCell>
+                  <TableCell>{stock.name ?? "—"}</TableCell>
+                  <TableCell>{stock.exchange ?? "—"}</TableCell>
+                  <TableCell>{stock.industry ?? "—"}</TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleRemove(stock.symbol)}
+                      aria-label={t("stocks.remove")}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-4 text-sm text-muted-foreground">
+              <span>
+                {safePage * PAGE_SIZE + 1}–{Math.min((safePage + 1) * PAGE_SIZE, filteredAndSorted.length)}{" "}
+                / {filteredAndSorted.length}
+              </span>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  disabled={safePage === 0}
+                  onClick={() => setPage((p) => p - 1)}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="px-2">
+                  {safePage + 1} / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  disabled={safePage >= totalPages - 1}
+                  onClick={() => setPage((p) => p + 1)}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
