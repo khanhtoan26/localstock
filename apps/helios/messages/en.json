@@ -157,6 +157,7 @@
       "crawl": "Crawl",
       "analyze": "Analyze",
       "score": "Score",
+      "report": "Report",
       "runAll": "Run Full Pipeline",
       "selected": "{count} selected"
     },

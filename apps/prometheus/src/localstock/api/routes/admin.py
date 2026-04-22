@@ -151,13 +151,13 @@ async def trigger_score(
 
 @router.post("/report")
 async def trigger_report(
-    request: ReportRequest,
+    request: SymbolsRequest,
     session: AsyncSession = Depends(get_session),
 ):
-    """Queue AI report generation for a specific symbol. Returns job ID immediately (D-04)."""
+    """Queue AI report generation for specified symbols. Returns job ID immediately (D-04)."""
     job_repo = JobRepository(session)
-    job = await job_repo.create_job(job_type="report", params={"symbol": request.symbol})
-    return {"job_id": job.id, "status": "pending", "job_type": "report", "symbol": request.symbol}
+    job = await job_repo.create_job(job_type="report", params={"symbols": request.symbols})
+    return {"job_id": job.id, "status": "pending", "job_type": "report", "symbols": request.symbols}
 
 
 @router.post("/pipeline")

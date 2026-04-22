@@ -157,6 +157,7 @@
       "crawl": "Thu thập",
       "analyze": "Phân tích",
       "score": "Chấm điểm",
+      "report": "Báo cáo",
       "runAll": "Chạy toàn bộ",
       "selected": "Đã chọn {count}"
     },

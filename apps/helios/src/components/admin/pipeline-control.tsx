@@ -7,6 +7,7 @@ import {
   RefreshCw,
   BarChart3,
   Calculator,
+  FileText,
   Play,
   Loader2,
   Search,
@@ -19,6 +20,7 @@ import {
   useTriggerAdminCrawl,
   useTriggerAdminAnalyze,
   useTriggerAdminScore,
+  useTriggerAdminReport,
   useTriggerAdminPipeline,
 } from "@/lib/queries";
 import type { TrackedStock } from "@/lib/types";
@@ -54,6 +56,7 @@ export function PipelineControl({ onOperationTriggered }: PipelineControlProps) 
   const triggerCrawl = useTriggerAdminCrawl();
   const triggerAnalyze = useTriggerAdminAnalyze();
   const triggerScore = useTriggerAdminScore();
+  const triggerReport = useTriggerAdminReport();
   const triggerPipeline = useTriggerAdminPipeline();
 
   const rawStocks = data?.stocks;
@@ -136,6 +139,7 @@ export function PipelineControl({ onOperationTriggered }: PipelineControlProps) 
     triggerCrawl.isPending ||
     triggerAnalyze.isPending ||
     triggerScore.isPending ||
+    triggerReport.isPending ||
     triggerPipeline.isPending;
 
   if (isLoading) {
@@ -212,6 +216,24 @@ export function PipelineControl({ onOperationTriggered }: PipelineControlProps) 
             <Calculator className="h-4 w-4 mr-1" />
           )}
           {t("pipeline.score")}
+        </Button>
+
+        <Button
+          variant="outline"
+          disabled={validSelected.size === 0 || triggerReport.isPending}
+          onClick={() =>
+            triggerReport.mutate([...validSelected], {
+              onSuccess: () => handleSuccess(t("pipeline.report")),
+              onError: handleMutationError,
+            })
+          }
+        >
+          {triggerReport.isPending ? (
+            <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+          ) : (
+            <FileText className="h-4 w-4 mr-1" />
+          )}
+          {t("pipeline.report")}
         </Button>
 
         <Button

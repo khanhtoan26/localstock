@@ -183,6 +183,20 @@ export function useTriggerAdminScore() {
   });
 }
 
+export function useTriggerAdminReport() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (symbols: string[]) =>
+      apiFetch<TriggerResponse>("/api/admin/report", {
+        method: "POST",
+        body: JSON.stringify({ symbols }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "jobs"] });
+    },
+  });
+}
+
 export function useTriggerAdminPipeline() {
   const queryClient = useQueryClient();
   return useMutation({

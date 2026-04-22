@@ -69,7 +69,7 @@ async def _execute_job(job_id: int, job_type: str, params: dict) -> None:
             case "score":
                 await service.run_score(job_id, params.get("symbols"))
             case "report":
-                await service.run_report(job_id, params.get("symbol", ""))
+                await service.run_report(job_id, params.get("symbols"))
             case "pipeline":
                 await service.run_pipeline(job_id, params.get("symbols"))
             case _:
@@ -151,16 +151,23 @@ class AdminService:
                 logger.error(f"Score job {job_id} failed: {e}")
                 await self._update_job(job_id, "failed", error=str(e))
 
-    async def run_report(self, job_id: int, symbol: str) -> None:
-        """Background: generate AI report for a specific symbol."""
+    async def run_report(self, job_id: int, symbols: list[str] | None = None) -> None:
+        """Background: generate AI reports for specified symbols."""
         async with _admin_lock:
             await self._update_job(job_id, "running")
             try:
-                async with self.session_factory() as session:
-                    from localstock.services.report_service import ReportService
-                    service = ReportService(session)
-                    result = await service.generate_for_symbol(symbol)
-                await self._update_job(job_id, "completed", result=result)
+                results: dict = {}
+                for symbol in (symbols or []):
+                    try:
+                        async with self.session_factory() as session:
+                            from localstock.services.report_service import ReportService
+                            service = ReportService(session)
+                            r = await service.generate_for_symbol(symbol)
+                            results[symbol] = r
+                    except Exception as e:
+                        results[symbol] = {"error": str(e)}
+                        logger.warning(f"Report failed for {symbol}: {e}")
+                await self._update_job(job_id, "completed", result=results)
             except Exception as e:
                 logger.error(f"Report job {job_id} failed: {e}")
                 await self._update_job(job_id, "failed", error=str(e))
