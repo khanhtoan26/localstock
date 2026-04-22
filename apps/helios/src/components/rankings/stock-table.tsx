@@ -10,6 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { GradeBadge } from "./grade-badge";
+import { RecommendationBadge } from "@/components/stock/recommendation-badge";
 import { formatScore } from "@/lib/utils";
 import type { StockScore } from "@/lib/types";
 import { useState } from "react";
@@ -52,6 +53,7 @@ export function StockTable({ data }: StockTableProps) {
     { key: "symbol", header: t("symbol"), width: "w-[80px]" },
     { key: "total_score", header: t("score"), width: "w-[70px]" },
     { key: "grade", header: t("grade"), width: "w-[60px]" },
+    { key: "recommendation", header: t("recommendation"), width: "w-[100px]" },
     { key: "technical_score", header: t("technical"), width: "w-[80px]" },
     { key: "fundamental_score", header: t("fundamental"), width: "w-[80px]" },
     { key: "sentiment_score", header: t("sentiment"), width: "w-[80px]" },
@@ -86,6 +88,13 @@ export function StockTable({ data }: StockTableProps) {
             </TableCell>
             <TableCell className="font-mono text-sm">{formatScore(stock.total_score)}</TableCell>
             <TableCell><GradeBadge grade={stock.grade} /></TableCell>
+            <TableCell>
+              {stock.recommendation ? (
+                <RecommendationBadge recommendation={stock.recommendation} />
+              ) : (
+                <span className="text-xs text-muted-foreground">—</span>
+              )}
+            </TableCell>
             <TableCell className="font-mono text-sm">{formatScore(stock.technical_score)}</TableCell>
             <TableCell className="font-mono text-sm">{formatScore(stock.fundamental_score)}</TableCell>
             <TableCell className="font-mono text-sm">{formatScore(stock.sentiment_score)}</TableCell>

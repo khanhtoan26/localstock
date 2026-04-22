@@ -12,6 +12,7 @@ export interface StockScore {
   macro_score: number | null;
   dimensions_used: number;
   weights: Record<string, number> | null;
+  recommendation: string | null;
 }
 
 export interface TopScoresResponse {

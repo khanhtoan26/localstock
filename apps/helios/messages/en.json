@@ -34,6 +34,7 @@
       "symbol": "Symbol",
       "score": "Score",
       "grade": "Grade",
+      "recommendation": "Signal",
       "technical": "Technical",
       "fundamental": "Fundamental",
       "sentiment": "Sentiment",

@@ -17,6 +17,7 @@ from localstock.db.repositories.indicator_repo import IndicatorRepository
 from localstock.db.repositories.industry_repo import IndustryRepository
 from localstock.db.repositories.macro_repo import MacroRepository
 from localstock.db.repositories.ratio_repo import RatioRepository
+from localstock.db.repositories.report_repo import ReportRepository
 from localstock.db.repositories.score_repo import ScoreRepository
 from localstock.db.repositories.stock_repo import StockRepository
 from localstock.macro.crawler import MacroCrawler
@@ -162,9 +163,20 @@ class ScoringService:
         """Get top-ranked stocks with breakdown for SCOR-03.
 
         Returns list of dicts with symbol, total_score, grade, rank,
-        per-dimension scores, and weights used.
+        per-dimension scores, weights used, and latest AI recommendation.
         """
         scores = await self.score_repo.get_top_ranked(limit=limit)
+        if not scores:
+            return []
+
+        # Enrich with latest recommendation from analysis_reports
+        report_repo = ReportRepository(self.session)
+        symbols = [s.symbol for s in scores]
+        rec_map: dict[str, str | None] = {}
+        for sym in symbols:
+            report = await report_repo.get_latest(sym)
+            rec_map[sym] = report.recommendation if report else None
+
         return [
             {
                 "symbol": s.symbol,
@@ -178,6 +190,7 @@ class ScoringService:
                 "macro_score": round(s.macro_score, 1) if s.macro_score else None,
                 "dimensions_used": s.dimensions_used,
                 "weights": s.weights_json,
+                "recommendation": rec_map.get(s.symbol),
             }
             for s in scores
         ]
