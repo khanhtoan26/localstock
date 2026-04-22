@@ -32,7 +32,7 @@
 
 ### 🚧 v1.2 Admin Console
 
-- [ ] **Phase 11: Admin API Endpoints** - Backend routes for stock management, pipeline control, job history
+- [x] **Phase 11: Admin API Endpoints** - Backend routes for stock management, pipeline control, job history (2/2 plans) — completed 2026-04-22
 - [ ] **Phase 12: Admin Console UI** - Admin page with stock management, pipeline trigger, job monitoring
 - [ ] **Phase 13: AI Report Generation UI** - Generate AI reports for specific stocks from the admin console
 
