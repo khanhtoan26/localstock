@@ -156,6 +156,7 @@ export function PriceChart({ prices, indicators }: PriceChartProps) {
       candleRef.current = null;
       volumeRef.current = null;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prices, indicators]); // NO chartColors — preserves zoom/scroll on theme toggle
 
   // Effect 2: Re-theme on toggle (only runs when chartColors changes, preserves zoom/scroll)

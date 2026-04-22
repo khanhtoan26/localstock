@@ -67,8 +67,8 @@ function processNode(children: ReactNode, linkedIds: Set<string>): ReactNode {
 }
 
 // Filter out react-markdown's `node` prop to avoid DOM attribute warnings
-function filterProps(props: Record<string, unknown>) {
-  const { node, ...domProps } = props;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function filterProps({ node: _node, ...domProps }: Record<string, unknown>) {
   return domProps;
 }
 

@@ -5,7 +5,6 @@ import {
   isWordBoundary,
   type AliasMapping,
   type GlossaryMatch,
-  type TextSegment,
 } from "../glossary-linker";
 
 describe("isWordBoundary", () => {

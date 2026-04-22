@@ -83,9 +83,11 @@ export function JobMonitor() {
     }
   }
 
+  const jobs = data?.jobs;
+
   const filteredAndSorted = useMemo(() => {
-    if (!data?.jobs) return [];
-    let list = data.jobs;
+    if (!jobs) return [];
+    let list = jobs;
     if (statusFilter !== "all") {
       list = list.filter((j: AdminJob) => j.status === statusFilter);
     }
@@ -101,7 +103,7 @@ export function JobMonitor() {
       }
       return sortDir === "asc" ? cmp : -cmp;
     });
-  }, [data?.jobs, statusFilter, typeFilter, sortKey, sortDir]);
+  }, [jobs, statusFilter, typeFilter, sortKey, sortDir]);
 
   if (isLoading) {
     return (

@@ -42,9 +42,11 @@ export function StockTable() {
     }
   }
 
+  const stocks = data?.stocks;
+
   const filteredAndSorted = useMemo(() => {
-    if (!data?.stocks) return [];
-    let list = data.stocks;
+    if (!stocks) return [];
+    let list = stocks;
     if (searchQuery.trim()) {
       const q = searchQuery.trim().toLowerCase();
       list = list.filter(
@@ -61,7 +63,7 @@ export function StockTable() {
       const cmp = av.localeCompare(bv);
       return sortDir === "asc" ? cmp : -cmp;
     });
-  }, [data?.stocks, searchQuery, sortKey, sortDir]);
+  }, [stocks, searchQuery, sortKey, sortDir]);
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();

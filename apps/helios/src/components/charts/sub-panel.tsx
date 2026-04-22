@@ -138,6 +138,7 @@ export function SubPanel({ type, indicators, height = 152 }: SubPanelProps) {
       chartRef.current = null;
       seriesRefs.current = { hist: null, line1: null, line2: null };
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [indicators, type, height]); // NO chartColors — preserves zoom/scroll on theme toggle
 
   // Effect 2: Re-theme on toggle (only runs when chartColors changes, preserves zoom/scroll)

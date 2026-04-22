@@ -20,20 +20,20 @@ interface GlossarySearchProps {
 
 export function GlossarySearch({ entries, category }: GlossarySearchProps) {
   const [query, setQuery] = useState("");
-  const [hashId, setHashId] = useState<string | null>(null);
-
-  // Read URL hash on mount for deep-link auto-expand (Phase 10 support)
-  useEffect(() => {
+  const [hashId] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
     const hash = window.location.hash.slice(1);
-    if (hash) {
-      setHashId(hash);
-      // Scroll to the matching entry after render
-      const el = document.getElementById(hash);
-      if (el) {
-        setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
-      }
+    return hash || null;
+  });
+
+  // Scroll to hash target after initial render (Phase 10 deep-link support)
+  useEffect(() => {
+    if (!hashId) return;
+    const el = document.getElementById(hashId);
+    if (el) {
+      setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
     }
-  }, []);
+  }, [hashId]);
 
   const filtered = query
     ? entries.filter((entry) => {
