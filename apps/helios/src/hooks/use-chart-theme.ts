@@ -1,5 +1,5 @@
 "use client";
-import { useTheme } from "next-themes";
+import { useTheme } from "@/components/theme/theme-provider";
 import { getChartColors, type ChartColorSet } from "@/lib/chart-colors";
 
 /** Returns the chart color set for the current theme */

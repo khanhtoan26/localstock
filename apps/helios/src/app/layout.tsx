@@ -24,6 +24,13 @@ export default async function RootLayout({
 
   return (
     <html lang={locale} suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("localstock-theme")||"light";document.documentElement.classList.add(t)}catch(e){document.documentElement.classList.add("light")}})()`,
+          }}
+        />
+      </head>
       <body>
         <NextIntlClientProvider messages={messages}>
           <ThemeProvider>
