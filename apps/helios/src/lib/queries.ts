@@ -1,5 +1,5 @@
 "use client";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "./api";
 import type {
   TopScoresResponse,
@@ -11,6 +11,10 @@ import type {
   StockReport,
   TechnicalData,
   FundamentalData,
+  TrackedStocksResponse,
+  AdminJobsResponse,
+  AdminJobDetail,
+  TriggerResponse,
 } from "./types";
 
 export function useTopScores(limit = 20) {
@@ -94,5 +98,120 @@ export function useSectorsLatest() {
 export function useTriggerPipeline() {
   return useMutation({
     mutationFn: () => apiFetch<Record<string, unknown>>(`/api/automation/run`, { method: "POST" }),
+  });
+}
+
+// --- Admin: Stock Management (ADMIN-05) ---
+
+export function useTrackedStocks() {
+  return useQuery({
+    queryKey: ["admin", "stocks"],
+    queryFn: () => apiFetch<TrackedStocksResponse>("/api/admin/stocks"),
+    staleTime: 30 * 1000,
+  });
+}
+
+export function useAddStock() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (symbol: string) =>
+      apiFetch<{ symbol: string; name: string | null; is_tracked: boolean; message: string }>(
+        "/api/admin/stocks",
+        { method: "POST", body: JSON.stringify({ symbol }) }
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "stocks"] });
+    },
+  });
+}
+
+export function useRemoveStock() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (symbol: string) =>
+      apiFetch<{ symbol: string; is_tracked: boolean; message: string }>(
+        `/api/admin/stocks/${symbol}`,
+        { method: "DELETE" }
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "stocks"] });
+    },
+  });
+}
+
+// --- Admin: Pipeline Triggers (ADMIN-06) ---
+
+export function useTriggerAdminCrawl() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (symbols: string[]) =>
+      apiFetch<TriggerResponse>("/api/admin/crawl", {
+        method: "POST",
+        body: JSON.stringify({ symbols }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "jobs"] });
+    },
+  });
+}
+
+export function useTriggerAdminAnalyze() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (symbols: string[]) =>
+      apiFetch<TriggerResponse>("/api/admin/analyze", {
+        method: "POST",
+        body: JSON.stringify({ symbols }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "jobs"] });
+    },
+  });
+}
+
+export function useTriggerAdminScore() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      apiFetch<TriggerResponse>("/api/admin/score", { method: "POST" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "jobs"] });
+    },
+  });
+}
+
+export function useTriggerAdminPipeline() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      apiFetch<TriggerResponse>("/api/admin/pipeline", { method: "POST" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "jobs"] });
+    },
+  });
+}
+
+// --- Admin: Job Monitor (ADMIN-07) ---
+
+export function useAdminJobs(limit = 50) {
+  return useQuery({
+    queryKey: ["admin", "jobs"],
+    queryFn: () => apiFetch<AdminJobsResponse>(`/api/admin/jobs?limit=${limit}`),
+    refetchInterval: (query) => {
+      const data = query.state.data;
+      if (!data) return 3000;
+      const hasActive = data.jobs.some(
+        (j) => j.status === "running" || j.status === "pending"
+      );
+      return hasActive ? 3000 : false;
+    },
+  });
+}
+
+export function useAdminJobDetail(jobId: number | null) {
+  return useQuery({
+    queryKey: ["admin", "jobs", jobId],
+    queryFn: () => apiFetch<AdminJobDetail>(`/api/admin/jobs/${jobId}`),
+    enabled: !!jobId,
   });
 }

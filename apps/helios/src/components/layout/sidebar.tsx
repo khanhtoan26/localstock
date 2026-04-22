@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { BarChart3, Globe, BookOpen } from "lucide-react";
+import { BarChart3, Globe, BookOpen, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function Sidebar() {
@@ -13,6 +13,7 @@ export function Sidebar() {
     { href: "/rankings", label: t("rankings"), icon: BarChart3 },
     { href: "/market", label: t("market"), icon: Globe },
     { href: "/learn", label: t("learn"), icon: BookOpen },
+    { href: "/admin", label: t("admin"), icon: Shield },
   ];
 
   return (
