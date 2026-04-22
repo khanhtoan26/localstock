@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useTranslations } from "next-intl";
-import { ChevronDown, Loader2 } from "lucide-react";
+import { ChevronDown, Loader2, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { useAdminJobs, useAdminJobDetail } from "@/lib/queries";
+import type { AdminJob } from "@/lib/types";
 import {
   Table,
   TableHeader,
@@ -13,11 +14,18 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "./status-badge";
 import { cn } from "@/lib/utils";
+
+type JobSortKey = "job_type" | "status" | "created_at";
+type SortDir = "asc" | "desc";
+
+const JOB_STATUSES = ["all", "pending", "running", "completed", "failed"] as const;
+const JOB_TYPES = ["all", "crawl", "analyze", "score", "report", "pipeline"] as const;
 
 function formatDuration(
   startedAt: string | null,
@@ -61,6 +69,39 @@ export function JobMonitor() {
   const t = useTranslations("admin");
   const { data, isLoading, isError } = useAdminJobs();
   const [expandedJobId, setExpandedJobId] = useState<number | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [sortKey, setSortKey] = useState<JobSortKey>("created_at");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+
+  function toggleSort(key: JobSortKey) {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir(key === "created_at" ? "desc" : "asc");
+    }
+  }
+
+  const filteredAndSorted = useMemo(() => {
+    if (!data?.jobs) return [];
+    let list = data.jobs;
+    if (statusFilter !== "all") {
+      list = list.filter((j: AdminJob) => j.status === statusFilter);
+    }
+    if (typeFilter !== "all") {
+      list = list.filter((j: AdminJob) => j.job_type === typeFilter);
+    }
+    return [...list].sort((a: AdminJob, b: AdminJob) => {
+      let cmp: number;
+      if (sortKey === "created_at") {
+        cmp = (a.created_at ?? "").localeCompare(b.created_at ?? "");
+      } else {
+        cmp = (a[sortKey] ?? "").localeCompare(b[sortKey] ?? "");
+      }
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+  }, [data?.jobs, statusFilter, typeFilter, sortKey, sortDir]);
 
   if (isLoading) {
     return (
@@ -86,59 +127,132 @@ export function JobMonitor() {
   }
 
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>{t("jobs.columns.type")}</TableHead>
-          <TableHead>{t("jobs.columns.status")}</TableHead>
-          <TableHead>{t("jobs.columns.duration")}</TableHead>
-          <TableHead>{t("jobs.columns.created")}</TableHead>
-          <TableHead className="w-10" />
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {data.jobs.map((job) => (
-          <>
-            <TableRow
-              key={job.id}
-              className="cursor-pointer"
-              onClick={() =>
-                setExpandedJobId(expandedJobId === job.id ? null : job.id)
-              }
+    <div>
+      <div className="flex items-center gap-2 mb-4 flex-wrap">
+        <div className="flex items-center gap-1.5">
+          <span className="text-sm text-muted-foreground">{t("jobs.filterStatus")}:</span>
+          {JOB_STATUSES.map((s) => (
+            <Button
+              key={s}
+              variant={statusFilter === s ? "default" : "outline"}
+              size="sm"
+              onClick={() => setStatusFilter(s)}
             >
-              <TableCell>
-                <Badge variant="outline">{job.job_type}</Badge>
-              </TableCell>
-              <TableCell>
-                <StatusBadge status={job.status} />
-              </TableCell>
-              <TableCell>
-                {job.status === "running" ? (
-                  <Loader2 className="h-3 w-3 animate-spin inline" />
+              {s === "all" ? t("jobs.all") : s}
+            </Button>
+          ))}
+        </div>
+        <div className="flex items-center gap-1.5 ml-auto">
+          <span className="text-sm text-muted-foreground">{t("jobs.filterType")}:</span>
+          {JOB_TYPES.map((jt) => (
+            <Button
+              key={jt}
+              variant={typeFilter === jt ? "default" : "outline"}
+              size="sm"
+              onClick={() => setTypeFilter(jt)}
+            >
+              {jt === "all" ? t("jobs.all") : jt}
+            </Button>
+          ))}
+        </div>
+      </div>
+
+      {filteredAndSorted.length === 0 ? (
+        <p className="text-sm text-muted-foreground text-center py-8">
+          {t("jobs.noResults")}
+        </p>
+      ) : (
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>
+              <button
+                className="flex items-center gap-1 hover:text-foreground transition-colors"
+                onClick={() => toggleSort("job_type")}
+              >
+                {t("jobs.columns.type")}
+                {sortKey === "job_type" ? (
+                  sortDir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
                 ) : (
-                  formatDuration(job.started_at, job.completed_at)
+                  <ArrowUpDown className="h-3 w-3 opacity-30" />
                 )}
-              </TableCell>
-              <TableCell>{formatTimestamp(job.created_at)}</TableCell>
-              <TableCell>
-                <ChevronDown
-                  className={cn(
-                    "h-4 w-4 transition-transform",
-                    expandedJobId === job.id && "rotate-180",
+              </button>
+            </TableHead>
+            <TableHead>
+              <button
+                className="flex items-center gap-1 hover:text-foreground transition-colors"
+                onClick={() => toggleSort("status")}
+              >
+                {t("jobs.columns.status")}
+                {sortKey === "status" ? (
+                  sortDir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                ) : (
+                  <ArrowUpDown className="h-3 w-3 opacity-30" />
+                )}
+              </button>
+            </TableHead>
+            <TableHead>{t("jobs.columns.duration")}</TableHead>
+            <TableHead>
+              <button
+                className="flex items-center gap-1 hover:text-foreground transition-colors"
+                onClick={() => toggleSort("created_at")}
+              >
+                {t("jobs.columns.created")}
+                {sortKey === "created_at" ? (
+                  sortDir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+                ) : (
+                  <ArrowUpDown className="h-3 w-3 opacity-30" />
+                )}
+              </button>
+            </TableHead>
+            <TableHead className="w-10" />
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {filteredAndSorted.map((job) => (
+            <>
+              <TableRow
+                key={job.id}
+                className="cursor-pointer"
+                onClick={() =>
+                  setExpandedJobId(expandedJobId === job.id ? null : job.id)
+                }
+              >
+                <TableCell>
+                  <Badge variant="outline">{job.job_type}</Badge>
+                </TableCell>
+                <TableCell>
+                  <StatusBadge status={job.status} />
+                </TableCell>
+                <TableCell>
+                  {job.status === "running" ? (
+                    <Loader2 className="h-3 w-3 animate-spin inline" />
+                  ) : (
+                    formatDuration(job.started_at, job.completed_at)
                   )}
-                />
-              </TableCell>
-            </TableRow>
-            {expandedJobId === job.id && (
-              <TableRow key={`${job.id}-detail`}>
-                <TableCell colSpan={5}>
-                  <JobDetailPanel jobId={job.id} />
+                </TableCell>
+                <TableCell>{formatTimestamp(job.created_at)}</TableCell>
+                <TableCell>
+                  <ChevronDown
+                    className={cn(
+                      "h-4 w-4 transition-transform",
+                      expandedJobId === job.id && "rotate-180",
+                    )}
+                  />
                 </TableCell>
               </TableRow>
-            )}
-          </>
-        ))}
-      </TableBody>
-    </Table>
+              {expandedJobId === job.id && (
+                <TableRow key={`${job.id}-detail`}>
+                  <TableCell colSpan={5}>
+                    <JobDetailPanel jobId={job.id} />
+                  </TableCell>
+                </TableRow>
+              )}
+            </>
+          ))}
+        </TableBody>
+      </Table>
+      )}
+    </div>
   );
 }

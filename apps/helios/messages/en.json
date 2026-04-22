@@ -141,6 +141,8 @@
       "placeholder": "Enter symbol (e.g. VNM)",
       "add": "Add Stock",
       "remove": "Remove stock",
+      "search": "Search stocks...",
+      "noResults": "No stocks match your search.",
       "emptyHeading": "No tracked stocks",
       "emptyBody": "Add stock symbols to your watchlist to start tracking and analysis.",
       "columns": {
@@ -161,6 +163,10 @@
     "jobs": {
       "emptyHeading": "No jobs yet",
       "emptyBody": "Trigger a pipeline operation to see job history here.",
+      "filterStatus": "Status",
+      "filterType": "Type",
+      "all": "All",
+      "noResults": "No jobs match the selected filters.",
       "columns": {
         "type": "Type",
         "status": "Status",

@@ -141,6 +141,8 @@
       "placeholder": "Nhập mã (VD: VNM)",
       "add": "Thêm mã",
       "remove": "Xóa mã",
+      "search": "Tìm mã cổ phiếu...",
+      "noResults": "Không tìm thấy mã phù hợp.",
       "emptyHeading": "Chưa có mã theo dõi",
       "emptyBody": "Thêm mã cổ phiếu vào danh sách để bắt đầu theo dõi và phân tích.",
       "columns": {
@@ -161,6 +163,10 @@
     "jobs": {
       "emptyHeading": "Chưa có tác vụ",
       "emptyBody": "Kích hoạt pipeline để xem lịch sử tác vụ tại đây.",
+      "filterStatus": "Trạng thái",
+      "filterType": "Loại",
+      "all": "Tất cả",
+      "noResults": "Không có tác vụ phù hợp với bộ lọc.",
       "columns": {
         "type": "Loại",
         "status": "Trạng thái",
