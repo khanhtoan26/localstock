@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Admin Console
-status: completed
+status: executing
 stopped_at: Phase 12 UI-SPEC approved
-last_updated: "2026-04-22T04:15:37.706Z"
-last_activity: 2026-04-22 -- Phase 11 execution started
+last_updated: "2026-04-22T04:50:15.358Z"
+last_activity: 2026-04-22 -- Phase 12 execution started
 progress:
   total_phases: 3
   completed_phases: 0
-  total_plans: 2
+  total_plans: 4
   completed_plans: 0
   percent: 0
 ---
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-21)
 
 **Core value:** Agent tự động phân tích và xếp hạng cổ phiếu HOSE — cho tôi danh sách gợi ý đáng mua kèm lý do rõ ràng, cập nhật hàng ngày, không tốn phí API.
-**Current focus:** Phase 12 — Admin Console UI
+**Current focus:** Phase 12 — admin-console-ui
 
 ## Current Position
 
-Phase: 11 (Admin API Endpoints) — COMPLETED
-Plan: 2 of 2
-Status: Phase 11 complete, ready for Phase 12
-Last activity: 2026-04-22 -- Phase 11 execution started
+Phase: 12 (admin-console-ui) — EXECUTING
+Plan: 1 of 2
+Status: Executing Phase 12
+Last activity: 2026-04-22 -- Phase 12 execution started
 
 Progress: [░░░░░░░░░░] 0%
 
