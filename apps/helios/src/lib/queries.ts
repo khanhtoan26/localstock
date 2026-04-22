@@ -217,6 +217,7 @@ export function useAdminJobs(limit = 50) {
   return useQuery({
     queryKey: ["admin", "jobs"],
     queryFn: () => apiFetch<AdminJobsResponse>(`/api/admin/jobs?limit=${limit}`),
+    staleTime: 10 * 1000,
     refetchInterval: (query) => {
       const data = query.state.data;
       if (!data) return false;
