@@ -50,9 +50,13 @@ Exceptions: none — standard scale matches existing `rankings/`, `market/`, and
 | Role | Size | Weight | Line Height | Usage in this phase |
 |------|------|--------|-------------|---------------------|
 | Body | 14px (text-sm) | 400 (normal) | 1.43 (20px) | Table cell text, form labels, descriptive text |
-| Label | 14px (text-sm) | 500 (medium) | 1.43 (20px) | Table column headers (TableHead), input labels |
-| Small | 12px (text-xs) | 500 (medium) | 1.33 (16px) | Badge text, timestamps, secondary metadata |
+| Label | 14px (text-sm) | 600 (semibold) | 1.43 (20px) | Table column headers (TableHead), input labels |
+| Small | 12px (text-xs) | 400 (normal) | 1.33 (16px) | Badge text, timestamps, secondary metadata |
 | Heading | 20px (text-xl) | 600 (semibold) | 1.2 (24px) | Page title "Admin Console" |
+
+**Declared design weights:** 2 — **400 (normal)** for body and small text, **600 (semibold)** for labels and headings. This creates a clear regular/emphasis binary.
+
+**Component internals note:** `badge.tsx` and `table.tsx` ship with `font-medium` (500) as an internal default. These are inherited component styles, not overridden — they do not count as declared design weights since they are not roles this spec assigns. Do not apply `font-medium` as a design-intent class outside of those component internals.
 
 Source: Established pattern from `rankings/page.tsx` (`text-xl font-semibold`), `table.tsx` (`text-sm`), `badge.tsx` (`text-xs font-medium`).
 
@@ -126,6 +130,12 @@ Implementation: `completed` and `running` badges use `className` override on the
 ---
 
 ## Layout Contract
+
+### Focal Point
+
+- **Stocks tab:** The inline add form (Input + "Add Stock" CTA) anchors visual focus at the top of the content area.
+- **Pipeline tab:** The action button bar (Crawl, Analyze, Score, Run Full Pipeline) anchors visual focus above the selection table.
+- **Jobs tab:** The status badges (colored by job state) anchor visual focus within the job table rows.
 
 ### Page Structure
 
