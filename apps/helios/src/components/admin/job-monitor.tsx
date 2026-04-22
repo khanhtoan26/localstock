@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { ChevronDown, Loader2, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { useAdminJobs, useAdminJobDetail } from "@/lib/queries";
@@ -212,9 +212,8 @@ export function JobMonitor() {
         </TableHeader>
         <TableBody>
           {filteredAndSorted.map((job) => (
-            <>
+            <React.Fragment key={job.id}>
               <TableRow
-                key={job.id}
                 className="cursor-pointer"
                 onClick={() =>
                   setExpandedJobId(expandedJobId === job.id ? null : job.id)
@@ -250,7 +249,7 @@ export function JobMonitor() {
                   </TableCell>
                 </TableRow>
               )}
-            </>
+            </React.Fragment>
           ))}
         </TableBody>
       </Table>
