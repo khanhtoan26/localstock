@@ -15,6 +15,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -40,6 +41,7 @@ class Stock(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC)
     )
+    is_tracked: Mapped[bool] = mapped_column(Boolean, default=True, server_default=text("true"))
 
 
 class StockPrice(Base):
@@ -457,4 +459,27 @@ class NotificationLog(Base):
 
     __table_args__ = (
         UniqueConstraint("date", "notification_type", name="uq_notification_log"),
+    )
+
+
+class AdminJob(Base):
+    """Admin-triggered job tracking (Phase 11)."""
+
+    __tablename__ = "admin_jobs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    job_type: Mapped[str] = mapped_column(String(30))  # 'crawl', 'analyze', 'score', 'report', 'pipeline'
+    status: Mapped[str] = mapped_column(String(20))  # 'pending', 'running', 'completed', 'failed'
+    params: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    result: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(UTC)
+    )
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (
+        Index("ix_admin_jobs_status", "status"),
+        Index("ix_admin_jobs_created_at", "created_at"),
     )

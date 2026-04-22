@@ -88,8 +88,77 @@ class StockRepository:
         return result.scalar_one_or_none()
 
     async def get_all_hose_symbols(self) -> list[str]:
-        """Return all symbols where exchange='HOSE', ordered alphabetically."""
-        stmt = select(Stock.symbol).where(Stock.exchange == "HOSE").order_by(Stock.symbol)
+        """Return all tracked symbols where exchange='HOSE', ordered alphabetically.
+
+        Filters by is_tracked=True so untracked stocks are excluded from pipeline runs.
+        Since is_tracked defaults to True for all existing stocks, this is backward-compatible.
+        """
+        stmt = (
+            select(Stock.symbol)
+            .where(Stock.exchange == "HOSE", Stock.is_tracked == True)  # noqa: E712
+            .order_by(Stock.symbol)
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def add_stock(self, symbol: str) -> Stock | None:
+        """Add a stock to the watch list by setting is_tracked=True.
+
+        If stock exists in DB, sets is_tracked=True.
+        If stock doesn't exist, creates a minimal record with just symbol and exchange='HOSE'.
+
+        Args:
+            symbol: Stock ticker (e.g., 'VNM').
+
+        Returns:
+            Stock instance, or None if creation failed.
+        """
+        stock = await self.get_by_symbol(symbol)
+        if stock:
+            stock.is_tracked = True
+            await self.session.commit()
+            return stock
+        stock = Stock(
+            symbol=symbol,
+            name=symbol,
+            exchange="HOSE",
+            is_tracked=True,
+            updated_at=datetime.now(UTC),
+        )
+        self.session.add(stock)
+        await self.session.commit()
+        await self.session.refresh(stock)
+        logger.info(f"Added new stock {symbol} to watchlist")
+        return stock
+
+    async def remove_stock(self, symbol: str) -> bool:
+        """Remove a stock from the watch list by setting is_tracked=False.
+
+        Args:
+            symbol: Stock ticker.
+
+        Returns:
+            True if stock was found and updated, False if not found.
+        """
+        stock = await self.get_by_symbol(symbol)
+        if not stock:
+            return False
+        stock.is_tracked = False
+        await self.session.commit()
+        logger.info(f"Removed stock {symbol} from watchlist")
+        return True
+
+    async def get_tracked_stocks(self) -> list[Stock]:
+        """Return all tracked stocks (is_tracked=True) on HOSE.
+
+        Returns:
+            List of Stock instances with is_tracked=True.
+        """
+        stmt = (
+            select(Stock)
+            .where(Stock.exchange == "HOSE", Stock.is_tracked == True)  # noqa: E712
+            .order_by(Stock.symbol)
+        )
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
