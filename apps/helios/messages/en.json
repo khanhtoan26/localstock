@@ -9,7 +9,8 @@
   "nav": {
     "rankings": "Rankings",
     "market": "Market",
-    "learn": "Learn"
+    "learn": "Learn",
+    "admin": "Admin"
   },
   "language": {
     "switchLabel": "Switch language"
@@ -127,6 +128,53 @@
         "titleEn": "Macro Concepts",
         "desc": "Macroeconomic indicators affecting the stock market"
       }
+    }
+  },
+  "admin": {
+    "title": "Admin Console",
+    "tabs": {
+      "stocks": "Stocks",
+      "pipeline": "Pipeline",
+      "jobs": "Jobs"
+    },
+    "stocks": {
+      "placeholder": "Enter symbol (e.g. VNM)",
+      "add": "Add Stock",
+      "remove": "Remove stock",
+      "emptyHeading": "No tracked stocks",
+      "emptyBody": "Add stock symbols to your watchlist to start tracking and analysis.",
+      "columns": {
+        "symbol": "Symbol",
+        "name": "Name",
+        "exchange": "Exchange",
+        "industry": "Industry"
+      }
+    },
+    "pipeline": {
+      "noSelection": "Select stocks from the table to run operations.",
+      "crawl": "Crawl",
+      "analyze": "Analyze",
+      "score": "Score",
+      "runAll": "Run Full Pipeline",
+      "selected": "{count} selected"
+    },
+    "jobs": {
+      "emptyHeading": "No jobs yet",
+      "emptyBody": "Trigger a pipeline operation to see job history here.",
+      "columns": {
+        "type": "Type",
+        "status": "Status",
+        "duration": "Duration",
+        "created": "Created"
+      }
+    },
+    "toast": {
+      "stockAdded": "Stock {symbol} added to watchlist",
+      "stockRemoved": "Stock {symbol} removed from watchlist",
+      "alreadyTracked": "Stock {symbol} is already tracked",
+      "operationStarted": "{type} operation started",
+      "operationLocked": "An operation is already running. Please wait.",
+      "error": "Operation failed: {detail}"
     }
   }
 }

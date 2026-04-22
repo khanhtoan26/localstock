@@ -1,6 +1,7 @@
 import { Sidebar } from "./sidebar";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { LanguageToggle } from "@/components/i18n/language-toggle";
+import { Toaster } from "@/components/ui/sonner";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
@@ -13,6 +14,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </header>
         <main className="p-6">{children}</main>
       </div>
+      <Toaster />
     </div>
   );
 }

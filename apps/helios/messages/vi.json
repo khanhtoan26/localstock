@@ -9,7 +9,8 @@
   "nav": {
     "rankings": "Xếp Hạng",
     "market": "Thị Trường",
-    "learn": "Học"
+    "learn": "Học",
+    "admin": "Quản trị"
   },
   "language": {
     "switchLabel": "Chuyển ngôn ngữ"
@@ -127,6 +128,53 @@
         "titleEn": "Macro Concepts",
         "desc": "Các chỉ số kinh tế vĩ mô ảnh hưởng đến thị trường chứng khoán"
       }
+    }
+  },
+  "admin": {
+    "title": "Bảng quản trị",
+    "tabs": {
+      "stocks": "Cổ phiếu",
+      "pipeline": "Pipeline",
+      "jobs": "Tác vụ"
+    },
+    "stocks": {
+      "placeholder": "Nhập mã (VD: VNM)",
+      "add": "Thêm mã",
+      "remove": "Xóa mã",
+      "emptyHeading": "Chưa có mã theo dõi",
+      "emptyBody": "Thêm mã cổ phiếu vào danh sách để bắt đầu theo dõi và phân tích.",
+      "columns": {
+        "symbol": "Mã",
+        "name": "Tên",
+        "exchange": "Sàn",
+        "industry": "Ngành"
+      }
+    },
+    "pipeline": {
+      "noSelection": "Chọn mã cổ phiếu từ bảng để chạy thao tác.",
+      "crawl": "Thu thập",
+      "analyze": "Phân tích",
+      "score": "Chấm điểm",
+      "runAll": "Chạy toàn bộ",
+      "selected": "Đã chọn {count}"
+    },
+    "jobs": {
+      "emptyHeading": "Chưa có tác vụ",
+      "emptyBody": "Kích hoạt pipeline để xem lịch sử tác vụ tại đây.",
+      "columns": {
+        "type": "Loại",
+        "status": "Trạng thái",
+        "duration": "Thời lượng",
+        "created": "Tạo lúc"
+      }
+    },
+    "toast": {
+      "stockAdded": "Đã thêm mã {symbol} vào danh sách",
+      "stockRemoved": "Đã xóa mã {symbol} khỏi danh sách",
+      "alreadyTracked": "Mã {symbol} đã được theo dõi",
+      "operationStarted": "Đã bắt đầu {type}",
+      "operationLocked": "Đang có tác vụ chạy. Vui lòng đợi.",
+      "error": "Thao tác thất bại: {detail}"
     }
   }
 }

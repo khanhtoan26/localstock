@@ -135,3 +135,46 @@ export interface FundamentalData {
   market_cap: number | null;
   current_price: number | null;
 }
+
+/* Admin API types — derived from /api/admin/* endpoint response shapes */
+
+export interface TrackedStock {
+  symbol: string;
+  name: string | null;
+  exchange: string | null;
+  industry: string | null;
+  is_tracked: boolean;
+}
+
+export interface TrackedStocksResponse {
+  stocks: TrackedStock[];
+  count: number;
+}
+
+export interface AdminJob {
+  id: number;
+  job_type: "crawl" | "analyze" | "score" | "report" | "pipeline";
+  status: "pending" | "running" | "completed" | "failed";
+  params: Record<string, unknown> | null;
+  created_at: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+}
+
+export interface AdminJobDetail extends AdminJob {
+  result: Record<string, unknown> | null;
+  error: string | null;
+}
+
+export interface AdminJobsResponse {
+  jobs: AdminJob[];
+  count: number;
+}
+
+export interface TriggerResponse {
+  job_id: number;
+  status: string;
+  job_type: string;
+  symbols?: string[];
+  symbol?: string;
+}
