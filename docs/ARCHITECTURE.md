@@ -1,6 +1,7 @@
+<!-- generated-by: gsd-doc-writer -->
 # Kiến trúc & Workflow — LocalStock
 
-Tài liệu này giải thích toàn bộ codebase hoạt động như thế nào: từ khởi động ứng dụng, qua pipeline xử lý dữ liệu, đến giao diện web dashboard.
+Tài liệu này giải thích toàn bộ codebase hoạt động như thế nào: từ khởi động ứng dụng, qua pipeline xử lý dữ liệu, đến giao diện web dashboard, hệ thống Admin Console, và trang học thuật.
 
 ## Mục lục
 
@@ -15,46 +16,59 @@ Tài liệu này giải thích toàn bộ codebase hoạt động như thế nà
 9. [Scheduler tự động](#9-scheduler-tự-động)
 10. [Database Layer](#10-database-layer)
 11. [Frontend (Next.js)](#11-frontend-nextjs)
-12. [Cấu hình hệ thống](#12-cấu-hình-hệ-thống)
-13. [Design Patterns](#13-design-patterns)
+12. [Admin Console](#12-admin-console)
+13. [Học thuật & Glossary](#13-học-thuật--glossary)
+14. [Theme & i18n](#14-theme--i18n)
+15. [Cấu hình hệ thống](#15-cấu-hình-hệ-thống)
+16. [Design Patterns](#16-design-patterns)
 
 ---
 
 ## 1. Tổng quan kiến trúc
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    LOCALSTOCK ARCHITECTURE                   │
-├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  ┌──────────┐    ┌───────────┐    ┌──────────┐              │
-│  │ Scheduler │───▶│  Pipeline  │───▶│ Telegram │              │
-│  │ (15:45)  │    │ Orchestrator│   │   Bot    │              │
-│  └──────────┘    └─────┬─────┘    └──────────┘              │
-│                        │                                     │
-│         ┌──────────────┼──────────────┐                     │
-│         ▼              ▼              ▼                     │
-│  ┌────────────┐ ┌────────────┐ ┌────────────┐              │
-│  │  Crawlers   │ │  Analysis   │ │  AI/LLM    │              │
-│  │ (vnstock)  │ │  (pandas-ta)│ │  (Ollama)  │              │
-│  └──────┬─────┘ └──────┬─────┘ └──────┬─────┘              │
-│         │              │              │                     │
-│         ▼              ▼              ▼                     │
-│  ┌──────────────────────────────────────────┐               │
-│  │          PostgreSQL (Supabase)            │               │
-│  │  18 tables — stocks, prices, indicators,  │               │
-│  │  scores, reports, notifications, etc.     │               │
-│  └────────────────────┬─────────────────────┘               │
-│                       │                                     │
-│         ┌─────────────┼─────────────┐                      │
-│         ▼                           ▼                      │
-│  ┌────────────┐              ┌────────────┐                │
-│  │  FastAPI    │◀─── REST ──▶│  Next.js    │                │
-│  │  Backend   │    (JSON)    │  Dashboard  │                │
-│  │  :8000     │              │  :3000      │                │
-│  └────────────┘              └────────────┘                │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                     LOCALSTOCK ARCHITECTURE                       │
+├──────────────────────────────────────────────────────────────────┤
+│                                                                   │
+│  ┌──────────┐    ┌───────────┐    ┌──────────┐                   │
+│  │ Scheduler │───▶│  Pipeline  │───▶│ Telegram │                   │
+│  │ (15:45)  │    │ Orchestrator│   │   Bot    │                   │
+│  └──────────┘    └─────┬─────┘    └──────────┘                   │
+│                        │                                          │
+│         ┌──────────────┼──────────────┐                          │
+│         ▼              ▼              ▼                          │
+│  ┌────────────┐ ┌────────────┐ ┌────────────┐                   │
+│  │  Crawlers   │ │  Analysis   │ │  AI/LLM    │                   │
+│  │ (vnstock)  │ │  (pandas-ta)│ │  (Ollama)  │                   │
+│  └──────┬─────┘ └──────┬─────┘ └──────┬─────┘                   │
+│         │              │              │                          │
+│         ▼              ▼              ▼                          │
+│  ┌──────────────────────────────────────────┐                    │
+│  │          PostgreSQL (Supabase)            │                    │
+│  │  19 tables — stocks, prices, indicators,  │                    │
+│  │  scores, reports, admin_jobs, etc.        │                    │
+│  └────────────────────┬─────────────────────┘                    │
+│                       │                                          │
+│         ┌─────────────┼─────────────┐                           │
+│         ▼                           ▼                           │
+│  ┌────────────┐              ┌────────────────────┐             │
+│  │  FastAPI    │◀─── REST ──▶│  Next.js Dashboard  │             │
+│  │  Backend   │    (JSON)    │  :3000              │             │
+│  │  :8000     │              │  ┌──────────────┐   │             │
+│  │            │              │  │ Admin Console │   │             │
+│  │ /api/*     │              │  │ (CRUD + Jobs) │   │             │
+│  │ /api/admin │              │  └──────────────┘   │             │
+│  │  /*        │              │  ┌──────────────┐   │             │
+│  └────────────┘              │  │ Learn Pages   │   │             │
+│                              │  │ (Glossary)    │   │             │
+│  ┌────────────┐              │  └──────────────┘   │             │
+│  │ Job Worker  │              │  ┌──────────────┐   │             │
+│  │ (5s poll)  │              │  │ i18n (vi/en)  │   │             │
+│  │ admin_jobs │              │  └──────────────┘   │             │
+│  └────────────┘              └────────────────────┘             │
+│                                                                   │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
 **Luồng dữ liệu chính:**
@@ -62,6 +76,13 @@ Tài liệu này giải thích toàn bộ codebase hoạt động như thế nà
 Crawl (vnstock) → Store (PostgreSQL) → Analyze (pandas-ta)
 → Score (weighted composite) → Report (Ollama LLM) → Notify (Telegram)
 → Display (Next.js Dashboard)
+```
+
+**Luồng Admin:**
+```
+Admin Console → POST /api/admin/* → Tạo job (pending) → DB queue (admin_jobs)
+→ Job Worker (5s poll) → AdminService execute → Cập nhật job status
+→ Frontend polling (3s khi có job active) → Hiển thị kết quả
 ```
 
 ---
@@ -79,7 +100,12 @@ def create_app() -> FastAPI:
     # 1. CORS middleware — chỉ cho phép frontend localhost:3000
     app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:3000"])
 
-    # 2. Đăng ký 9 routers (30+ endpoints)
+    # 2. Global exception handler → JSON response
+    @app.exception_handler(Exception)
+    async def global_exception_handler(request, exc):
+        return JSONResponse(status_code=500, content={"detail": "Internal Server Error"})
+
+    # 3. Đăng ký 10 routers (40+ endpoints)
     app.include_router(health_router)       # GET /health
     app.include_router(analysis_router)     # /api/analysis/*
     app.include_router(news_router)         # /api/news/*
@@ -89,6 +115,7 @@ def create_app() -> FastAPI:
     app.include_router(automation_router)   # /api/automation/*
     app.include_router(prices_router)       # /api/prices/*
     app.include_router(dashboard_router)    # /api/sectors/*
+    app.include_router(admin_router)        # /api/admin/* (v1.2)
 
     return app
 ```
@@ -99,7 +126,9 @@ def create_app() -> FastAPI:
 @asynccontextmanager
 async def get_lifespan(app: FastAPI):
     # Startup: Khởi tạo scheduler
-    setup_scheduler()        # Tạo daily job (15:45 VN time)
+    configure_ssl()
+    configure_vnstock_api_key()
+    setup_scheduler()        # Tạo daily job (15:45 VN time) + admin job worker (5s)
     scheduler.start()        # Bắt đầu lắng nghe
     yield
     # Shutdown: Tắt scheduler
@@ -109,9 +138,9 @@ async def get_lifespan(app: FastAPI):
 **Thứ tự khởi động:**
 1. uvicorn load module `localstock.api.app`
 2. `create_app()` tạo FastAPI instance
-3. CORS middleware được thêm
-4. 9 routers đăng ký endpoints
-5. Lifespan bắt đầu → APScheduler start
+3. CORS middleware + global exception handler được thêm
+4. 10 routers đăng ký endpoints (bao gồm admin router mới)
+5. Lifespan bắt đầu → SSL + vnstock config → APScheduler start (2 jobs: daily pipeline + admin worker)
 6. Server sẵn sàng nhận request tại `:8000`
 
 ---
@@ -514,20 +543,60 @@ await notification_repo.log_notification(today, "daily_digest", "sent")
 
 ## 9. Scheduler tự động
 
-### APScheduler CronTrigger
+### APScheduler — 2 Jobs
 
 ```python
 # apps/prometheus/src/localstock/scheduler/scheduler.py
 
-scheduler.add_job(
-    daily_job,
-    trigger=CronTrigger(
-        hour=15, minute=45,              # 15:45 VN time
-        day_of_week="mon-fri",           # Thứ 2-6 only
-        timezone="Asia/Ho_Chi_Minh",
-    ),
-    misfire_grace_time=3600,             # Nếu miss, chạy trong 1 giờ
-)
+def setup_scheduler() -> AsyncIOScheduler:
+    # Job 1: Daily Pipeline (CronTrigger)
+    scheduler.add_job(
+        daily_job,
+        trigger=CronTrigger(
+            hour=15, minute=45,              # 15:45 VN time
+            day_of_week="mon-fri",           # Thứ 2-6 only
+            timezone="Asia/Ho_Chi_Minh",
+        ),
+        id="daily_pipeline",
+        misfire_grace_time=3600,             # Nếu miss, chạy trong 1 giờ
+    )
+
+    # Job 2: Admin Job Worker (IntervalTrigger) — v1.2
+    scheduler.add_job(
+        process_pending_jobs,                # Poll DB cho pending jobs
+        trigger="interval",
+        seconds=5,                           # Mỗi 5 giây kiểm tra 1 lần
+        id="admin_job_worker",
+    )
+```
+
+### Admin Job Worker (DB-Queue Pattern)
+
+```python
+# apps/prometheus/src/localstock/services/admin_service.py
+
+async def process_pending_jobs():
+    """Được gọi mỗi 5 giây bởi APScheduler."""
+    if _admin_lock.locked():
+        return  # Đã có job đang chạy
+
+    # 1. Lấy job cũ nhất có status='pending'
+    job = await job_repo.get_oldest_pending()
+    if not job:
+        return  # Không có job mới
+
+    # 2. Đánh dấu 'running' ngay lập tức (tránh re-pickup)
+    await job_repo.update_status(job.id, "running")
+
+    # 3. Chạy trong background task (không block poller)
+    task = asyncio.create_task(_execute_job(job.id, job.job_type, job.params))
+
+    # 4. Execute theo job_type:
+    #    crawl    → Pipeline.run_single() cho từng symbol
+    #    analyze  → AnalysisService.run_single/run_full()
+    #    score    → ScoringService.run_full(symbols=...)
+    #    report   → ReportService.generate_for_symbol()
+    #    pipeline → crawl→analyze→score→report tuần tự
 ```
 
 ### Trading Day Calendar
@@ -552,11 +621,11 @@ def is_trading_day(check_date=None):
 
 ## 10. Database Layer
 
-### 18 bảng (5 nhóm)
+### 19 bảng (6 nhóm)
 
 ```
 📦 Master Data
-├── stocks              — Danh sách mã (~400 HOSE)
+├── stocks              — Danh sách mã (~400 HOSE) + is_tracked flag
 ├── stock_prices        — Giá OHLCV hàng ngày
 ├── corporate_events    — Splits, dividends
 └── financial_statements — BCTC (JSON format)
@@ -574,14 +643,19 @@ def is_trading_day(check_date=None):
 
 🏆 Scoring & Reports
 ├── composite_scores    — Điểm tổng hợp/mã/ngày
-├── stock_reports       — Báo cáo AI (9 sections)
+├── analysis_reports    — Báo cáo AI (9 sections)
 ├── macro_indicators    — Lãi suất, tỷ giá, CPI
-├── score_changes       — Biến động điểm >15%
+├── score_change_alerts — Biến động điểm >15%
 └── sector_snapshots    — Snapshot ngành hàng ngày
 
 ⚙️ Operations
 ├── pipeline_runs       — Log pipeline execution
-└── notifications_sent  — Log thông báo đã gửi
+└── notification_logs   — Log thông báo đã gửi
+
+🔧 Admin (v1.2)
+└── admin_jobs          — Job queue cho admin operations
+                          (id, job_type, status, params, result, error,
+                           created_at, started_at, completed_at)
 ```
 
 ### Repository Pattern
@@ -619,25 +693,58 @@ async with session_factory() as session:
 
 ```
 apps/helios/src/
-├── app/                    # Pages (App Router)
-│   ├── layout.tsx          # Root layout (dark theme, Vietnamese)
-│   ├── page.tsx            # Home → redirect to /rankings
-│   ├── rankings/page.tsx   # Bảng xếp hạng
-│   ├── market/page.tsx     # Tổng quan thị trường
-│   └── stock/[symbol]/     # Chi tiết mã
-│       └── page.tsx        # Candlestick chart + AI report
+├── app/                       # Pages (App Router)
+│   ├── layout.tsx             # Root layout (ThemeProvider, NextIntlClientProvider, QueryProvider)
+│   ├── page.tsx               # Home → redirect to /rankings
+│   ├── rankings/page.tsx      # Bảng xếp hạng
+│   ├── market/page.tsx        # Tổng quan thị trường
+│   ├── stock/[symbol]/page.tsx # Chi tiết mã: chart + AI report + recommendation
+│   ├── learn/page.tsx         # Trang học thuật — 3 danh mục (v1.1)
+│   ├── learn/[category]/page.tsx # Glossary theo danh mục (v1.1)
+│   └── admin/page.tsx         # Admin Console — 3 tabs (v1.2)
 ├── components/
-│   ├── layout/             # Sidebar (240px), AppShell
-│   ├── charts/             # Candlestick (lightweight-charts v5)
-│   ├── rankings/           # DataTable, GradeBadge
-│   ├── market/             # MacroCards, SectorTable
-│   └── ui/                 # EmptyState, ErrorState
-└── lib/
-    ├── api.ts              # apiFetch() → localhost:8000
-    ├── queries.ts           # 10 React Query hooks
-    ├── types.ts             # 14 TypeScript interfaces
-    └── utils.ts             # Vietnamese formatters
+│   ├── layout/                # Sidebar (240px, 4 nav items), AppShell
+│   ├── charts/                # Candlestick (lightweight-charts v5), SubPanel, TimeframeSelector
+│   ├── rankings/              # DataTable, GradeBadge
+│   ├── market/                # MacroCards, SectorTable
+│   ├── stock/                 # AIReportPanel, ScoreBreakdown, RecommendationBadge (v1.2)
+│   ├── admin/                 # StockTable, PipelineControl, JobMonitor, StatusBadge (v1.2)
+│   ├── glossary/              # GlossaryMarkdown, GlossaryTerm — interactive linking (v1.1)
+│   ├── learn/                 # GlossaryEntryCard, GlossarySearch (v1.1)
+│   ├── theme/                 # ThemeProvider, ThemeToggle — light/dark (v1.1)
+│   ├── i18n/                  # LanguageToggle — vi/en (v1.1)
+│   └── ui/                    # Shadcn/ui: badge, button, card, checkbox, collapsible,
+│                              #   empty-state, error-state, input, scroll-area, separator,
+│                              #   skeleton, sonner, table, tabs
+├── hooks/
+│   └── use-chart-theme.ts     # Chart theme hook
+├── i18n/
+│   ├── routing.ts             # locales: ['vi', 'en'], defaultLocale: 'en'
+│   └── request.ts             # Cookie-based locale detection, fallback to Accept-Language
+├── lib/
+│   ├── api.ts                 # apiFetch() → localhost:8000
+│   ├── queries.ts             # 20 React Query hooks (bao gồm 9 admin hooks)
+│   ├── types.ts               # 20 TypeScript interfaces
+│   ├── glossary.ts            # Static glossary data — 26 entries, 3 categories (v1.1)
+│   ├── glossary-linker.ts     # Alias scanner — longest-first matching (v1.1)
+│   ├── chart-colors.ts        # Chart color config
+│   ├── query-provider.tsx     # React Query provider
+│   └── utils.ts               # Vietnamese formatters
+└── messages/
+    ├── vi.json                # Vietnamese translations
+    └── en.json                # English translations
 ```
+
+### Navigation (Sidebar)
+
+```
+Rankings (BarChart3)     → /rankings        — Bảng xếp hạng mã
+Market (Globe)           → /market          — Tổng quan thị trường
+Learn (BookOpen)         → /learn           — Học thuật & Glossary (v1.1)
+Admin (Shield)           → /admin           — Admin Console (v1.2)
+```
+
+Header chứa: `LanguageToggle` (vi/en) + `ThemeToggle` (light/dark)
 
 ### Data Flow
 
@@ -651,21 +758,34 @@ React Component → useTopScores() hook → React Query cache
                                        PostgreSQL
 ```
 
-### React Query Hooks
+### React Query Hooks (20 hooks)
 
 ```typescript
 // apps/helios/src/lib/queries.ts
 
+// --- Data Display (10 hooks) ---
 useTopScores(limit=20)           // GET /api/scores/top
 useStockScore(symbol)            // GET /api/scores/{symbol}
 useStockPrices(symbol, days=365) // GET /api/prices/{symbol}
 useStockIndicators(symbol)       // GET /api/prices/{symbol}/indicators
-useTechnicalAnalysis(symbol)     // GET /api/analysis/{symbol}/technical
-useFundamentalAnalysis(symbol)   // GET /api/analysis/{symbol}/fundamental
+useStockTechnical(symbol)        // GET /api/analysis/{symbol}/technical
+useStockFundamental(symbol)      // GET /api/analysis/{symbol}/fundamental
 useStockReport(symbol)           // GET /api/reports/{symbol}
 useMacroLatest()                 // GET /api/macro/latest
-useSectorSnapshots()             // GET /api/sectors/latest
+useSectorsLatest()               // GET /api/sectors/latest
 useTriggerPipeline()             // POST /api/automation/run (mutation)
+
+// --- Admin Console (9 hooks, v1.2) ---
+useTrackedStocks()               // GET  /api/admin/stocks
+useAddStock()                    // POST /api/admin/stocks (mutation)
+useRemoveStock()                 // DELETE /api/admin/stocks/{symbol} (mutation)
+useTriggerAdminCrawl()           // POST /api/admin/crawl (mutation)
+useTriggerAdminAnalyze()         // POST /api/admin/analyze (mutation)
+useTriggerAdminScore()           // POST /api/admin/score (mutation)
+useTriggerAdminReport()          // POST /api/admin/report (mutation)
+useTriggerAdminPipeline()        // POST /api/admin/pipeline (mutation)
+useAdminJobs(limit=50)           // GET  /api/admin/jobs (auto-refetch 3s khi có active jobs)
+useAdminJobDetail(jobId)         // GET  /api/admin/jobs/{id}
 ```
 
 ### Chart Implementation
@@ -684,7 +804,242 @@ candleSeries.setData(priceData);  // OHLCV from API
 
 ---
 
-## 12. Cấu hình hệ thống
+## 12. Admin Console
+
+### Tổng quan (v1.2)
+
+Admin Console tại `/admin` cung cấp giao diện quản trị với 3 tab:
+
+```
+┌─────────────────────────────────────────────────┐
+│  Admin Console                                   │
+├──────────┬───────────────┬──────────────────────┤
+│  Stocks  │  Pipeline     │  Jobs                │
+│  (CRUD)  │  (Triggers)   │  (Monitor)           │
+├──────────┴───────────────┴──────────────────────┤
+│                                                  │
+│  Tab 1: Stock Management (StockTable)            │
+│  - Thêm/xóa mã theo dõi (TrackedStock)          │
+│  - Tìm kiếm + sắp xếp bảng                     │
+│  - Hiển thị: symbol, name, exchange, industry    │
+│                                                  │
+│  Tab 2: Pipeline Control (PipelineControl)       │
+│  - Chọn mã → trigger từng step hoặc full pipe   │
+│  - 5 operations: Crawl, Analyze, Score,          │
+│    Report, Run All (pipeline)                    │
+│  - Checkbox multi-select + search/sort           │
+│                                                  │
+│  Tab 3: Job Monitor (JobMonitor)                 │
+│  - Bảng jobs với filter status + type            │
+│  - Auto-refresh 3s khi có pending/running jobs   │
+│  - Expandable rows: xem result/error detail      │
+│  - StatusBadge: completed/running/pending/failed │
+│                                                  │
+└──────────────────────────────────────────────────┘
+```
+
+### Admin API Endpoints (10 endpoints)
+
+```
+# apps/prometheus/src/localstock/api/routes/admin.py
+
+📋 Stock Management
+GET    /api/admin/stocks          — Danh sách mã đang theo dõi (is_tracked=True)
+POST   /api/admin/stocks          — Thêm mã mới vào watchlist
+DELETE /api/admin/stocks/{symbol} — Xóa mã khỏi watchlist (is_tracked=False)
+
+⚡ Pipeline Triggers (DB-Queue Pattern)
+POST   /api/admin/crawl           — Queue crawl job cho các mã chọn
+POST   /api/admin/analyze         — Queue analysis job
+POST   /api/admin/score           — Queue scoring job
+POST   /api/admin/report          — Queue AI report generation
+POST   /api/admin/pipeline        — Queue full pipeline (crawl→analyze→score→report)
+
+📊 Job Monitoring
+GET    /api/admin/jobs             — Danh sách jobs gần đây (default: 50)
+GET    /api/admin/jobs/{id}        — Chi tiết job (result + error)
+```
+
+### DB-Queue Pattern
+
+```
+Frontend                    Backend API                 DB (admin_jobs)
+   │                            │                            │
+   │── POST /api/admin/crawl ──▶│                            │
+   │                            │── INSERT (pending) ───────▶│
+   │◀── {job_id, pending} ─────│                            │
+   │                            │                            │
+   │                     Job Worker (mỗi 5s)                 │
+   │                            │◀── SELECT oldest pending ──│
+   │                            │── UPDATE status=running ──▶│
+   │                            │── Execute crawl ──────────▶│
+   │                            │── UPDATE status=completed ▶│
+   │                            │                            │
+   │── GET /api/admin/jobs ────▶│                            │
+   │◀── [{status: completed}] ──│                            │
+```
+
+### AdminJob Model
+
+```python
+# apps/prometheus/src/localstock/db/models.py
+
+class AdminJob(Base):
+    __tablename__ = "admin_jobs"
+
+    id: int                      # Auto-increment PK
+    job_type: str                # 'crawl' | 'analyze' | 'score' | 'report' | 'pipeline'
+    status: str                  # 'pending' | 'running' | 'completed' | 'failed'
+    params: dict | None          # JSON — e.g., {"symbols": ["VNM", "FPT"]}
+    result: dict | None          # JSON — kết quả khi completed
+    error: str | None            # Error message khi failed
+    created_at: datetime         # Thời điểm tạo job
+    started_at: datetime | None  # Thời điểm bắt đầu chạy
+    completed_at: datetime | None # Thời điểm hoàn thành/lỗi
+
+    # Indexes: ix_admin_jobs_status, ix_admin_jobs_created_at
+```
+
+### RecommendationBadge (v1.2)
+
+```typescript
+// apps/helios/src/components/stock/recommendation-badge.tsx
+
+// Hiển thị khuyến nghị từ AI report với màu sắc tương ứng
+// Normalize cả tiếng Việt và English: "Mua mạnh" ↔ "strong_buy"
+// 5 levels: strong_buy (xanh đậm), buy (emerald), hold (amber), sell (cam), strong_sell (đỏ)
+```
+
+---
+
+## 13. Học thuật & Glossary
+
+### Tổng quan (v1.1)
+
+Hệ thống học thuật gồm 2 phần chính:
+
+1. **Learn Pages** (`/learn`) — Trang giáo dục với glossary tĩnh, 3 danh mục
+2. **Interactive Glossary Linking** — Tự động liên kết thuật ngữ trong AI reports
+
+### Learn Pages
+
+```
+/learn                        — Trang chủ: 3 card danh mục
+/learn/technical              — Phân tích kỹ thuật (RSI, MACD, SMA, EMA, BB, ADX, OBV, ...)
+/learn/fundamental            — Phân tích cơ bản (P/E, P/B, EPS, ROE, ROA, D/E, ...)
+/learn/macro                  — Kinh tế vĩ mô (CPI, GDP, lãi suất, tỷ giá, ...)
+```
+
+### Glossary Data Architecture
+
+```typescript
+// apps/helios/src/lib/glossary.ts — 956 dòng, 26 entries
+
+interface GlossaryEntry {
+  id: string;              // URL-safe slug: "rsi", "pe-ratio"
+  term: string;            // Tiếng Việt: "Chỉ số sức mạnh tương đối (RSI)"
+  termEn: string;          // English: "Relative Strength Index"
+  aliases: string[];       // Matching aliases: ["RSI", "chỉ số RSI", ...]
+  category: GlossaryCategory;  // "technical" | "fundamental" | "macro"
+  shortDef: string;        // 1 câu định nghĩa tiếng Việt
+  content: string;         // Full markdown article
+  formula?: string;        // Công thức (optional)
+}
+
+// Helper functions:
+getEntriesByCategory(category)  // Lọc entries theo danh mục
+getAllEntries()                  // Tất cả 26 entries
+normalizeForSearch(text)        // NFD + remove diacritics + đ→d + lowercase
+```
+
+### Interactive Glossary Linking (GlossaryMarkdown)
+
+```
+AI Report Text → GlossaryMarkdown → scanText() → Segments
+                                       ↓
+                                  AliasMap (sorted longest-first)
+                                       ↓
+                              Case-insensitive matching
+                              + Word boundary check
+                              + First-occurrence only
+                                       ↓
+                              GlossaryTerm components
+                              (popover on hover: shortDef + formula + link to /learn)
+```
+
+```typescript
+// apps/helios/src/lib/glossary-linker.ts
+
+buildAliasMap()    // Tạo sorted alias map (longest-first) từ tất cả entries
+scanText(text, aliasMap, linkedIds)
+                   // Scan text, trả về TextSegment[] (string | GlossaryMatch)
+                   // - Case-insensitive matching (toLowerCase)
+                   // - Word boundary check (Unicode-aware [\p{L}\p{N}])
+                   // - First-occurrence-only (linkedIds Set)
+```
+
+### GlossaryTerm Popover
+
+```typescript
+// apps/helios/src/components/glossary/glossary-term.tsx
+// Dùng @base-ui/react Popover — hover với delay 200ms
+// Hiển thị: term name + shortDef + formula (nếu có) + link "Xem chi tiết →"
+// Link dẫn đến /learn/{category}#{id} (deep-link với auto-scroll)
+```
+
+### GlossarySearch
+
+```typescript
+// apps/helios/src/components/learn/glossary-search.tsx
+// Tìm kiếm real-time trong entries: term, termEn, shortDef, aliases
+// Dùng normalizeForSearch() — bỏ dấu tiếng Việt khi tìm
+// Hash-based deep-linking: /learn/technical#rsi → auto-open + scroll
+```
+
+---
+
+## 14. Theme & i18n
+
+### Theme System (v1.1)
+
+```typescript
+// apps/helios/src/components/theme/theme-provider.tsx
+
+// ThemeProvider dùng useSyncExternalStore + localStorage
+// Key: "localstock-theme", default: "light"
+// 2 themes: "light" | "dark"
+// Cross-tab sync qua StorageEvent
+// FOUC prevention: inline script trong <head> đọc localStorage trước render
+
+// ThemeToggle: nút Sun/Moon chuyển đổi light↔dark
+```
+
+### i18n — next-intl (v1.1)
+
+```
+Locales: vi (Vietnamese), en (English)
+Default: en
+
+Locale Detection (theo thứ tự ưu tiên):
+1. Cookie NEXT_LOCALE
+2. Accept-Language header (startsWith 'vi' → vi, else en)
+
+Switching: LanguageToggle component
+→ Set cookie NEXT_LOCALE + router.refresh()
+→ Không dùng URL-based routing (không có /vi/ prefix)
+```
+
+```
+messages/
+├── vi.json   — Bản dịch tiếng Việt
+└── en.json   — Bản dịch tiếng Anh
+
+Namespaces: metadata, nav, rankings, market, stock, admin, learn, theme, language
+```
+
+---
+
+## 15. Cấu hình hệ thống
 
 ### Pydantic Settings
 
@@ -715,7 +1070,7 @@ def get_settings() -> Settings:
 
 ---
 
-## 13. Design Patterns
+## 16. Design Patterns
 
 | Pattern | Mục đích | Vị trí |
 |---------|----------|--------|
@@ -731,3 +1086,11 @@ def get_settings() -> Settings:
 | **Process Lock** | `asyncio.Lock()` ngăn chạy pipeline song song | automation_service.py |
 | **Source Fallback** | KBS fail → VCI (cho financial data) | finance_crawler.py |
 | **Session-per-step** | Mỗi pipeline step dùng riêng DB session | automation_service.py |
+| **DB-Queue Pattern** | API tạo job → worker poll → execute background | admin_service.py (v1.2) |
+| **Background Task GC** | `_background_tasks` set giữ reference tránh GC | admin_service.py (v1.2) |
+| **Static Data Module** | Glossary data tĩnh tại build time, không API call | glossary.ts (v1.1) |
+| **Longest-First Matching** | Alias dài nhất match trước (tránh partial match) | glossary-linker.ts (v1.1) |
+| **First-Occurrence Linking** | Chỉ link lần đầu mỗi glossary term trong text | glossary-linker.ts (v1.1) |
+| **Cookie-based i18n** | Locale detect: cookie → Accept-Language → default | i18n/request.ts (v1.1) |
+| **FOUC Prevention** | Inline `<script>` đọc theme từ localStorage trước render | layout.tsx (v1.1) |
+| **Cross-tab Theme Sync** | useSyncExternalStore + StorageEvent listener | theme-provider.tsx (v1.1) |
