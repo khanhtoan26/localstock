@@ -51,7 +51,10 @@
   6. POST /api/admin/report — generate AI report for a specific symbol
   7. GET /api/admin/jobs — list recent pipeline/job history with status
   8. GET /api/admin/jobs/{id} — get detailed job status + errors
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 11-01-PLAN.md — Data layer foundation (models, migration, repositories)
+- [ ] 11-02-PLAN.md — Admin API endpoints + service + tests
 **UI hint**: no
 
 ### Phase 12: Admin Console UI
@@ -92,6 +95,6 @@
 | 8. Stock Page Reading-First Redesign | v1.1 | - | Complete (merged into Phase 7) | 2026-04-20 |
 | 9. Academic/Learning Page & Glossary Data | v1.1 | 2/2 | Complete | 2026-04-20 |
 | 10. Interactive Glossary Linking | v1.1 | 2/2 | Complete | 2026-04-21 |
-| 11. Admin API Endpoints | v1.2 | 0/0 | Not started | - |
+| 11. Admin API Endpoints | v1.2 | 0/2 | Planning | - |
 | 12. Admin Console UI | v1.2 | 0/0 | Not started | - |
 | 13. AI Report Generation UI | v1.2 | 0/0 | Not started | - |
