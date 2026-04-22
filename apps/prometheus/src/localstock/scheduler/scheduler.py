@@ -78,6 +78,10 @@ async def get_lifespan(app: FastAPI):
     Usage in app.py:
         app = FastAPI(lifespan=get_lifespan)
     """
+    from localstock import configure_ssl, configure_vnstock_api_key
+
+    configure_ssl()
+    configure_vnstock_api_key()
     setup_scheduler()
     scheduler.start()
     logger.info("APScheduler started")

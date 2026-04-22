@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://localhost:5432/localstock"
     database_url_migration: str = ""
     vnstock_source: str = "VCI"
+    vnstock_api_key: str = ""  # Set via VNSTOCK_API_KEY env var
     crawl_delay_seconds: float = 1.0
     crawl_batch_size: int = 50
     log_level: str = "INFO"

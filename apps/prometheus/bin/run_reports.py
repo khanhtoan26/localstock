@@ -13,11 +13,12 @@ import sys
 
 from loguru import logger
 
-from localstock import configure_ssl
+from localstock import configure_ssl, configure_vnstock_api_key
 from localstock.db.database import get_session_factory
 from localstock.services.report_service import ReportService
 
 configure_ssl()
+configure_vnstock_api_key()
 
 
 async def main(top_n: int = 10) -> None:
