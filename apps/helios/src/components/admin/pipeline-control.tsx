@@ -3,7 +3,17 @@
 import { useState, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { RefreshCw, BarChart3, Calculator, Play, Loader2 } from "lucide-react";
+import {
+  RefreshCw,
+  BarChart3,
+  Calculator,
+  Play,
+  Loader2,
+  Search,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+} from "lucide-react";
 import {
   useTrackedStocks,
   useTriggerAdminCrawl,
@@ -11,6 +21,7 @@ import {
   useTriggerAdminScore,
   useTriggerAdminPipeline,
 } from "@/lib/queries";
+import type { TrackedStock } from "@/lib/types";
 import {
   Table,
   TableHeader,
@@ -20,9 +31,13 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
+
+type SortKey = "symbol" | "name" | "exchange" | "industry";
+type SortDir = "asc" | "desc";
 
 interface PipelineControlProps {
   onOperationTriggered: () => void;
@@ -32,29 +47,63 @@ export function PipelineControl({ onOperationTriggered }: PipelineControlProps) 
   const t = useTranslations("admin");
   const { data, isLoading } = useTrackedStocks();
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortKey, setSortKey] = useState<SortKey>("symbol");
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
 
   const triggerCrawl = useTriggerAdminCrawl();
   const triggerAnalyze = useTriggerAdminAnalyze();
   const triggerScore = useTriggerAdminScore();
   const triggerPipeline = useTriggerAdminPipeline();
 
-  const stocks = useMemo(() => data?.stocks ?? [], [data?.stocks]);
+  const rawStocks = data?.stocks;
 
-  // Sync selection with current stock list (pitfall 5: stale selection state)
+  const filteredAndSorted = useMemo(() => {
+    if (!rawStocks) return [];
+    let list = rawStocks;
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      list = list.filter(
+        (s: TrackedStock) =>
+          s.symbol.toLowerCase().includes(q) ||
+          (s.name ?? "").toLowerCase().includes(q) ||
+          (s.exchange ?? "").toLowerCase().includes(q) ||
+          (s.industry ?? "").toLowerCase().includes(q),
+      );
+    }
+    return [...list].sort((a: TrackedStock, b: TrackedStock) => {
+      const av = (a[sortKey] ?? "").toLowerCase();
+      const bv = (b[sortKey] ?? "").toLowerCase();
+      const cmp = av.localeCompare(bv);
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+  }, [rawStocks, searchQuery, sortKey, sortDir]);
+
+  // Sync selection with filtered stock list
   const validSelected = useMemo(() => {
-    const symbols = new Set(stocks.map((s) => s.symbol));
+    const symbols = new Set(filteredAndSorted.map((s) => s.symbol));
     return new Set([...selected].filter((s) => symbols.has(s)));
-  }, [stocks, selected]);
+  }, [filteredAndSorted, selected]);
 
-  const allSelected = validSelected.size === stocks.length && stocks.length > 0;
+  const allSelected =
+    validSelected.size === filteredAndSorted.length && filteredAndSorted.length > 0;
   const someSelected =
-    validSelected.size > 0 && validSelected.size < stocks.length;
+    validSelected.size > 0 && validSelected.size < filteredAndSorted.length;
+
+  function toggleSort(key: SortKey) {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+  }
 
   function toggleAll() {
     if (allSelected) {
       setSelected(new Set());
     } else {
-      setSelected(new Set(stocks.map((s) => s.symbol)));
+      setSelected(new Set(filteredAndSorted.map((s) => s.symbol)));
     }
   }
 
@@ -99,7 +148,7 @@ export function PipelineControl({ onOperationTriggered }: PipelineControlProps) 
     );
   }
 
-  if (stocks.length === 0) {
+  if (!rawStocks || rawStocks.length === 0) {
     return (
       <EmptyState
         heading={t("stocks.emptyHeading")}
@@ -182,44 +231,84 @@ export function PipelineControl({ onOperationTriggered }: PipelineControlProps) 
           {t("pipeline.runAll")}
         </Button>
 
-        <span className="text-sm text-muted-foreground ml-auto">
-          {t("pipeline.selected", { count: validSelected.size })}
-        </span>
+        <div className="relative ml-auto">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder={t("stocks.search")}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-8 max-w-xs"
+          />
+        </div>
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-10">
-              <Checkbox
-                checked={allSelected}
-                indeterminate={someSelected}
-                onCheckedChange={toggleAll}
-              />
-            </TableHead>
-            <TableHead>{t("stocks.columns.symbol")}</TableHead>
-            <TableHead>{t("stocks.columns.name")}</TableHead>
-            <TableHead>{t("stocks.columns.exchange")}</TableHead>
-            <TableHead>{t("stocks.columns.industry")}</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {stocks.map((stock) => (
-            <TableRow key={stock.symbol}>
-              <TableCell>
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-sm text-muted-foreground">
+          {t("pipeline.selected", { count: validSelected.size })}
+        </span>
+        {searchQuery && (
+          <span className="text-xs text-muted-foreground">
+            {filteredAndSorted.length}/{rawStocks.length}
+          </span>
+        )}
+      </div>
+
+      {filteredAndSorted.length === 0 && searchQuery ? (
+        <p className="text-sm text-muted-foreground text-center py-8">
+          {t("stocks.noResults")}
+        </p>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-10">
                 <Checkbox
-                  checked={validSelected.has(stock.symbol)}
-                  onCheckedChange={() => toggleOne(stock.symbol)}
+                  checked={allSelected}
+                  indeterminate={someSelected}
+                  onCheckedChange={toggleAll}
                 />
-              </TableCell>
-              <TableCell className="font-medium">{stock.symbol}</TableCell>
-              <TableCell>{stock.name ?? "—"}</TableCell>
-              <TableCell>{stock.exchange ?? "—"}</TableCell>
-              <TableCell>{stock.industry ?? "—"}</TableCell>
+              </TableHead>
+              {(["symbol", "name", "exchange", "industry"] as SortKey[]).map(
+                (key) => (
+                  <TableHead key={key}>
+                    <button
+                      className="flex items-center gap-1 hover:text-foreground transition-colors"
+                      onClick={() => toggleSort(key)}
+                    >
+                      {t(`stocks.columns.${key}`)}
+                      {sortKey === key ? (
+                        sortDir === "asc" ? (
+                          <ArrowUp className="h-3 w-3" />
+                        ) : (
+                          <ArrowDown className="h-3 w-3" />
+                        )
+                      ) : (
+                        <ArrowUpDown className="h-3 w-3 opacity-30" />
+                      )}
+                    </button>
+                  </TableHead>
+                ),
+              )}
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {filteredAndSorted.map((stock) => (
+              <TableRow key={stock.symbol}>
+                <TableCell>
+                  <Checkbox
+                    checked={validSelected.has(stock.symbol)}
+                    onCheckedChange={() => toggleOne(stock.symbol)}
+                  />
+                </TableCell>
+                <TableCell className="font-medium">{stock.symbol}</TableCell>
+                <TableCell>{stock.name ?? "—"}</TableCell>
+                <TableCell>{stock.exchange ?? "—"}</TableCell>
+                <TableCell>{stock.industry ?? "—"}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
     </div>
   );
 }
