@@ -33,7 +33,7 @@
 ### 🚧 v1.2 Admin Console
 
 - [x] **Phase 11: Admin API Endpoints** - Backend routes for stock management, pipeline control, job history (2/2 plans) — completed 2026-04-22
-- [ ] **Phase 12: Admin Console UI** - Admin page with stock management, pipeline trigger, job monitoring
+- [ ] **Phase 12: Admin Console UI** - Admin page with stock management, pipeline trigger, job monitoring (2/2 plans)
 - [ ] **Phase 13: AI Report Generation UI** - Generate AI reports for specific stocks from the admin console
 
 ## Phase Details
@@ -67,7 +67,10 @@ Plans:
   3. Pipeline Control section: buttons to trigger crawl, analyze, full pipeline for selected stocks
   4. Job Monitor section: table of recent jobs with status (running/completed/failed), duration, errors
   5. Real-time job status updates (polling or SSE)
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 12-01-PLAN.md — Foundation: types, hooks, i18n, sidebar nav, shadcn installs
+- [ ] 12-02-PLAN.md — Admin page: stock table, pipeline control, job monitor, page shell
 **UI hint**: yes
 
 ### Phase 13: AI Report Generation UI
