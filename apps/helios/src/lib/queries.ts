@@ -172,8 +172,11 @@ export function useTriggerAdminAnalyze() {
 export function useTriggerAdminScore() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: () =>
-      apiFetch<TriggerResponse>("/api/admin/score", { method: "POST" }),
+    mutationFn: (symbols: string[]) =>
+      apiFetch<TriggerResponse>("/api/admin/score", {
+        method: "POST",
+        body: JSON.stringify({ symbols }),
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "jobs"] });
     },

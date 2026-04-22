@@ -67,7 +67,7 @@ async def _execute_job(job_id: int, job_type: str, params: dict) -> None:
             case "analyze":
                 await service.run_analyze(job_id, params.get("symbols"))
             case "score":
-                await service.run_score(job_id)
+                await service.run_score(job_id, params.get("symbols"))
             case "report":
                 await service.run_report(job_id, params.get("symbol", ""))
             case "pipeline":
@@ -137,15 +137,15 @@ class AdminService:
                 logger.error(f"Analyze job {job_id} failed: {e}")
                 await self._update_job(job_id, "failed", error=str(e))
 
-    async def run_score(self, job_id: int) -> None:
-        """Background: run scoring for all tracked stocks."""
+    async def run_score(self, job_id: int, symbols: list[str] | None = None) -> None:
+        """Background: run scoring for specified stocks (or all tracked)."""
         async with _admin_lock:
             await self._update_job(job_id, "running")
             try:
                 async with self.session_factory() as session:
                     from localstock.services.scoring_service import ScoringService
                     service = ScoringService(session)
-                    result = await service.run_full()
+                    result = await service.run_full(symbols=symbols)
                 await self._update_job(job_id, "completed", result=result)
             except Exception as e:
                 logger.error(f"Score job {job_id} failed: {e}")

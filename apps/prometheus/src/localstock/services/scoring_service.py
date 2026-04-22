@@ -45,8 +45,11 @@ class ScoringService:
         self.industry_repo = IndustryRepository(session)
         self.config = ScoringConfig.from_settings()
 
-    async def run_full(self) -> dict:
-        """Compute composite scores for all HOSE stocks.
+    async def run_full(self, symbols: list[str] | None = None) -> dict:
+        """Compute composite scores for specified or all HOSE stocks.
+
+        Args:
+            symbols: Score only these symbols. If None, scores all HOSE stocks.
 
         Returns:
             Summary dict with counts and errors.
@@ -58,7 +61,10 @@ class ScoringService:
             "errors": [],
         }
 
-        symbols = await self.stock_repo.get_all_hose_symbols()
+        if symbols:
+            target_symbols = symbols
+        else:
+            target_symbols = await self.stock_repo.get_all_hose_symbols()
         today = date.today()
         score_rows = []
 
@@ -69,7 +75,7 @@ class ScoringService:
         crawler = MacroCrawler()
         macro_conditions = await crawler.determine_macro_conditions(macro_indicators)
 
-        for symbol in symbols:
+        for symbol in target_symbols:
             try:
                 # Get latest technical indicator
                 indicator = await self.indicator_repo.get_latest(symbol)

@@ -140,12 +140,13 @@ async def trigger_analyze(
 
 @router.post("/score")
 async def trigger_score(
+    request: SymbolsRequest,
     session: AsyncSession = Depends(get_session),
 ):
-    """Queue scoring job for all tracked stocks. Returns job ID immediately (D-04)."""
+    """Queue scoring job for specified symbols. Returns job ID immediately (D-04)."""
     job_repo = JobRepository(session)
-    job = await job_repo.create_job(job_type="score")
-    return {"job_id": job.id, "status": "pending", "job_type": "score"}
+    job = await job_repo.create_job(job_type="score", params={"symbols": request.symbols})
+    return {"job_id": job.id, "status": "pending", "job_type": "score", "symbols": request.symbols}
 
 
 @router.post("/report")

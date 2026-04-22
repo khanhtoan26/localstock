@@ -198,9 +198,9 @@ export function PipelineControl({ onOperationTriggered }: PipelineControlProps) 
 
         <Button
           variant="outline"
-          disabled={triggerScore.isPending}
+          disabled={validSelected.size === 0 || triggerScore.isPending}
           onClick={() =>
-            triggerScore.mutate(undefined, {
+            triggerScore.mutate([...validSelected], {
               onSuccess: () => handleSuccess(t("pipeline.score")),
               onError: handleMutationError,
             })
