@@ -84,6 +84,28 @@ class JobRepository:
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
+    async def get_oldest_pending(self) -> AdminJob | None:
+        """Get the oldest pending job for worker processing.
+
+        Returns:
+            Oldest pending AdminJob or None if queue is empty.
+        """
+        stmt = (
+            select(AdminJob)
+            .where(AdminJob.status == "pending")
+            .order_by(AdminJob.created_at.asc())
+            .limit(1)
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def count_pending(self) -> int:
+        """Count pending jobs in the queue."""
+        from sqlalchemy import func
+        stmt = select(func.count()).select_from(AdminJob).where(AdminJob.status == "pending")
+        result = await self.session.execute(stmt)
+        return result.scalar_one()
+
     async def get_by_id(self, job_id: int) -> AdminJob | None:
         """Get a single job by ID.
 

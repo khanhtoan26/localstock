@@ -1,7 +1,10 @@
 """Admin service — orchestrates background admin operations with job tracking.
 
-Each operation runs in a background asyncio task with its own session lifecycle.
-Job status is updated to 'running' → 'completed'/'failed' as the task progresses.
+Job execution uses a DB-queue pattern:
+1. API endpoints create job records (status=pending) and return immediately.
+2. A scheduler worker polls for pending jobs every few seconds.
+3. Worker picks up the oldest pending job and executes it.
+4. This decouples execution from the API process — failures don't crash the server.
 """
 
 import asyncio
@@ -17,11 +20,52 @@ from localstock.db.repositories.job_repo import JobRepository
 _admin_lock = asyncio.Lock()
 
 
-class AdminService:
-    """Background task runners for admin operations.
+async def process_pending_jobs() -> None:
+    """Poll DB for pending jobs and execute the oldest one.
 
-    Each run_* method is designed to be called via asyncio.create_task().
-    They manage their own database sessions via get_session_factory().
+    Called periodically by APScheduler. Skips if a job is already running
+    (lock held) or if no pending jobs exist.
+    """
+    if _admin_lock.locked():
+        return  # A job is already running
+
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        repo = JobRepository(session)
+        job = await repo.get_oldest_pending()
+        if not job:
+            return
+
+    job_id = job.id
+    job_type = job.job_type
+    params = job.params or {}
+
+    logger.info(f"Worker picked up job {job_id}: type={job_type}")
+
+    service = AdminService()
+    match job_type:
+        case "crawl":
+            await service.run_crawl(job_id, params.get("symbols", []))
+        case "analyze":
+            await service.run_analyze(job_id, params.get("symbols"))
+        case "score":
+            await service.run_score(job_id)
+        case "report":
+            await service.run_report(job_id, params.get("symbol", ""))
+        case "pipeline":
+            await service.run_pipeline(job_id)
+        case _:
+            logger.warning(f"Unknown job type: {job_type}")
+            async with session_factory() as session:
+                repo = JobRepository(session)
+                await repo.update_status(job_id, "failed", error=f"Unknown job type: {job_type}")
+
+
+class AdminService:
+    """Executes admin pipeline operations with job tracking.
+
+    Each run_* method acquires the _admin_lock, updates job status in DB,
+    and executes the operation. Called by process_pending_jobs() worker.
     """
 
     def __init__(self):

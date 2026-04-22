@@ -20,11 +20,12 @@ scheduler = AsyncIOScheduler(timezone="Asia/Ho_Chi_Minh")
 
 
 def setup_scheduler() -> AsyncIOScheduler:
-    """Configure the scheduler with the daily pipeline job.
+    """Configure the scheduler with the daily pipeline job and admin job worker.
 
     Returns:
         Configured (but not started) scheduler instance.
     """
+    from localstock.services.admin_service import process_pending_jobs
     from localstock.services.automation_service import AutomationService
 
     settings = get_settings()
@@ -51,6 +52,16 @@ def setup_scheduler() -> AsyncIOScheduler:
         name="Daily full pipeline",
         replace_existing=True,
         misfire_grace_time=3600,  # 1hr grace if missed
+    )
+
+    # Admin job worker — polls DB for pending jobs every 5 seconds
+    scheduler.add_job(
+        process_pending_jobs,
+        trigger="interval",
+        seconds=5,
+        id="admin_job_worker",
+        name="Admin job worker",
+        replace_existing=True,
     )
 
     logger.info(

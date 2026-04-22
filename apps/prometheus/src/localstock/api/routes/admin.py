@@ -1,19 +1,22 @@
 """Admin API endpoints for stock management, pipeline triggers, and job monitoring.
 
+Pipeline triggers use a DB-queue pattern:
+- Endpoints create a job record (status=pending) and return immediately.
+- A background worker (APScheduler) picks up pending jobs and executes them.
+- This decouples heavy work from API request handling.
+
 Endpoints (per D-01: separate /api/admin/* prefix):
 - GET    /api/admin/stocks          — list tracked stocks (ADMIN-01)
 - POST   /api/admin/stocks          — add stock to watchlist (ADMIN-01)
 - DELETE /api/admin/stocks/{symbol} — remove stock from watchlist (ADMIN-01)
-- POST   /api/admin/crawl           — trigger crawl (ADMIN-02, D-04)
-- POST   /api/admin/analyze         — trigger analysis (ADMIN-02, D-04)
-- POST   /api/admin/score           — trigger scoring (ADMIN-02, D-04)
-- POST   /api/admin/report          — trigger report generation (ADMIN-02, D-04)
-- POST   /api/admin/pipeline        — trigger full pipeline (ADMIN-03)
+- POST   /api/admin/crawl           — queue crawl job (ADMIN-02, D-04)
+- POST   /api/admin/analyze         — queue analysis job (ADMIN-02, D-04)
+- POST   /api/admin/score           — queue scoring job (ADMIN-02, D-04)
+- POST   /api/admin/report          — queue report generation (ADMIN-02, D-04)
+- POST   /api/admin/pipeline        — queue full pipeline (ADMIN-03)
 - GET    /api/admin/jobs             — list recent jobs (ADMIN-04)
 - GET    /api/admin/jobs/{id}        — get job detail (ADMIN-04)
 """
-
-import asyncio
 
 from fastapi import APIRouter, Depends, HTTPException, Path
 from pydantic import BaseModel, Field
@@ -22,7 +25,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from localstock.db.database import get_session
 from localstock.db.repositories.job_repo import JobRepository
 from localstock.db.repositories.stock_repo import StockRepository
-from localstock.services.admin_service import AdminService, _admin_lock
 
 router = APIRouter(prefix="/api/admin")
 
@@ -119,16 +121,9 @@ async def trigger_crawl(
     request: SymbolsRequest,
     session: AsyncSession = Depends(get_session),
 ):
-    """Trigger crawl for specified symbols. Returns job ID immediately (D-04a)."""
-    if _admin_lock.locked():
-        raise HTTPException(status_code=409, detail="An admin operation is already running")
-
+    """Queue crawl job for specified symbols. Returns job ID immediately (D-04a)."""
     job_repo = JobRepository(session)
     job = await job_repo.create_job(job_type="crawl", params={"symbols": request.symbols})
-
-    service = AdminService()
-    asyncio.create_task(service.run_crawl(job.id, request.symbols))
-
     return {"job_id": job.id, "status": "pending", "job_type": "crawl", "symbols": request.symbols}
 
 
@@ -137,16 +132,9 @@ async def trigger_analyze(
     request: SymbolsRequest,
     session: AsyncSession = Depends(get_session),
 ):
-    """Trigger analysis for specified symbols. Returns job ID immediately (D-04)."""
-    if _admin_lock.locked():
-        raise HTTPException(status_code=409, detail="An admin operation is already running")
-
+    """Queue analysis job for specified symbols. Returns job ID immediately (D-04)."""
     job_repo = JobRepository(session)
     job = await job_repo.create_job(job_type="analyze", params={"symbols": request.symbols})
-
-    service = AdminService()
-    asyncio.create_task(service.run_analyze(job.id, request.symbols))
-
     return {"job_id": job.id, "status": "pending", "job_type": "analyze", "symbols": request.symbols}
 
 
@@ -154,16 +142,9 @@ async def trigger_analyze(
 async def trigger_score(
     session: AsyncSession = Depends(get_session),
 ):
-    """Trigger scoring for all tracked stocks. Returns job ID immediately (D-04)."""
-    if _admin_lock.locked():
-        raise HTTPException(status_code=409, detail="An admin operation is already running")
-
+    """Queue scoring job for all tracked stocks. Returns job ID immediately (D-04)."""
     job_repo = JobRepository(session)
     job = await job_repo.create_job(job_type="score")
-
-    service = AdminService()
-    asyncio.create_task(service.run_score(job.id))
-
     return {"job_id": job.id, "status": "pending", "job_type": "score"}
 
 
@@ -172,16 +153,9 @@ async def trigger_report(
     request: ReportRequest,
     session: AsyncSession = Depends(get_session),
 ):
-    """Generate AI report for a specific symbol. Returns job ID immediately (D-04)."""
-    if _admin_lock.locked():
-        raise HTTPException(status_code=409, detail="An admin operation is already running")
-
+    """Queue AI report generation for a specific symbol. Returns job ID immediately (D-04)."""
     job_repo = JobRepository(session)
     job = await job_repo.create_job(job_type="report", params={"symbol": request.symbol})
-
-    service = AdminService()
-    asyncio.create_task(service.run_report(job.id, request.symbol.upper()))
-
     return {"job_id": job.id, "status": "pending", "job_type": "report", "symbol": request.symbol}
 
 
@@ -189,16 +163,9 @@ async def trigger_report(
 async def trigger_pipeline(
     session: AsyncSession = Depends(get_session),
 ):
-    """Trigger full daily pipeline (crawl→analyze→score→report). Returns job ID (ADMIN-03)."""
-    if _admin_lock.locked():
-        raise HTTPException(status_code=409, detail="An admin operation is already running")
-
+    """Queue full daily pipeline (crawl→analyze→score→report). Returns job ID (ADMIN-03)."""
     job_repo = JobRepository(session)
     job = await job_repo.create_job(job_type="pipeline")
-
-    service = AdminService()
-    asyncio.create_task(service.run_pipeline(job.id))
-
     return {"job_id": job.id, "status": "pending", "job_type": "pipeline"}
 
 
