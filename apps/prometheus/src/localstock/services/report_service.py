@@ -232,6 +232,130 @@ class ReportService:
         )
         return summary
 
+    async def generate_for_symbol(self, symbol: str) -> dict:
+        """Generate AI report for a single specific symbol.
+
+        Unlike run_full (which targets top-ranked stocks), this generates
+        a report for any given symbol regardless of rank.
+
+        Args:
+            symbol: Stock ticker symbol (e.g., 'VNM').
+
+        Returns:
+            Dict with 'status', 'symbol', and optional 'error'.
+        """
+        settings = get_settings()
+
+        is_healthy = await self.ollama.health_check()
+        if not is_healthy:
+            return {"status": "failed", "symbol": symbol, "error": "Ollama not available"}
+
+        try:
+            score = await self.score_repo.get_latest(symbol)
+            score_data = {}
+            if score:
+                score_data = {
+                    "total": score.total_score,
+                    "grade": score.grade,
+                    "technical": score.technical_score,
+                    "fundamental": score.fundamental_score,
+                    "sentiment": score.sentiment_score,
+                    "macro": score.macro_score,
+                }
+
+            macro_indicators = await self.macro_repo.get_all_latest()
+            crawler = MacroCrawler()
+            macro_conditions = await crawler.determine_macro_conditions(macro_indicators)
+            macro_data = {
+                "conditions": ", ".join(
+                    f"{k}: {v}" for k, v in macro_conditions.items()
+                ) if macro_conditions else None,
+            }
+
+            indicator = await self.indicator_repo.get_latest(symbol)
+            indicator_data = {}
+            if indicator:
+                indicator_data = {
+                    col.name: getattr(indicator, col.name)
+                    for col in indicator.__table__.columns
+                    if col.name not in ("id", "computed_at")
+                }
+
+            latest_price = await self.price_repo.get_latest(symbol)
+            if latest_price:
+                indicator_data["close"] = latest_price.close
+
+            ratio = await self.ratio_repo.get_latest(symbol)
+            ratio_data = {}
+            if ratio:
+                ratio_data = {
+                    col.name: getattr(ratio, col.name)
+                    for col in ratio.__table__.columns
+                    if col.name not in ("id", "computed_at")
+                }
+
+            sent_avg = await self.sentiment_service.get_aggregated_sentiment(
+                symbol, days=settings.sentiment_lookback_days
+            )
+            sentiment_data = {}
+            if sent_avg is not None:
+                sentiment_label = (
+                    "tích cực" if sent_avg > 0.6
+                    else "tiêu cực" if sent_avg < 0.4
+                    else "trung lập"
+                )
+                sentiment_data = {
+                    "summary": f"Điểm sentiment: {sent_avg:.2f} ({sentiment_label})",
+                }
+
+            stock = await self.stock_repo.get_by_symbol(symbol)
+            stock_info = {}
+            if stock:
+                stock_info = {
+                    "company_name": stock.name,
+                    "industry": stock.industry_icb3,
+                    "close_price": latest_price.close if latest_price else None,
+                }
+
+            t3_data = predict_3day_trend(indicator_data)
+
+            data = ReportDataBuilder().build(
+                symbol=symbol,
+                score_data=score_data,
+                indicator_data=indicator_data,
+                ratio_data=ratio_data,
+                sentiment_data=sentiment_data,
+                macro_data=macro_data,
+                t3_data=t3_data,
+                stock_info=stock_info,
+            )
+            prompt = build_report_prompt(data)
+            report = await self.ollama.generate_report(prompt, symbol)
+
+            mapped_rec = RECOMMENDATION_MAP.get(report.recommendation, "hold")
+
+            today = date.today()
+            await self.report_repo.upsert({
+                "symbol": symbol,
+                "date": today,
+                "report_type": "full",
+                "content_json": report.model_dump(),
+                "summary": report.summary,
+                "recommendation": mapped_rec,
+                "t3_prediction": t3_data["direction"],
+                "model_used": self.ollama.model,
+                "total_score": score.total_score if score else 0.0,
+                "grade": score.grade if score else "N/A",
+                "generated_at": datetime.now(UTC),
+            })
+
+            logger.info(f"Generated report for {symbol}: {mapped_rec}")
+            return {"status": "completed", "symbol": symbol, "recommendation": mapped_rec}
+
+        except Exception as e:
+            logger.warning(f"Report generation failed for {symbol}: {e}")
+            return {"status": "failed", "symbol": symbol, "error": str(e)}
+
     async def get_reports(self, limit: int = 20) -> list[dict]:
         """Get latest generated reports.
 

@@ -4,6 +4,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from localstock.api.routes.admin import router as admin_router
 from localstock.api.routes.analysis import router as analysis_router
 from localstock.api.routes.automation import router as automation_router
 from localstock.api.routes.dashboard import router as dashboard_router
@@ -53,6 +54,7 @@ def create_app() -> FastAPI:
     app.include_router(automation_router, tags=["automation"])
     app.include_router(prices_router, tags=["prices"])
     app.include_router(dashboard_router, tags=["dashboard"])
+    app.include_router(admin_router, tags=["admin"])
     return app
 
 
