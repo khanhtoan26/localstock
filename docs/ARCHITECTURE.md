@@ -692,47 +692,48 @@ async with session_factory() as session:
 ### Architecture
 
 ```
-apps/helios/src/
-├── app/                       # Pages (App Router)
-│   ├── layout.tsx             # Root layout (ThemeProvider, NextIntlClientProvider, QueryProvider)
-│   ├── page.tsx               # Home → redirect to /rankings
-│   ├── rankings/page.tsx      # Bảng xếp hạng
-│   ├── market/page.tsx        # Tổng quan thị trường
-│   ├── stock/[symbol]/page.tsx # Chi tiết mã: chart + AI report + recommendation
-│   ├── learn/page.tsx         # Trang học thuật — 3 danh mục (v1.1)
-│   ├── learn/[category]/page.tsx # Glossary theo danh mục (v1.1)
-│   └── admin/page.tsx         # Admin Console — 3 tabs (v1.2)
-├── components/
-│   ├── layout/                # Sidebar (240px, 4 nav items), AppShell
-│   ├── charts/                # Candlestick (lightweight-charts v5), SubPanel, TimeframeSelector
-│   ├── rankings/              # DataTable, GradeBadge
-│   ├── market/                # MacroCards, SectorTable
-│   ├── stock/                 # AIReportPanel, ScoreBreakdown, RecommendationBadge (v1.2)
-│   ├── admin/                 # StockTable, PipelineControl, JobMonitor, StatusBadge (v1.2)
-│   ├── glossary/              # GlossaryMarkdown, GlossaryTerm — interactive linking (v1.1)
-│   ├── learn/                 # GlossaryEntryCard, GlossarySearch (v1.1)
-│   ├── theme/                 # ThemeProvider, ThemeToggle — light/dark (v1.1)
-│   ├── i18n/                  # LanguageToggle — vi/en (v1.1)
-│   └── ui/                    # Shadcn/ui: badge, button, card, checkbox, collapsible,
-│                              #   empty-state, error-state, input, scroll-area, separator,
-│                              #   skeleton, sonner, table, tabs
-├── hooks/
-│   └── use-chart-theme.ts     # Chart theme hook
-├── i18n/
-│   ├── routing.ts             # locales: ['vi', 'en'], defaultLocale: 'en'
-│   └── request.ts             # Cookie-based locale detection, fallback to Accept-Language
-├── lib/
-│   ├── api.ts                 # apiFetch() → localhost:8000
-│   ├── queries.ts             # 20 React Query hooks (bao gồm 9 admin hooks)
-│   ├── types.ts               # 20 TypeScript interfaces
-│   ├── glossary.ts            # Static glossary data — 26 entries, 3 categories (v1.1)
-│   ├── glossary-linker.ts     # Alias scanner — longest-first matching (v1.1)
-│   ├── chart-colors.ts        # Chart color config
-│   ├── query-provider.tsx     # React Query provider
-│   └── utils.ts               # Vietnamese formatters
-└── messages/
-    ├── vi.json                # Vietnamese translations
-    └── en.json                # English translations
+apps/helios/
+├── messages/
+│   ├── vi.json                # Vietnamese translations
+│   └── en.json                # English translations
+└── src/
+    ├── app/                       # Pages (App Router)
+    │   ├── layout.tsx             # Root layout (ThemeProvider, NextIntlClientProvider, QueryProvider)
+    │   ├── page.tsx               # Home → redirect to /rankings
+    │   ├── rankings/page.tsx      # Bảng xếp hạng
+    │   ├── market/page.tsx        # Tổng quan thị trường
+    │   ├── stock/[symbol]/page.tsx # Chi tiết mã: chart + AI report + recommendation
+    │   ├── learn/page.tsx         # Trang học thuật — 3 danh mục (v1.1)
+    │   ├── learn/[category]/page.tsx # Glossary theo danh mục (v1.1)
+    │   └── admin/page.tsx         # Admin Console — 3 tabs (v1.2)
+    ├── components/
+    │   ├── layout/                # Sidebar (240px, 4 nav items), AppShell
+    │   ├── charts/                # Candlestick (lightweight-charts v5), SubPanel, TimeframeSelector
+    │   ├── rankings/              # DataTable, GradeBadge
+    │   ├── market/                # MacroCards, SectorTable
+    │   ├── stock/                 # AIReportPanel, ScoreBreakdown, RecommendationBadge (v1.2)
+    │   ├── admin/                 # StockTable, PipelineControl, JobMonitor, StatusBadge (v1.2)
+    │   ├── glossary/              # GlossaryMarkdown, GlossaryTerm — interactive linking (v1.1)
+    │   ├── learn/                 # GlossaryEntryCard, GlossarySearch (v1.1)
+    │   ├── theme/                 # ThemeProvider, ThemeToggle — light/dark (v1.1)
+    │   ├── i18n/                  # LanguageToggle — vi/en (v1.1)
+    │   └── ui/                    # Shadcn/ui: badge, button, card, checkbox, collapsible,
+    │                              #   empty-state, error-state, input, scroll-area, separator,
+    │                              #   skeleton, sonner, table, tabs
+    ├── hooks/
+    │   └── use-chart-theme.ts     # Chart theme hook
+    ├── i18n/
+    │   ├── routing.ts             # locales: ['vi', 'en'], defaultLocale: 'en'
+    │   └── request.ts             # Cookie-based locale detection, fallback to Accept-Language
+    └── lib/
+        ├── api.ts                 # apiFetch() → localhost:8000
+        ├── queries.ts             # 20 React Query hooks (bao gồm 9 admin hooks)
+        ├── types.ts               # 20 TypeScript interfaces
+        ├── glossary.ts            # Static glossary data — 26 entries, 3 categories (v1.1)
+        ├── glossary-linker.ts     # Alias scanner — longest-first matching (v1.1)
+        ├── chart-colors.ts        # Chart color config
+        ├── query-provider.tsx     # React Query provider
+        └── utils.ts               # Vietnamese formatters
 ```
 
 ### Navigation (Sidebar)
