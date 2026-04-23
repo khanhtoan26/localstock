@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import {
@@ -14,6 +14,8 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import {
   useTrackedStocks,
@@ -41,6 +43,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 type SortKey = "symbol" | "name" | "exchange" | "industry";
 type SortDir = "asc" | "desc";
 
+const PAGE_SIZE = 50;
+
 interface PipelineControlProps {
   onOperationTriggered: () => void;
 }
@@ -52,6 +56,7 @@ export function PipelineControl({ onOperationTriggered }: PipelineControlProps) 
   const [searchQuery, setSearchQuery] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("symbol");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const [page, setPage] = useState(0);
 
   const triggerCrawl = useTriggerAdminCrawl();
   const triggerAnalyze = useTriggerAdminAnalyze();
@@ -82,35 +87,50 @@ export function PipelineControl({ onOperationTriggered }: PipelineControlProps) 
     });
   }, [rawStocks, searchQuery, sortKey, sortDir]);
 
-  // Sync selection with filtered stock list
+  const totalPages = Math.max(1, Math.ceil(filteredAndSorted.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages - 1);
+  const pageSlice = filteredAndSorted.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
+
+  // Selection uses all filtered items, not just visible page
   const validSelected = useMemo(() => {
     const symbols = new Set(filteredAndSorted.map((s) => s.symbol));
     return new Set([...selected].filter((s) => symbols.has(s)));
   }, [filteredAndSorted, selected]);
 
-  const allSelected =
-    validSelected.size === filteredAndSorted.length && filteredAndSorted.length > 0;
-  const someSelected =
-    validSelected.size > 0 && validSelected.size < filteredAndSorted.length;
+  // Page-level select all
+  const pageSymbols = pageSlice.map((s) => s.symbol);
+  const allPageSelected =
+    pageSymbols.length > 0 && pageSymbols.every((s) => validSelected.has(s));
+  const somePageSelected =
+    pageSymbols.some((s) => validSelected.has(s)) && !allPageSelected;
 
-  function toggleSort(key: SortKey) {
-    if (sortKey === key) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    } else {
-      setSortKey(key);
+  const toggleSort = useCallback((key: SortKey) => {
+    setSortKey((prev) => {
+      if (prev === key) {
+        setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+        return prev;
+      }
       setSortDir("asc");
-    }
-  }
+      return key;
+    });
+    setPage(0);
+  }, []);
 
-  function toggleAll() {
-    if (allSelected) {
-      setSelected(new Set());
-    } else {
-      setSelected(new Set(filteredAndSorted.map((s) => s.symbol)));
-    }
-  }
+  const toggleAll = useCallback(() => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      const symbols = pageSlice.map((s) => s.symbol);
+      const allChecked = symbols.every((s) => next.has(s));
+      if (allChecked) {
+        symbols.forEach((s) => next.delete(s));
+      } else {
+        symbols.forEach((s) => next.add(s));
+      }
+      return next;
+    });
+  }, [pageSlice]);
 
-  function toggleOne(symbol: string) {
+  const toggleOne = useCallback((symbol: string) => {
     setSelected((prev) => {
       const next = new Set(prev);
       if (next.has(symbol)) {
@@ -120,20 +140,25 @@ export function PipelineControl({ onOperationTriggered }: PipelineControlProps) 
       }
       return next;
     });
-  }
+  }, []);
 
-  function handleMutationError(error: Error) {
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value);
+    setPage(0);
+  }, []);
+
+  const handleMutationError = useCallback((error: Error) => {
     if (error.message.includes("409")) {
       toast.error(t("toast.operationLocked"));
     } else {
       toast.error(t("toast.error", { detail: error.message }));
     }
-  }
+  }, [t]);
 
-  function handleSuccess(type: string) {
+  const handleSuccess = useCallback((type: string) => {
     toast(t("toast.operationStarted", { type }));
     onOperationTriggered();
-  }
+  }, [t, onOperationTriggered]);
 
   const anyPending =
     triggerCrawl.isPending ||
@@ -258,7 +283,7 @@ export function PipelineControl({ onOperationTriggered }: PipelineControlProps) 
           <Input
             placeholder={t("stocks.search")}
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={handleSearchChange}
             className="pl-8 max-w-xs"
           />
         </div>
@@ -280,56 +305,90 @@ export function PipelineControl({ onOperationTriggered }: PipelineControlProps) 
           {t("stocks.noResults")}
         </p>
       ) : (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-10">
-                <Checkbox
-                  checked={allSelected}
-                  indeterminate={someSelected}
-                  onCheckedChange={toggleAll}
-                />
-              </TableHead>
-              {(["symbol", "name", "exchange", "industry"] as SortKey[]).map(
-                (key) => (
-                  <TableHead key={key}>
-                    <button
-                      className="flex items-center gap-1 hover:text-foreground transition-colors"
-                      onClick={() => toggleSort(key)}
-                    >
-                      {t(`stocks.columns.${key}`)}
-                      {sortKey === key ? (
-                        sortDir === "asc" ? (
-                          <ArrowUp className="h-3 w-3" />
-                        ) : (
-                          <ArrowDown className="h-3 w-3" />
-                        )
-                      ) : (
-                        <ArrowUpDown className="h-3 w-3 opacity-30" />
-                      )}
-                    </button>
-                  </TableHead>
-                ),
-              )}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredAndSorted.map((stock) => (
-              <TableRow key={stock.symbol}>
-                <TableCell>
+        <>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-10">
                   <Checkbox
-                    checked={validSelected.has(stock.symbol)}
-                    onCheckedChange={() => toggleOne(stock.symbol)}
+                    checked={allPageSelected}
+                    indeterminate={somePageSelected}
+                    onCheckedChange={toggleAll}
                   />
-                </TableCell>
-                <TableCell className="font-medium">{stock.symbol}</TableCell>
-                <TableCell>{stock.name ?? "—"}</TableCell>
-                <TableCell>{stock.exchange ?? "—"}</TableCell>
-                <TableCell>{stock.industry ?? "—"}</TableCell>
+                </TableHead>
+                {(["symbol", "name", "exchange", "industry"] as SortKey[]).map(
+                  (key) => (
+                    <TableHead key={key}>
+                      <button
+                        className="flex items-center gap-1 hover:text-foreground transition-colors"
+                        onClick={() => toggleSort(key)}
+                      >
+                        {t(`stocks.columns.${key}`)}
+                        {sortKey === key ? (
+                          sortDir === "asc" ? (
+                            <ArrowUp className="h-3 w-3" />
+                          ) : (
+                            <ArrowDown className="h-3 w-3" />
+                          )
+                        ) : (
+                          <ArrowUpDown className="h-3 w-3 opacity-30" />
+                        )}
+                      </button>
+                    </TableHead>
+                  ),
+                )}
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {pageSlice.map((stock) => (
+                <TableRow key={stock.symbol}>
+                  <TableCell>
+                    <Checkbox
+                      checked={validSelected.has(stock.symbol)}
+                      onCheckedChange={() => toggleOne(stock.symbol)}
+                    />
+                  </TableCell>
+                  <TableCell className="font-medium">{stock.symbol}</TableCell>
+                  <TableCell>{stock.name ?? "—"}</TableCell>
+                  <TableCell>{stock.exchange ?? "—"}</TableCell>
+                  <TableCell>{stock.industry ?? "—"}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-4 text-sm text-muted-foreground">
+              <span>
+                {safePage * PAGE_SIZE + 1}–{Math.min((safePage + 1) * PAGE_SIZE, filteredAndSorted.length)}{" "}
+                / {filteredAndSorted.length}
+              </span>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  disabled={safePage === 0}
+                  onClick={() => setPage((p) => p - 1)}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="px-2">
+                  {safePage + 1} / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  disabled={safePage >= totalPages - 1}
+                  onClick={() => setPage((p) => p + 1)}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
