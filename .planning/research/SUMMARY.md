@@ -1,186 +1,195 @@
 # Project Research Summary
 
-**Project:** LocalStock v1.1 — UX Polish & Educational Depth
-**Domain:** Frontend redesign of a Vietnamese stock market AI agent (Next.js 16 + React 19 + Tailwind v4 + shadcn/ui)
-**Researched:** 2026-04-17
+**Project:** LocalStock v1.3 — UI/UX Refinement
+**Domain:** Stock analysis dashboard — visual polish & interaction improvement
+**Researched:** 2026-04-24
 **Confidence:** HIGH
 
 ## Executive Summary
 
-LocalStock v1.1 is a **pure-frontend milestone** that transforms an existing dark-mode-only financial dashboard into a reading-first AI report experience. The four features — theme system, stock page redesign, academic/learning page, and interactive glossary linking — share a clear dependency chain and require zero backend changes. The existing stack (Next.js 16, @base-ui/react 1.4.0, Tailwind v4, shadcn/ui base-nova style, TanStack Query 5) is well-suited for all four features; only 5 new npm packages are needed (`next-themes`, `react-markdown`, `remark-gfm`, `rehype-sanitize`, `@tailwindcss/typography`), plus 3 shadcn component installs (Sheet, Tabs, Popover/HoverCard). The recommended approach is a typed TypeScript glossary module (not MDX/CMS) for ~25 entries, `react-markdown` for structured report rendering, and `next-themes` for FOUC-free theme switching.
+LocalStock v1.3 is a pure UI/UX refinement milestone for an existing, functional Vietnamese stock analysis dashboard built on Next.js 16 + React 19 + Tailwind v4 + shadcn/ui (base-nova). The existing stack is mature and well-chosen — research confirms that **only 1 new npm dependency (`nuqs`) and 1 new shadcn component (`tooltip`)** are needed. All 7 committed features can be implemented using existing primitives: `@base-ui/react` for tooltips/collapsibles/progress, `next/font/google` for typography, CSS variables for theming, `Intl.DateTimeFormat` for timezone handling, and TanStack Query for data fetching. The architecture is CSS-variable-driven, meaning font and color changes propagate globally with zero component modifications.
 
-The recommended build order follows the dependency chain: **Theme foundation first** (it touches `globals.css` and `layout.tsx` which every other feature depends on), then **stock page redesign** (creates the `AIReportView` component that glossary hooks into), then **academic/learning page** (produces the glossary data that glossary linking consumes), and finally **glossary linking** (requires both the report renderer and the glossary data). Content authoring (~25 glossary entries) should start in parallel with engineering from Phase 2 onward — it's the single biggest time cost (~50 hours for 50 entries, but a minimum viable set of 15-20 entries suffices for launch).
+The recommended approach is a 4-phase build ordered by dependency chains: **Foundation first** (font + colors — everything else inherits from these), **Layout second** (sidebar rewrite — the highest-complexity item that restructures the app shell), **Feature integration third** (search persistence, market session bar, table sort fix), and **Market metrics last** (blocked on a new backend API endpoint that doesn't exist yet). The sidebar rewrite is the critical path — it touches `app-shell.tsx`, changes the `ml-60` → `ml-14` content offset, introduces 3 new components, and must settle before the market session bar can be placed in the header.
 
-The key risks are: (1) **financial semantic tokens are dark-mode values sitting in `:root`** — they will render nonsensically when the warm-light theme activates unless audited and duplicated into both theme blocks; (2) **canvas-based charts (lightweight-charts) cannot follow CSS variable changes** — they require imperative `chart.applyOptions()` calls keyed to theme state; (3) **Vietnamese typography requires intentional font and line-height choices** — stacked diacritics clip at default line-height, and many popular fonts have poor Vietnamese coverage; (4) **glossary linking against LLM output is non-deterministic** — the same indicator appears in many surface forms across reports, requiring alias-based matching with Vietnamese-aware word boundaries. All four risks have well-documented mitigation strategies and should be addressed in Phase 1 (risks 1-3) and Phase 3-4 (risk 4).
+Key risks are well-understood and preventable. The top 3: (1) **Font variable collision** — `next/font` CSS variable and hardcoded `font-family` in `globals.css` compete, causing silent fallback to system fonts; fix by removing the hardcoded rule. (2) **Sidebar overlay blocking clicks** — expanded sidebar covers content with no dismiss mechanism; fix with a backdrop element. (3) **nuqs + next-intl provider ordering** — wrong nesting causes hydration mismatches; the correct order is `NextIntlClientProvider → ThemeProvider → QueryProvider → NuqsAdapter → AppShell`. All 3 are avoidable with the specific mitigations documented in PITFALLS.md.
 
 ## Key Findings
 
 ### Recommended Stack
 
-The existing stack handles v1.1 without framework changes. Five new runtime/dev dependencies are needed, all battle-tested and React 19 / Next.js 16 compatible. The critical stack decision is to **stay within the Base UI primitive ecosystem** — do not introduce Radix UI, vaul, or any competing primitive library, as the project is locked to `base-nova` style via `components.json`.
+The existing stack handles 95% of v1.3 needs. One new dependency, one shadcn add.
 
-**Core technologies:**
-- **next-themes@^0.4.6**: Theme state management — injects an inline `<script>` before hydration to prevent FOUC; handles localStorage persistence and `<html>` class toggling. Use `attribute="class"`, `defaultTheme="claude"`, `enableSystem={false}`.
-- **react-markdown@^10 + remark-gfm@^4 + rehype-sanitize@^6**: Replaces current `whitespace-pre-wrap` plain text rendering with structured Markdown. Enables GFM tables (LLM outputs these constantly), XSS sanitization on LLM output, and custom `components` overrides for glossary term injection.
-- **@tailwindcss/typography@^0.5.19**: `prose` classes for reading-first AI reports — paragraph rhythm, list spacing, and blockquote tone for Vietnamese long-form content at `prose-lg` (~18px / 1.75 leading).
-- **Be Vietnam Pro (via next/font/google)**: Vietnamese-optimized variable font — system fonts render Vietnamese stacked diacritics (`ế`, `ợ`, `ủ`) poorly. `subsets: ["vietnamese", "latin"]` required.
-- **@base-ui/react (existing 1.4.0)**: Drawer, Popover, PreviewCard, and Tooltip primitives already installed. Use Drawer for right-side data panel, PreviewCard for hover glossary definitions.
-- **Typed TS glossary module (not MDX)**: ~25 entries as a `Record<GlossaryCode, GlossaryEntry>` in `lib/glossary.ts`. Compile-time type safety on `seeAlso` links, zero new dependencies, shared by report renderer and academic pages.
+**Core technologies (existing — no changes):**
+- **Next.js 16** (`next/font/google`): Self-hosts Source Sans 3, Vietnamese subset verified in font-data.json
+- **Tailwind v4** (`@theme inline` in CSS): Color tokens via CSS variables, no `tailwind.config.ts` needed
+- **@base-ui/react 1.4.0**: `tooltip/`, `collapsible/`, `progress/` primitives — all verified installed
+- **TanStack Query 5.99.0**: Market metrics data fetching with `refetchInterval`
+- **lucide-react 1.8.0**: Sidebar icons (PanelLeftClose/Open, ChevronLeft/Right)
 
-**Explicitly rejected:** vaul, @radix-ui/*, @next/mdx, contentlayer/velite/nextra, streamdown, framer-motion, styled-components/emotion, prismjs/shiki, katex. See STACK.md for per-item rationale.
+**New additions:**
+- **`nuqs` ^2.8.9** (only new npm dep): URL-based search/sort state persistence. Replaces `useState` in 3 components. Requires `<NuqsAdapter>` wrapper in layout.tsx. ~5KB gzipped.
+- **`shadcn add tooltip`** (not a new npm dep): Styled wrapper over already-installed `@base-ui/react/tooltip`. Needed for collapsed sidebar icon labels.
+
+**Explicitly rejected:** `@radix-ui/*` (conflicts with base-nova), `framer-motion` (CSS transitions suffice), `date-fns`/`dayjs` (`Intl.DateTimeFormat` handles timezone), `zustand`/`jotai` (URL state via nuqs is better), `@fontsource/*` (`next/font` handles self-hosting).
 
 ### Expected Features
 
-**Must have (table stakes — v1.1 broken without these):**
-- Theme persistence across reloads (localStorage via next-themes)
-- No flash of wrong theme on load (inline blocking script)
-- Theme toggle visible from every page (top-right header or sidebar)
-- Stock page loads AI report first, not chart (the philosophy shift)
-- Structured section rendering of AI reports (not `JSON.stringify`)
-- Drawer open/close without breaking scroll position
-- Glossary terms clickable (not hover-only — mobile has no hover)
-- Academic page searchable with Vietnamese diacritic-insensitive matching
-- Charts re-themed for warm mode (candle colors legible on cream)
+All 7 features are committed scope per the v1.3 spec. No features are deferred.
 
-**Should have (differentiators):**
-- Claude-style warm cream (`oklch(0.97 0.02 70)`) + terracotta accent palette — unclaimed aesthetic in the stock tool space
-- Right drawer with tabbed panels (Chart / Raw Data) — one drawer, tabs inside (Linear/Notion pattern)
-- AI report auto-links known terms to glossary — client-side `react-markdown` component override on inline code tokens
-- Hover card definitions with click-to-expand (PreviewCard for hover, Popover for tap/mobile)
-- Drawer state persisted in URL search params (`?drawer=chart`) for shareable links and browser back support
+**Must have (table stakes) — all 7:**
 
-**Defer to v1.2+:**
-- Per-term live example charts in academic entries
-- Keyboard shortcut system (single drawer toggle binding is fine for v1.1)
-- In-drawer mini-chart preview on hover over dates/prices in report text
-- Cross-linking between academic entries (only after content stabilizes)
-- AI-powered "explain this simpler" button
+| # | Feature | Complexity | Key Constraint |
+|---|---------|------------|----------------|
+| 1 | Source Sans 3 font | Low | Vietnamese subset required; `next/font/google` handles it |
+| 2 | Claude Desktop color palette | Low | Change 10 blue CSS vars to warm terracotta; backgrounds already warm |
+| 3 | Sidebar float + collapse | **High** | Full rewrite: 3 new components, localStorage state, z-index layers |
+| 4 | Fix table sort | Low | Bug fix — string vs number comparator |
+| 5 | Search state persistence | Medium | `nuqs` replaces `useState` in 3 components + `NuqsAdapter` wrapper |
+| 6 | Market session progress bar | Medium | HOSE hours 9:00–15:00 ICT, timezone via `Intl.DateTimeFormat` |
+| 7 | Market overview metrics | Medium | **Blocked on new backend API** — `GET /api/market/summary` doesn't exist |
+
+**Should have (differentiators — if time allows):**
+- Sidebar keyboard shortcut (`Cmd+B` toggle)
+- Search highlight in filtered results
+- Session state transition toasts
+
+**Anti-features (explicitly out of scope):**
+- Mobile responsive layout (spec says desktop-only)
+- WebSocket real-time data (polling via TanStack Query suffices)
+- Custom charts for market overview (simple number cards)
+- Theme variants beyond light/dark
+- New navigation pages
 
 ### Architecture Approach
 
-All four features are frontend-only and follow a clear dependency chain: Theme → Stock Page Redesign + Academic Page → Glossary Linking. The architecture adds **15 new components** and **modifies 8 existing components**, with 3 shadcn/ui installs (Sheet, Tabs, Popover/HoverCard) and 4 new route pages under `/learn`. The single most important architectural insight is that the **glossary data module (`glossary-data.ts`) is the shared spine** — it feeds both the academic/learning pages and the report term-linking system. It must be designed first even if populated incrementally.
+The architecture is a surgical modification of an existing, well-structured Next.js App Router app. The component tree stays the same — only the sidebar subtree gets replaced and the header gains a new child. All styling flows through CSS variables, so font and color changes require zero component modifications. The file change footprint is precise: **9 files modified, 7 files created, 1 file deleted**.
 
 **Major components:**
-1. **ThemeProvider + ThemeToggle** — Client-side theme context wrapping `next-themes`; manages `<html>` class toggle between no-class (warm `:root`) and `.dark`. Chart colors updated imperatively via `chart.applyOptions()` keyed to `resolvedTheme`.
-2. **AIReportView** — New component replacing `whitespace-pre-wrap` text dump. Renders `content_json` sections via `react-markdown` with glossary term injection through custom `components.code` override. This is the integration point for Features 2 and 4.
-3. **StockDataDrawer** — shadcn Sheet (right-side, `position: fixed`) with internal Tabs (Chart / Data). Lazy-loads chart data via React Query `enabled: drawerOpen`. Existing PriceChart, SubPanel, TimeframeSelector components move inside largely unchanged.
-4. **Glossary data module + linkify engine** — Typed `glossary.ts` with aliases per term; `glossary-linkify.ts` builds a compiled regex from all aliases (longest-first), scans report text in a single pass, wraps matches in `<GlossaryLink>` components. Runs at render time via remark plugin or react-markdown component override, not post-hoc DOM mutation.
-5. **Academic/Learning pages** — Static Server Component routes at `/learn/[category]`, rendering `ConceptCard` components from the same glossary data. Category-based navigation (Technical / Fundamental / Macro).
+
+1. **FloatingSidebar** (NEW — replaces `sidebar.tsx`): Container managing collapse state (`useState` + `localStorage`), active tab group, and expand/close behavior. Contains `IconRail` (w-14, always visible, z-30) and `SidebarPanel` (w-60, overlay, z-50).
+
+2. **MarketSessionBar** (NEW — in header): Client-side HOSE session progress. Uses `Intl.DateTimeFormat` with `timeZone: 'Asia/Ho_Chi_Minh'`, updates via `setInterval(60s)`, renders status dot + label + progress bar + countdown.
+
+3. **MarketMetrics** (NEW — on `/market` page): 4-card market summary (VN-Index, volume, advances/declines, breadth). Depends on new backend endpoint. Uses existing `Card` component + new TanStack Query hook.
+
+4. **Search persistence layer**: `nuqs` `useQueryState` replaces `useState` in `admin/stock-table.tsx`, `learn/glossary-search.tsx`, and adds search to `rankings/stock-table.tsx`.
+
+**Z-index layer system:**
+```
+z-0:  Content (default)
+z-30: Icon rail (always visible)
+z-40: Backdrop (dismiss overlay)
+z-50: Sidebar panel (expanded)
+z-50: Toaster/modals
+```
+
+**Provider nesting order (critical):**
+```
+NextIntlClientProvider → ThemeProvider → QueryProvider → NuqsAdapter → AppShell
+```
 
 ### Critical Pitfalls
 
-1. **Financial tokens are dark values in `:root`** — `--chart-bg: #0f172a` (dark navy) sits in `:root` because the app was always dark. When warm-light activates, every component reading `var(--chart-bg)` gets inverted colors. **Fix:** Audit every CSS variable; provide values in both `:root` (warm) and `.dark` blocks. Unify color spaces on oklch.
+Research identified 10 pitfalls (3 critical, 4 moderate, 3 minor). The top 5 that must be addressed:
 
-2. **Canvas charts ignore CSS/class changes** — `lightweight-charts` renders to `<canvas>` with colors set at `createChart()` time. Theme toggle changes nothing visually. **Fix:** Refactor `chart-colors.ts` from constants to `getChartColors(theme)` function. Add `useEffect` on `resolvedTheme` that calls `chart.applyOptions()` and `series.applyOptions()` — no chart destruction needed.
+1. **Font variable collision** (Critical) — `next/font` sets `--font-sans` via className on `<html>`, but `globals.css` body rule has hardcoded `font-family: system-ui`. **Fix:** Remove the hardcoded `font-family` rule. **Detection:** DevTools Computed tab → check if body shows `"Source Sans 3"` or `system-ui`.
 
-3. **Hardcoded Tailwind colors fail on light backgrounds** — `gradeColors` uses `text-green-400` (contrast 2.0:1 on cream), `text-yellow-400` (1.5:1 on cream). **Fix:** Replace with `text-green-700 dark:text-green-400` pattern or define grade colors as CSS variables in the theme matrix.
+2. **Sidebar overlay blocks clicks** (Critical) — Expanded sidebar covers content with no dismiss mechanism. **Fix:** Add backdrop div (`fixed inset-0 z-30`) that collapses sidebar on click. Test by expanding sidebar and clicking content area.
 
-4. **LLM output surface forms are non-deterministic** — "RSI" appears as `RSI`, `chỉ số RSI`, `chỉ báo sức mạnh tương đối`, `Relative Strength Index` across reports. `MA` collides with Vietnamese words. **Fix:** Each glossary entry declares an alias list; match longest-first; require uppercase for ambiguous abbreviations; add LLM system prompt guidance to normalize forms. Build regression tests against 20-30 real reports.
+3. **nuqs + next-intl provider ordering** (Critical) — Wrong nesting causes hydration mismatches or lost URL params. **Fix:** `NuqsAdapter` goes inside `QueryProvider`, outside `AppShell`. Test by navigating `/rankings?q=VNM` → `/market` → back → verify `q=VNM` survives.
 
-5. **Glossary cold-start kills perceived quality** — Shipping glossary UI with 5 stub entries looks broken. **Fix:** Ship with ≥15 high-frequency entries (top 8 technical + 7 fundamental indicators). Build frequency list from actual report corpus. Start content authoring in parallel with engineering, not after.
+4. **Warm primary color vs financial semantics** (Moderate) — Terracotta primary (~24° hue) could clash with `--stock-warning` (yellow ~48°) or `--chart-4` (existing terracotta ~15°). **Fix:** Target hue ~24° for separation from both. Visually test primary buttons next to stock-up/down/warning indicators.
+
+5. **Sort state polluting browser history** (Moderate) — Every sort click with `nuqs` creates a history entry; "back" changes sort instead of navigating. **Fix:** Use `history: 'replace'` option for sort params; only search query `q` uses default `push`.
 
 ## Implications for Roadmap
 
 Based on research, suggested phase structure:
 
-### Phase 1: Theme Foundation & Visual Identity
-**Rationale:** Every subsequent feature renders differently per theme. Theme touches `globals.css`, `layout.tsx`, and the color pipeline — foundational files. Doing theme last would mean reworking every component twice.
-**Delivers:** Warm-light default (Claude cream + terracotta) + preserved dark mode, FOUC-free toggle, theme-aware charts, contrast-passing financial tokens, Be Vietnam Pro font pipeline.
-**Addresses:** Theme persistence, FOUC prevention, chart re-theming, grade badge contrast, warm palette, Vietnamese font — all P1 features from FEATURES.md.
-**Avoids:** Pitfalls #1 (FOUC), #2 (token inversion), #3 (canvas charts), #4 (hardcoded colors), #5 (WCAG contrast).
-**Files:** `globals.css` (major), `layout.tsx` (major), new `theme-provider.tsx` / `theme-toggle.tsx`, `chart-colors.ts` (major refactor), `utils.ts`, `grade-badge.tsx`, `price-chart.tsx`, `sub-panel.tsx`, `sidebar.tsx`.
-**Estimate:** 3-4 days (including palette tuning and contrast verification).
+### Phase 1: Foundation — Font + Color Palette
+**Rationale:** Every other feature inherits typography and color tokens. Screenshots and visual testing are meaningless until these are correct. Lowest risk, highest global impact.
+**Delivers:** Source Sans 3 with Vietnamese subset active across all pages; warm terracotta accent replacing all 10 blue CSS variable values in both light and dark themes.
+**Addresses:** Features #1 (font), #2 (colors)
+**Avoids:** Pitfall #1 (font variable collision) — remove hardcoded font-family; Pitfall #4 (color semantic clash) — test warm accent against financial indicators
+**Files touched:** `layout.tsx` (font import + className), `globals.css` (10 color vars + remove font-family rule)
+**Complexity:** Low — 2 files, pure configuration
 
-### Phase 2: Stock Page Reading-First Redesign
-**Rationale:** Creates the `AIReportView` component that Phase 4 hooks into. Drawer component is the backbone for on-demand data access. Must happen before glossary linking because the report renderer is the injection point for term links.
-**Delivers:** AI report full-width above the fold, right-side drawer with Chart/Data tabs, structured section rendering via react-markdown, lazy chart data loading, drawer state in URL params.
-**Addresses:** Report-first layout, drawer component, structured report rendering, drawer URL state, scroll preservation, lazy data loading — core differentiator features.
-**Avoids:** Pitfalls #6 (eager chart loading), #9 (broken deep links), #10 (scroll position), #11 (Vietnamese typography), #12 (chart dimensions in drawer).
-**Uses:** react-markdown, remark-gfm, rehype-sanitize, @tailwindcss/typography (new deps installed in Phase 1), Sheet + Tabs (shadcn installs).
-**Estimate:** 3-4 days.
+### Phase 2: Layout — Sidebar Float/Collapse
+**Rationale:** Highest complexity feature. Restructures the app shell (`ml-60` → `ml-14`), which affects header width and content placement. Must settle before market session bar (which lives in the header).
+**Delivers:** Collapsible floating sidebar with icon rail (always visible), expandable panel (overlay), 2 tab groups (Main/Admin), tooltip labels on collapsed icons, localStorage persistence.
+**Addresses:** Feature #3 (sidebar)
+**Avoids:** Pitfall #2 (overlay click blocking) — backdrop element; Pitfall #6 (collapse flash on load) — `useState` lazy initializer reading `localStorage` synchronously
+**Files touched:** Delete `sidebar.tsx`; create `floating-sidebar.tsx`, `icon-rail.tsx`, `sidebar-panel.tsx`; modify `app-shell.tsx`
+**Complexity:** High — 3 new components, z-index layering, CSS transitions, localStorage
 
-### Phase 3: Academic/Learning Page + Glossary Content
-**Rationale:** Produces the glossary data module that Phase 4 consumes. Content authoring is the single biggest time cost — starting it here (parallel with engineering) ensures ≥15 entries are ready when glossary linking ships. Academic pages also validate the glossary data schema before it's wired into reports.
-**Delivers:** `/learn` route with Technical/Fundamental/Macro category pages, glossary data module (`glossary-data.ts` or `glossary.ts`), ConceptCard components, diacritic-insensitive client-side search, sidebar nav expansion ("Học Thuật").
-**Addresses:** Academic page skeleton, glossary content authoring, client-side search, sidebar navigation.
-**Avoids:** Pitfall #14 (glossary cold-start — content ships with infrastructure).
-**Implements:** Static content architecture (typed TS arrays, not MDX). FormulaBlock + InterpretationGuide components for visual learning aids.
-**Estimate:** 2-3 days engineering + 3-5 days content authoring (parallel track).
+### Phase 3: Feature Integration — Search, Sort, Session Bar
+**Rationale:** These 3 features are independent of each other and can be developed in parallel within the phase. They all depend on the settled layout from Phase 2 (header structure, content area). Grouped because they're all medium/low complexity frontend-only work.
+**Delivers:** URL-persisted search across rankings/admin/learn pages; fixed string vs number sort comparator; live HOSE market session progress bar in header with timezone-aware countdown.
+**Addresses:** Features #4 (sort fix), #5 (search persistence), #6 (market session bar)
+**Avoids:** Pitfall #3 (nuqs provider ordering) — correct nesting; Pitfall #5 (timezone assumptions) — always `Intl.DateTimeFormat`; Pitfall #7 (sort history pollution) — `history: 'replace'`; Pitfall #9 (useless closed-hours bar) — show "Opens in Xh Ym" countdown
+**Files touched:** Install `nuqs`; add `NuqsAdapter` to layout; modify 3 search components; fix sort in `stock-table.tsx`; create `market-session-bar.tsx`; modify header in `app-shell.tsx`
+**Complexity:** Medium — multiple independent workstreams, nuqs is the only new dependency
 
-### Phase 4: Interactive Glossary Linking
-**Rationale:** Must be last — depends on both AIReportView (from Phase 2) and glossary-data.ts (from Phase 3). This is the "tie it together" feature that connects AI reports to educational content.
-**Delivers:** Term auto-detection in AI reports via react-markdown component override, PreviewCard hover definitions (desktop), Popover tap definitions (mobile), "Xem chi tiết →" navigation to academic pages, first-occurrence-only linking to avoid hyperlink clutter.
-**Addresses:** Interactive term linking, hover preview + click-through, cross-referencing between reports and learning content.
-**Avoids:** Pitfalls #7 (LLM surface forms — alias-based matching), #8 (DOM mutation — remark plugin instead), #13 (tooltip dismissal — use PreviewCard/Popover, not Tooltip).
-**Uses:** @base-ui/react PreviewCard + Popover (existing), glossary-linkify.ts (new pure function).
-**Estimate:** 2-3 days (including matcher regression testing against real reports).
+### Phase 4: Market Metrics + Polish
+**Rationale:** Market overview metrics depend on a **new backend API endpoint** (`GET /api/market/summary`) that doesn't exist. This is the only feature with an external dependency. Place it last so backend work can happen in parallel during Phases 1–3. Polish tasks (i18n keys, visual QA) naturally follow.
+**Delivers:** 4-card market overview on `/market` page (VN-Index, volume, advances/declines, breadth); graceful fallback if API not ready; final visual polish.
+**Addresses:** Feature #7 (market metrics)
+**Avoids:** Pitfall #10 (backend not ready) — build with skeleton → error → "Coming soon" fallback; define API contract upfront for parallel backend work
+**Files touched:** Create `market-metrics.tsx`; add `useMarketSummary()` to `queries.ts`; add `MarketSummary` type; modify `/market/page.tsx`; backend: create `api/routes/market.py`
+**Complexity:** Medium — frontend straightforward, backend dependency is the risk
 
 ### Phase Ordering Rationale
 
-- **Theme first because it's foundational:** Every CSS variable, every component color, every chart is affected. Building anything on the old dark-only styling means rework.
-- **Stock page before academic page:** The stock page redesign creates the `AIReportView` component and installs react-markdown. Academic pages can then reuse the same Markdown renderer for style parity. However, these two phases have minimal code overlap and could partially overlap if needed.
-- **Content authoring starts in Phase 3 but continues through Phase 4:** The glossary data module is defined in Phase 3 (schema + initial 15+ entries). Additional entries can be added during Phase 4 without blocking engineering.
-- **Glossary linking is strictly last:** It depends on both the report renderer (Phase 2) and the glossary data (Phase 3). Attempting it earlier means building against components that don't exist yet.
-- **This ordering also groups pitfalls naturally:** Phase 1 handles all 5 theme-related pitfalls. Phase 2 handles all 4 layout/drawer pitfalls. Phase 3-4 handle all 4 glossary pitfalls. Scope creep (Pitfall #15) is a process discipline across all phases.
+- **Foundation before everything** — CSS variables cascade globally. Wrong font or wrong color makes all visual testing invalid.
+- **Sidebar before session bar** — Session bar lives in the header, which is restructured by the sidebar rewrite (`ml-60` → `ml-14`). Building the session bar before the sidebar is stable creates rework.
+- **Search/sort/session bar grouped** — All independent, all frontend-only, all medium/low complexity. Can be parallelized within the phase.
+- **Market metrics last** — Only feature requiring new backend code. Placing it last gives maximum time for backend API to be built in parallel. If backend isn't ready, the frontend still ships with graceful fallback.
 
 ### Research Flags
 
-Phases likely needing deeper research during planning:
-- **Phase 1 (Chart re-theming):** The `chart.applyOptions()` approach for lightweight-charts v5 theme switching needs validation with the actual chart code. Verify that series colors (candle up/down, volume alpha) update correctly without chart destruction. Also verify Be Vietnam Pro Vietnamese diacritic rendering at actual report text sizes.
-- **Phase 4 (Glossary matcher):** Vietnamese-aware word boundary regex (`(?<![\p{L}])` with `u` flag) needs testing against real LLM report corpus. The alias list per term needs to be built empirically from actual reports, not guessed. Consider running matcher on last 30 reports to measure recall before shipping.
+**Phases with standard patterns (skip `/gsd-research-phase`):**
+- **Phase 1 (Foundation):** `next/font/google` and CSS variable theming are well-documented, verified patterns. Font data confirmed in `node_modules`.
+- **Phase 3 (Search/Sort/Session):** `nuqs` has excellent docs, sort fix is a simple code change, `Intl.DateTimeFormat` is standard API.
 
-Phases with standard patterns (skip research-phase):
-- **Phase 2 (Stock page redesign):** shadcn Sheet + Tabs is a well-documented pattern; existing React Query hooks provide all data; layout restructure is CSS/JSX work with no unknowns.
-- **Phase 3 (Academic page):** Static content pages with typed data arrays — the simplest possible content architecture. No API integration, no build pipeline, no unknowns.
+**Phases that may benefit from brief research during planning:**
+- **Phase 2 (Sidebar):** The floating sidebar with icon rail + overlay panel + tab groups is a custom pattern, not a standard shadcn component. Z-index layering, CSS transitions, and the backdrop dismiss pattern need careful implementation. Consider researching existing icon-rail sidebar implementations if the implementer hasn't built one before.
+- **Phase 4 (Market Metrics):** The backend API contract (`GET /api/market/summary`) needs to be defined. Research what data is available in existing DB tables to compute VN-Index, volume, advances/declines without adding new crawlers.
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | All packages verified against npm as of Apr 2026; existing codebase inspected directly; version compatibility matrix confirmed. No speculative choices. |
-| Features | HIGH | Feature landscape well-defined by existing competitive analysis (Seeking Alpha, Linear, Claude.ai); prioritization grounded in actual codebase state (what exists vs what's missing). |
-| Architecture | HIGH | All 4 features use established patterns within the existing stack. No new backend work. Component inventory verified against actual `src/` file tree. |
-| Pitfalls | HIGH | 15 pitfalls grounded in verified codebase reading (actual file contents cited); mitigation strategies reference specific APIs and patterns. Recovery costs assessed realistically. |
+| Stack | **HIGH** | All primitives verified in `node_modules/`. Font subset confirmed in font-data.json. `nuqs` is the only new dep and is well-documented. |
+| Features | **HIGH** | All 7 features clearly specified in project milestone. Dependency graph is straightforward. No ambiguity in scope. |
+| Architecture | **HIGH** | Based on direct codebase inspection. File change map (9 modify, 7 create, 1 delete) is precise. Provider ordering verified against existing layout.tsx. |
+| Pitfalls | **HIGH** | All 10 pitfalls come from direct code inspection and known patterns. Prevention strategies are specific and testable. |
 
-**Overall confidence:** HIGH
+**Overall confidence: HIGH** — This is a well-scoped UI polish milestone on a mature codebase with a known stack. No speculative technology choices. All assertions verified against actual source code and `node_modules/`.
 
 ### Gaps to Address
 
-- **next-themes vs hand-rolled theme provider:** ARCHITECTURE.md flags next-themes as an anti-pattern (unnecessary dependency for 2 themes), while STACK.md and PITFALLS.md both recommend it strongly (handles the tricky inline blocking script and hydration warning correctly). **Recommendation: Use next-themes.** The 2kB cost is trivially justified by eliminating the FOUC edge cases that a hand-rolled solution inevitably hits. The inline `<script>` timing is subtle and next-themes has been battle-tested for 3+ years.
+1. **Backend API contract for market metrics** — `GET /api/market/summary` needs a defined response schema. The frontend can be built against a type interface, but the backend computation (VN-Index from individual stock prices? aggregate volume?) needs clarification. **Action:** Define the API contract in Phase 1/2 so backend work can begin in parallel.
 
-- **Exact drawer width:** 420px? 480px? 560px? Depends on minimum readable chart width inside the drawer. Current PriceChart uses ResizeObserver and should adapt, but need to verify that a ~450px-wide candlestick chart is still legible. **Resolve during Phase 2 implementation** with real chart data.
+2. **Exact warm terracotta HSL values** — Research recommends ~`hsl(24 70% 50%)` for primary accent, but the exact values for both light and dark themes need visual tuning against the existing warm backgrounds (`hsl(48 33.3% 97.1%)`) and financial indicators. **Action:** Create a color test page or Storybook story during Phase 1 implementation to dial in the exact values.
 
-- **Glossary entry count:** FEATURES.md estimates 50 entries (~50 hours), ARCHITECTURE.md says 30-40, STACK.md says ~25. **Recommendation:** Start with 15-20 high-frequency entries (the terms that appear in >50% of reports), ship as MVP, add more incrementally. Build the frequency list by grepping actual LLM report output.
+3. **Sidebar behavior on narrow desktop viewports** — Spec says "no mobile," but what happens on a 1280px laptop screen with sidebar expanded (240px overlay)? Is the backdrop sufficient, or should auto-collapse trigger below a breakpoint? **Action:** Decide during Phase 2 planning — likely auto-collapse below ~1440px is prudent.
 
-- **Vietnamese serif font for report body:** FEATURES.md suggests serif for AI reports (Claude/Stratechery pattern), STACK.md recommends Be Vietnam Pro (a sans-serif font). **Recommendation:** Use Be Vietnam Pro as the primary body font (verified Vietnamese diacritic support) and defer serif exploration to v1.2. Serif Vietnamese fonts with good diacritic coverage are rare and need per-font testing.
-
-- **`lightweight-charts` v5 `applyOptions()` live color update:** Confirmed supported in the API, but not yet tested against the actual `price-chart.tsx` code which creates multiple series (candle, volume, SMA lines). Verify in Phase 1 that all series types accept runtime color updates without flicker.
+4. **Holiday/weekend awareness for session bar** — PITFALLS.md mentions showing "Reopens Monday" on weekends. The backend has a `holidays` package, but there's no `is_trading_day` endpoint exposed. **Action:** Either add a simple backend endpoint or hardcode Vietnamese market holidays in the frontend for v1.3.
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- Local codebase inspection: `package.json`, `components.json`, `globals.css`, `layout.tsx`, `chart-colors.ts`, `utils.ts`, `price-chart.tsx`, `sub-panel.tsx`, `stock/[symbol]/page.tsx`, `sidebar.tsx`, `app-shell.tsx`, `queries.ts`
-- [next-themes on GitHub](https://github.com/pacocoursey/next-themes) — v0.4.6 behavior, inline script FOUC prevention, hydration warning handling
-- [Base UI releases](https://base-ui.com/react/overview/releases) — v1.4.0 (Apr 13, 2026), Drawer stable since v1.3.0
-- [Tailwind CSS v4 Dark Mode docs](https://tailwindcss.com/docs/dark-mode) — `@custom-variant dark` syntax
-- [@tailwindcss/typography on npm](https://www.npmjs.com/package/@tailwindcss/typography) — v0.5.19 with `@plugin` directive for v4
-- [react-markdown](https://remarkjs.github.io/react-markdown/) — custom `components` override pattern for glossary tokens
-- [rehype-sanitize](https://github.com/rehypejs/rehype-sanitize) — `defaultSchema` for XSS hardening on LLM output
-- [Be Vietnam Pro on Google Fonts](https://fonts.google.com/specimen/Be+Vietnam+Pro) — Vietnamese-optimized variable font
-- [lightweight-charts theme tutorial](https://tradingview.github.io/lightweight-charts/tutorials/customization/chart-colors) — `applyOptions` for dynamic updates
-- [WebAIM Contrast Checker](https://webaim.org/resources/contrastchecker/) — WCAG 4.5:1 requirements
+- Direct codebase inspection: `layout.tsx`, `app-shell.tsx`, `sidebar.tsx`, `globals.css`, `stock-table.tsx`, all `components/ui/*`
+- `node_modules/next/dist/compiled/@next/font/dist/google/font-data.json` — Source Sans 3 Vietnamese subset confirmed
+- `node_modules/@base-ui/react/` — tooltip, collapsible, progress primitives verified
+- `apps/prometheus/src/localstock/scheduler/calendar.py` — HOSE trading hours
+- `apps/prometheus/src/localstock/api/routes/*.py` — confirmed no market summary endpoint exists
 
 ### Secondary (MEDIUM confidence)
-- [Tailwind CSS discussion #17405](https://github.com/tailwindlabs/tailwindcss/discussions/17405) — multi-theme pattern with `data-theme` + class variants
-- [Claude brand colors on Mobbin](https://mobbin.com/colors/brand/claude) — warm terracotta + cream reference (reverse-engineered, not official spec)
-- [Vietnamese Typography recommendations](https://vietnamesetypography.com/type-recommendations/) — stacked diacritic line-height guidance
-- [shadcn Claude theme](https://www.shadcn.io/theme/claude) — community-maintained shadcn tokens matching Claude palette
-- Competitive analysis: Seeking Alpha, Morningstar, Simply Wall St, Linear, Notion, Claude.ai — layout patterns, drawer UX, glossary approaches
-
-### Tertiary (LOW confidence)
-- Exact glossary entry count and authoring time — varies by depth; 15 entries is safe MVP, 50 is aspirational for v1.1
-- Serif font choice for Vietnamese body text — candidates identified but not rendering-tested
+- `nuqs` v2.8.9 npm registry and documentation — history mode options, adapter patterns
+- Claude Desktop UI reference — warm neutral palette principles (hue ranges approximate)
+- MDN `Intl.DateTimeFormat.formatToParts()` — timezone handling patterns
 
 ---
-*Research completed: 2026-04-17*
+*Research completed: 2026-04-24*
 *Ready for roadmap: yes*
