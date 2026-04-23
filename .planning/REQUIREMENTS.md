@@ -69,26 +69,26 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| VIS-01 | — | Pending |
-| VIS-02 | — | Pending |
-| VIS-03 | — | Pending |
-| LAY-01 | — | Pending |
-| LAY-02 | — | Pending |
-| LAY-03 | — | Pending |
-| LAY-04 | — | Pending |
-| TBL-01 | — | Pending |
-| TBL-02 | — | Pending |
-| TBL-03 | — | Pending |
-| TBL-04 | — | Pending |
-| MKT-01 | — | Pending |
-| MKT-02 | — | Pending |
-| MKT-03 | — | Pending |
-| MKT-04 | — | Pending |
+| VIS-01 | Phase 14 | Pending |
+| VIS-02 | Phase 14 | Pending |
+| VIS-03 | Phase 14 | Pending |
+| LAY-01 | Phase 15 | Pending |
+| LAY-02 | Phase 15 | Pending |
+| LAY-03 | Phase 15 | Pending |
+| LAY-04 | Phase 15 | Pending |
+| TBL-01 | Phase 16 | Pending |
+| TBL-02 | Phase 16 | Pending |
+| TBL-03 | Phase 16 | Pending |
+| TBL-04 | Phase 16 | Pending |
+| MKT-01 | Phase 16 | Pending |
+| MKT-02 | Phase 16 | Pending |
+| MKT-03 | Phase 17 | Pending |
+| MKT-04 | Phase 17 | Pending |
 
 **Coverage:**
 - v1.3 requirements: 15 total
-- Mapped to phases: 0
-- Unmapped: 15 ⚠️ (pending roadmap creation)
+- Mapped to phases: 15
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-04-24*
