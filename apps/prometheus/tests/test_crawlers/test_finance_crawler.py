@@ -177,11 +177,11 @@ async def test_fetch_falls_back_to_vci(mock_kbs_fails_vci_works):
     assert mock_kbs_fails_vci_works.import_module.call_count >= 2
 
 
-async def test_fetch_raises_when_all_sources_fail(mock_all_fail):
-    """FinanceCrawler raises ValueError when all sources fail."""
+async def test_fetch_returns_empty_when_all_sources_fail(mock_all_fail):
+    """FinanceCrawler returns empty dict when all sources fail."""
     crawler = FinanceCrawler(delay_seconds=0)
-    with pytest.raises(ValueError, match="All sources failed"):
-        await crawler.fetch("INVALID")
+    result = await crawler.fetch("INVALID")
+    assert result == {}
 
 
 async def test_fetch_quarterly_and_annual(mock_kbs_finance):

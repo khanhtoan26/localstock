@@ -82,9 +82,41 @@ class FinanceCrawler(BaseCrawler):
                 f"(types: {list(results.keys())})"
             )
         else:
-            raise ValueError(f"All sources failed for {symbol} financials")
+            logger.info(f"No financial data available for {symbol} from any source")
 
         return results
+
+    async def fetch_batch(
+        self, symbols: list[str], **kwargs
+    ) -> tuple[dict[str, dict[str, pd.DataFrame]], list[tuple[str, str]]]:
+        """Fetch financials for multiple symbols with error tolerance.
+
+        Overrides BaseCrawler.fetch_batch because FinanceCrawler.fetch()
+        returns dict[str, DataFrame] (not a single DataFrame).
+        """
+        results: dict[str, dict[str, pd.DataFrame]] = {}
+        failed: list[tuple[str, str]] = []
+
+        for symbol in symbols:
+            try:
+                reports = await self.fetch(symbol, **kwargs)
+                if reports:
+                    results[symbol] = reports
+                else:
+                    failed.append((symbol, "No financial data available"))
+            except Exception as e:
+                failed.append((symbol, str(e)))
+                logger.warning(f"Skipping {symbol}: {e}")
+
+            await asyncio.sleep(self.delay_seconds)
+
+        if failed:
+            logger.warning(
+                f"Financial data unavailable for {len(failed)}/{len(symbols)} "
+                f"symbols: {[f[0] for f in failed]}"
+            )
+
+        return results, failed
 
     async def _fetch_from_source(
         self, symbol: str, source_name: str, module_path: str,
@@ -102,7 +134,14 @@ class FinanceCrawler(BaseCrawler):
             with suppress_vnstock_output():
                 mod = importlib.import_module(module_path)
                 FinanceClass = getattr(mod, class_name)
-                fin = FinanceClass(symbol)
+                try:
+                    fin = FinanceClass(symbol)
+                except (KeyError, Exception) as e:
+                    logger.debug(
+                        f"{source_name} init failed for {symbol}: "
+                        f"API returned invalid response (missing key: {e})"
+                    )
+                    return {}
 
                 results = {}
                 for rtype in self.REPORT_TYPES:
@@ -111,6 +150,11 @@ class FinanceCrawler(BaseCrawler):
                         df = method(period=period)
                         if df is not None and not df.empty:
                             results[rtype] = df
+                    except KeyError as e:
+                        logger.debug(
+                            f"{source_name} {rtype} failed for {symbol}: "
+                            f"missing API response key '{e.args[0]}'"
+                        )
                     except Exception as e:
                         logger.debug(
                             f"{source_name} {rtype} failed for {symbol}: {e}"
