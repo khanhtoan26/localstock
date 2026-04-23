@@ -59,7 +59,7 @@ export default function AdminPage() {
       // 3. Update sheet state for report jobs (Phase 13)
       if (job.job_type === "report") {
         setSheetState((prev) => {
-          if (prev.status !== "generating") return prev;
+          if (prev.status !== "generating" && prev.status !== "minimized") return prev;
           if (prev.jobId !== job.id) return prev;
           const jobSymbols = getJobSymbols(job);
           if (job.status === "completed") {
@@ -106,6 +106,12 @@ export default function AdminPage() {
             onOperationTriggered={() => setActiveTab("jobs")}
             onReportTriggered={({ jobId, symbols }) => {
               setSheetState({ status: "generating", symbols, jobId });
+            }}
+            reportMinimized={sheetState.status === "minimized"}
+            onReportReopen={() => {
+              if (sheetState.status === "minimized") {
+                setSheetState({ status: "generating", symbols: sheetState.symbols, jobId: sheetState.jobId });
+              }
             }}
           />
         </TabsContent>

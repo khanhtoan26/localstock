@@ -48,9 +48,11 @@ const PAGE_SIZE = 50;
 interface PipelineControlProps {
   onOperationTriggered: () => void;
   onReportTriggered?: (data: { jobId: number; symbols: string[] }) => void;
+  reportMinimized?: boolean;
+  onReportReopen?: () => void;
 }
 
-export function PipelineControl({ onOperationTriggered, onReportTriggered }: PipelineControlProps) {
+export function PipelineControl({ onOperationTriggered, onReportTriggered, reportMinimized, onReportReopen }: PipelineControlProps) {
   const t = useTranslations("admin");
   const { data, isLoading } = useTrackedStocks();
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -246,16 +248,21 @@ export function PipelineControl({ onOperationTriggered, onReportTriggered }: Pip
 
         <Button
           variant="outline"
-          disabled={validSelected.size === 0 || triggerReport.isPending}
-          onClick={() =>
+          disabled={reportMinimized ? false : (validSelected.size === 0 || triggerReport.isPending)}
+          onClick={() => {
+            if (reportMinimized) {
+              onReportReopen?.();
+              return;
+            }
             triggerReport.mutate([...validSelected], {
               onSuccess: (data) => {
                 handleSuccess(t("pipeline.report"));
                 onReportTriggered?.({ jobId: data.job_id, symbols: [...validSelected] });
               },
               onError: handleMutationError,
-            })
-          }
+            });
+          }}
+          className="relative"
         >
           {triggerReport.isPending ? (
             <Loader2 className="h-4 w-4 mr-1 animate-spin" />
@@ -263,6 +270,9 @@ export function PipelineControl({ onOperationTriggered, onReportTriggered }: Pip
             <FileText className="h-4 w-4 mr-1" />
           )}
           {t("pipeline.report")}
+          {reportMinimized && (
+            <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-primary step-active-pulse" />
+          )}
         </Button>
 
         <Button

@@ -20,7 +20,8 @@ export type SheetState =
   | { status: "closed" }
   | { status: "generating"; symbols: string[]; jobId: number }
   | { status: "completed"; symbols: string[]; lastSymbol: string }
-  | { status: "failed"; symbols: string[]; failedSymbol: string; error?: string };
+  | { status: "failed"; symbols: string[]; failedSymbol: string; error?: string }
+  | { status: "minimized"; symbols: string[]; jobId: number };
 
 interface ReportGenerationSheetProps {
   sheetState: SheetState;
@@ -33,14 +34,20 @@ export function ReportGenerationSheet({
 }: ReportGenerationSheetProps) {
   const t = useTranslations("admin");
 
-  const isOpen = sheetState.status !== "closed";
+  const isOpen = sheetState.status !== "closed" && sheetState.status !== "minimized";
   const symbols = isOpen ? sheetState.symbols : [];
 
   return (
     <Sheet
       open={isOpen}
       onOpenChange={(open) => {
-        if (!open) onStateChange({ status: "closed" });
+        if (!open) {
+          if (sheetState.status === "generating") {
+            onStateChange({ status: "minimized", symbols: sheetState.symbols, jobId: sheetState.jobId });
+          } else {
+            onStateChange({ status: "closed" });
+          }
+        }
       }}
     >
       <SheetContent side="right" className="sm:max-w-lg flex flex-col">
