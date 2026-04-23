@@ -37,7 +37,7 @@
 - [ ] **Phase 12.1: Performance & Polish** - Optimize admin table rendering, fix stale caches, improve UX polish
   **Plans:** 2 plans
   Plans:
-  - [ ] 12.1-01-PLAN.md — Foundation: cache invalidation utility, job transition hook, i18n, CSS animation
+  - [x] 12.1-01-PLAN.md — Foundation: cache invalidation utility, job transition hook, i18n, CSS animation
   - [ ] 12.1-02-PLAN.md — Integration: wire transitions into admin page, job row highlight + scroll
 - [ ] **Phase 13: AI Report Generation UI** - Generate AI reports for specific stocks from the admin console
 
