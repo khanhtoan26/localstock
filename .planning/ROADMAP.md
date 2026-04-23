@@ -39,11 +39,11 @@
   Plans:
   - [x] 12.1-01-PLAN.md — Foundation: cache invalidation utility, job transition hook, i18n, CSS animation
   - [x] 12.1-02-PLAN.md — Integration: wire transitions into admin page, job row highlight + scroll
-- [ ] **Phase 13: AI Report Generation UI** - Generate AI reports for specific stocks from the admin console
+- [x] **Phase 13: AI Report Generation UI** - Generate AI reports for specific stocks from the admin console
   **Plans:** 2 plans
   Plans:
-  - [ ] 13-01-PLAN.md — Foundation: shadcn Sheet + Progress install, i18n keys, CSS animation
-  - [ ] 13-02-PLAN.md — Components + wiring: ReportProgress, ReportPreview, ReportGenerationSheet, admin page integration
+  - [x] 13-01-PLAN.md — Foundation: shadcn Sheet + Progress install, i18n keys, CSS animation
+  - [x] 13-02-PLAN.md — Components + wiring: ReportProgress, job detail page, admin page integration
 
 ## Phase Details
 
