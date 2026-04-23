@@ -1,3 +1,6 @@
+"use client";
+
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 
 const recommendationStyles: Record<string, string> = {
@@ -8,12 +11,12 @@ const recommendationStyles: Record<string, string> = {
   "strong_sell":"bg-red-100 text-red-800 border-red-300 dark:bg-red-900/40 dark:text-red-300 dark:border-red-700",
 };
 
-const recommendationLabels: Record<string, string> = {
-  "strong_buy":  "Mua mạnh",
-  "buy":         "Mua",
-  "hold":        "Nắm giữ",
-  "sell":        "Bán",
-  "strong_sell": "Bán mạnh",
+const labelKeys: Record<string, string> = {
+  "strong_buy":  "strongBuy",
+  "buy":         "buy",
+  "hold":        "hold",
+  "sell":        "sell",
+  "strong_sell": "strongSell",
 };
 
 function normalizeKey(raw: string): string {
@@ -26,9 +29,10 @@ function normalizeKey(raw: string): string {
 }
 
 export function RecommendationBadge({ recommendation }: { recommendation: string }) {
+  const t = useTranslations("stock.recommendation");
   const key = normalizeKey(recommendation);
   const style = recommendationStyles[key] || recommendationStyles.hold;
-  const label = recommendationLabels[key] || recommendation;
+  const label = t(labelKeys[key] || "hold");
 
   return (
     <span className={cn("inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold border", style)}>

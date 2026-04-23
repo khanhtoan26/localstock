@@ -1,17 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { GlossaryEntryCard } from "./glossary-entry-card";
 import { normalizeForSearch, type GlossaryEntry, type GlossaryCategory } from "@/lib/glossary";
-
-// Category-specific search placeholders per UI-SPEC Copywriting Contract
-const SEARCH_PLACEHOLDERS: Record<GlossaryCategory, string> = {
-  technical: "Tìm chỉ báo kỹ thuật...",
-  fundamental: "Tìm tỷ số cơ bản...",
-  macro: "Tìm yếu tố vĩ mô...",
-};
 
 interface GlossarySearchProps {
   entries: GlossaryEntry[];
@@ -19,6 +13,7 @@ interface GlossarySearchProps {
 }
 
 export function GlossarySearch({ entries, category }: GlossarySearchProps) {
+  const t = useTranslations("learn.glossary");
   const [query, setQuery] = useState("");
   const [hashId] = useState<string | null>(() => {
     if (typeof window === "undefined") return null;
@@ -49,12 +44,14 @@ export function GlossarySearch({ entries, category }: GlossarySearchProps) {
       })
     : entries;
 
+  const placeholder = t(`searchPlaceholders.${category}`);
+
   return (
     <div>
       {/* Search input */}
       <div className="relative">
         <label htmlFor={`search-${category}`} className="sr-only">
-          {SEARCH_PLACEHOLDERS[category]}
+          {placeholder}
         </label>
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
         <Input
@@ -68,14 +65,14 @@ export function GlossarySearch({ entries, category }: GlossarySearchProps) {
               (e.target as HTMLInputElement).focus();
             }
           }}
-          placeholder={SEARCH_PLACEHOLDERS[category]}
+          placeholder={placeholder}
           className="h-10 w-full pl-10 pr-10"
         />
         {query && (
           <button
             onClick={() => setQuery("")}
             className="absolute right-3 top-1/2 -translate-y-1/2"
-            aria-label="Xóa tìm kiếm"
+            aria-label={t("clearSearch")}
           >
             <X className="h-4 w-4 text-muted-foreground" />
           </button>
@@ -84,14 +81,14 @@ export function GlossarySearch({ entries, category }: GlossarySearchProps) {
 
       {/* Result count */}
       <p className="text-xs text-muted-foreground mt-2" aria-live="polite">
-        {filtered.length} kết quả
+        {t("resultCount", { count: filtered.length })}
       </p>
 
       {/* Entry list */}
       <div className="mt-4 space-y-4">
         {filtered.length === 0 ? (
           <p className="text-sm text-muted-foreground py-8 text-center">
-            Không tìm thấy kết quả cho &quot;{query}&quot;
+            {t("noResultsFor", { query })}
           </p>
         ) : (
           filtered.map((entry) => (

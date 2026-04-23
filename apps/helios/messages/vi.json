@@ -87,6 +87,13 @@
       "noReport": "Chưa có báo cáo — chạy pipeline để tạo báo cáo AI.",
       "emptyContent": "Báo cáo không có nội dung."
     },
+    "recommendation": {
+      "strongBuy": "Mua mạnh",
+      "buy": "Mua",
+      "hold": "Nắm giữ",
+      "sell": "Bán",
+      "strongSell": "Bán mạnh"
+    },
     "data": {
       "priceError": "Không thể tải dữ liệu giá.",
       "noPrice": "Chưa có dữ liệu giá.",
@@ -113,6 +120,21 @@
     "searchPlaceholder": "Tìm kiếm thuật ngữ...",
     "entries": "mục",
     "noResults": "Không tìm thấy kết quả.",
+    "glossary": {
+      "viewDetails": "Xem chi tiết →",
+      "viewDetailsLabel": "Xem chi tiết về {term}",
+      "collapse": "Thu gọn {term}",
+      "expand": "Mở rộng {term}",
+      "formula": "Công thức",
+      "clearSearch": "Xóa tìm kiếm",
+      "resultCount": "{count} kết quả",
+      "noResultsFor": "Không tìm thấy kết quả cho \"{query}\"",
+      "searchPlaceholders": {
+        "technical": "Tìm chỉ báo kỹ thuật...",
+        "fundamental": "Tìm tỷ số cơ bản...",
+        "macro": "Tìm yếu tố vĩ mô..."
+      }
+    },
     "categories": {
       "technical": {
         "title": "Chỉ Báo Kỹ Thuật",

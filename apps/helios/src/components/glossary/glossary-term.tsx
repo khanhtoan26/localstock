@@ -1,15 +1,18 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Popover } from "@base-ui/react/popover";
 import type { GlossaryEntry } from "@/lib/glossary";
 
 interface GlossaryTermProps {
   entry: GlossaryEntry;
-  children: React.ReactNode; // The matched text from source
+  children: React.ReactNode;
 }
 
 export function GlossaryTerm({ entry, children }: GlossaryTermProps) {
+  const t = useTranslations("learn.glossary");
+
   return (
     <Popover.Root>
       <Popover.Trigger
@@ -37,9 +40,9 @@ export function GlossaryTerm({ entry, children }: GlossaryTermProps) {
             <Link
               href={`/learn/${entry.category}#${entry.id}`}
               className="mt-2 inline-block text-xs text-primary hover:underline"
-              aria-label={`Xem chi tiết về ${entry.term}`}
+              aria-label={t("viewDetailsLabel", { term: entry.term })}
             >
-              Xem chi tiết →
+              {t("viewDetails")}
             </Link>
           </Popover.Popup>
         </Popover.Positioner>

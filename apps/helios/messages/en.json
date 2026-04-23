@@ -87,6 +87,13 @@
       "noReport": "No report available — run pipeline to generate AI report.",
       "emptyContent": "Report has no content."
     },
+    "recommendation": {
+      "strongBuy": "Strong Buy",
+      "buy": "Buy",
+      "hold": "Hold",
+      "sell": "Sell",
+      "strongSell": "Strong Sell"
+    },
     "data": {
       "priceError": "Unable to load price data.",
       "noPrice": "No price data available.",
@@ -113,6 +120,21 @@
     "searchPlaceholder": "Search terms...",
     "entries": "entries",
     "noResults": "No results found.",
+    "glossary": {
+      "viewDetails": "View details →",
+      "viewDetailsLabel": "View details about {term}",
+      "collapse": "Collapse {term}",
+      "expand": "Expand {term}",
+      "formula": "Formula",
+      "clearSearch": "Clear search",
+      "resultCount": "{count} results",
+      "noResultsFor": "No results found for \"{query}\"",
+      "searchPlaceholders": {
+        "technical": "Search technical indicators...",
+        "fundamental": "Search fundamental ratios...",
+        "macro": "Search macro factors..."
+      }
+    },
     "categories": {
       "technical": {
         "title": "Technical Indicators",

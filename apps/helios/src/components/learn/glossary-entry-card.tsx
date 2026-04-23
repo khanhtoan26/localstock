@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -14,13 +15,14 @@ interface GlossaryEntryCardProps {
 
 export function GlossaryEntryCard({ entry, defaultOpen = false }: GlossaryEntryCardProps) {
   const [open, setOpen] = useState(defaultOpen);
+  const t = useTranslations("learn.glossary");
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
       <Card id={entry.id} className="scroll-mt-20">
         <CollapsibleTrigger
           className="w-full cursor-pointer text-left"
-          aria-label={open ? `Thu gọn ${entry.term}` : `Mở rộng ${entry.term}`}
+          aria-label={open ? t("collapse", { term: entry.term }) : t("expand", { term: entry.term })}
         >
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -38,7 +40,7 @@ export function GlossaryEntryCard({ entry, defaultOpen = false }: GlossaryEntryC
           <CardContent>
             {entry.formula && (
               <div className="mb-4">
-                <span className="text-xs text-muted-foreground">Công thức</span>
+                <span className="text-xs text-muted-foreground">{t("formula")}</span>
                 <code className="block bg-muted rounded-md p-3 font-mono text-sm mt-1">
                   {entry.formula}
                 </code>
