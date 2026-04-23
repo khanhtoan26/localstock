@@ -45,7 +45,7 @@
 
 **Milestone Goal:** Cải thiện giao diện và trải nghiệm người dùng — font, màu sắc, sidebar, table, search, market session indicator, market metrics.
 
-- [ ] **Phase 14: Visual Foundation** - Source Sans 3 font + warm terracotta color palette (light & dark)
+- [ ] **Phase 14: Visual Foundation** - Source Sans 3 font + warm neutral color palette (light & dark)
 - [ ] **Phase 15: Sidebar Float & Collapse** - Floating collapsible sidebar with icon rail and tab groups
 - [ ] **Phase 16: Table, Search & Session Bar** - Sort fix, search persistence, market session progress bar
 - [ ] **Phase 17: Market Overview Metrics** - Live 4-card market summary with new backend API
@@ -61,11 +61,10 @@
   2. Buttons, links, and interactive elements use warm terracotta accent color instead of blue
   3. Dark mode uses corresponding warm palette with WCAG AA contrast on all text
   4. Financial indicator colors (stock-up green, stock-down red, warning yellow) remain visually distinct from the new primary accent
-**Plans**: TBD
-**UI hint**: yes
+**Plans**: 1 plan
 
 Plans:
-- [ ] 14-01: TBD
+- [ ] 14-01-PLAN.md — Source Sans 3 font + neutral color palette (both themes) + hardcoded blue cleanup
 
 ### Phase 15: Sidebar Float & Collapse
 **Goal**: Sidebar operates as a floating, collapsible panel with icon navigation and persistent state
@@ -130,7 +129,7 @@ Plans:
 | 12. Admin Console UI | v1.2 | 2/2 | Complete | 2026-04-22 |
 | 12.1 Performance & Polish | v1.2 | 2/2 | Complete | 2026-04-23 |
 | 13. AI Report Generation UI | v1.2 | 2/2 | Complete | 2026-04-23 |
-| 14. Visual Foundation | v1.3 | 0/0 | Not started | - |
+| 14. Visual Foundation | v1.3 | 0/1 | Planning complete | - |
 | 15. Sidebar Float & Collapse | v1.3 | 0/0 | Not started | - |
 | 16. Table, Search & Session Bar | v1.3 | 0/0 | Not started | - |
 | 17. Market Overview Metrics | v1.3 | 0/0 | Not started | - |
