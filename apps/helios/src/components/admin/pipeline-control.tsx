@@ -47,9 +47,10 @@ const PAGE_SIZE = 50;
 
 interface PipelineControlProps {
   onOperationTriggered: () => void;
+  onReportTriggered?: (data: { jobId: number; symbols: string[] }) => void;
 }
 
-export function PipelineControl({ onOperationTriggered }: PipelineControlProps) {
+export function PipelineControl({ onOperationTriggered, onReportTriggered }: PipelineControlProps) {
   const t = useTranslations("admin");
   const { data, isLoading } = useTrackedStocks();
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -248,7 +249,10 @@ export function PipelineControl({ onOperationTriggered }: PipelineControlProps) 
           disabled={validSelected.size === 0 || triggerReport.isPending}
           onClick={() =>
             triggerReport.mutate([...validSelected], {
-              onSuccess: () => handleSuccess(t("pipeline.report")),
+              onSuccess: (data) => {
+                handleSuccess(t("pipeline.report"));
+                onReportTriggered?.({ jobId: data.job_id, symbols: [...validSelected] });
+              },
               onError: handleMutationError,
             })
           }

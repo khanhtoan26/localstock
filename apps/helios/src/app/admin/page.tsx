@@ -11,11 +11,13 @@ import { JobMonitor } from "@/components/admin/job-monitor";
 import { useJobTransitions } from "@/hooks/use-job-transitions";
 import { invalidateForJob, getJobSymbols } from "@/lib/queries";
 import type { AdminJob } from "@/lib/types";
+import { ReportGenerationSheet, type SheetState } from "@/components/admin/report-generation-sheet";
 
 export default function AdminPage() {
   const t = useTranslations("admin");
   const [activeTab, setActiveTab] = useState("stocks");
   const [focusedJobId, setFocusedJobId] = useState<number | null>(null);
+  const [sheetState, setSheetState] = useState<SheetState>({ status: "closed" });
   const queryClient = useQueryClient();
 
   const handleTransition = useCallback(
@@ -53,6 +55,30 @@ export default function AdminPage() {
           },
         },
       });
+
+      // 3. Update sheet state for report jobs (Phase 13)
+      if (job.job_type === "report") {
+        setSheetState((prev) => {
+          if (prev.status !== "generating") return prev;
+          if (prev.jobId !== job.id) return prev;
+          const jobSymbols = getJobSymbols(job);
+          if (job.status === "completed") {
+            return {
+              status: "completed",
+              symbols: prev.symbols,
+              lastSymbol: jobSymbols[jobSymbols.length - 1] || prev.symbols[prev.symbols.length - 1] || "",
+            };
+          }
+          if (job.status === "failed") {
+            return {
+              status: "failed",
+              symbols: prev.symbols,
+              failedSymbol: prev.symbols[0] || "",
+            };
+          }
+          return prev;
+        });
+      }
     },
     [queryClient, t],
   );
@@ -76,12 +102,21 @@ export default function AdminPage() {
           <StockTable />
         </TabsContent>
         <TabsContent value="pipeline" className="pt-6">
-          <PipelineControl onOperationTriggered={() => setActiveTab("jobs")} />
+          <PipelineControl
+            onOperationTriggered={() => setActiveTab("jobs")}
+            onReportTriggered={({ jobId, symbols }) => {
+              setSheetState({ status: "generating", symbols, jobId });
+            }}
+          />
         </TabsContent>
         <TabsContent value="jobs" className="pt-6" keepMounted>
           <JobMonitor focusedJobId={focusedJobId} onFocusHandled={handleFocusHandled} />
         </TabsContent>
       </Tabs>
+      <ReportGenerationSheet
+        sheetState={sheetState}
+        onStateChange={setSheetState}
+      />
     </div>
   );
 }
