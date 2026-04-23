@@ -199,6 +199,8 @@
       "backToAdmin": "Quay lại admin",
       "notFound": "Không tìm thấy tác vụ.",
       "result": "Kết quả",
+      "errorHeading": "Tác vụ thất bại",
+      "errorGeneric": "Đã xảy ra lỗi không mong muốn.",
       "viewDetail": "Xem",
       "columns": {
         "type": "Loại",

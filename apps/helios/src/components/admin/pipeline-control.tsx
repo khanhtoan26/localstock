@@ -48,10 +48,9 @@ const PAGE_SIZE = 50;
 
 interface PipelineControlProps {
   onOperationTriggered: () => void;
-  onReportTriggered?: (data: { jobId: number; symbols: string[] }) => void;
 }
 
-export function PipelineControl({ onOperationTriggered, onReportTriggered }: PipelineControlProps) {
+export function PipelineControl({ onOperationTriggered }: PipelineControlProps) {
   const t = useTranslations("admin");
   const router = useRouter();
   const { data, isLoading } = useTrackedStocks();
@@ -253,7 +252,6 @@ export function PipelineControl({ onOperationTriggered, onReportTriggered }: Pip
             triggerReport.mutate([...validSelected], {
               onSuccess: (data) => {
                 handleSuccess(t("pipeline.report"));
-                onReportTriggered?.({ jobId: data.job_id, symbols: [...validSelected] });
                 router.push(`/admin/jobs/${data.job_id}`);
               },
               onError: handleMutationError,

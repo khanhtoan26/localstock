@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ArrowLeft, AlertCircle, RefreshCw } from "lucide-react";
+import { ArrowLeft, AlertCircle } from "lucide-react";
 import { useAdminJobDetail, useStockReport, getJobSymbols } from "@/lib/queries";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -117,10 +117,10 @@ export default function JobDetailPage() {
             <AlertCircle className="h-5 w-5 text-destructive mt-0.5" />
             <div>
               <h2 className="text-base font-medium text-destructive">
-                {t("report.errorHeading")}
+                {isReportJob ? t("report.errorHeading") : t("jobs.errorHeading")}
               </h2>
               <p className="text-sm text-muted-foreground mt-1">
-                {job.error || t("report.errorGeneric")}
+                {job.error || (isReportJob ? t("report.errorGeneric") : t("jobs.errorGeneric"))}
               </p>
             </div>
           </div>

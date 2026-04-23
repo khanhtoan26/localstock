@@ -199,6 +199,8 @@
       "backToAdmin": "Back to admin",
       "notFound": "Job not found or could not be loaded.",
       "result": "Result",
+      "errorHeading": "Job failed",
+      "errorGeneric": "An unexpected error occurred.",
       "viewDetail": "View",
       "columns": {
         "type": "Type",
