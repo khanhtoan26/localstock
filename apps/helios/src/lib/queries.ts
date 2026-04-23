@@ -242,6 +242,10 @@ export function useAdminJobDetail(jobId: number | null) {
     queryKey: ["admin", "jobs", jobId],
     queryFn: () => apiFetch<AdminJobDetail>(`/api/admin/jobs/${jobId}`),
     enabled: !!jobId,
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      return status === "pending" || status === "running" ? 3000 : false;
+    },
   });
 }
 

@@ -195,9 +195,15 @@
       "filterType": "Loại",
       "all": "Tất cả",
       "noResults": "Không có tác vụ phù hợp với bộ lọc.",
+      "detailTitle": "Tác vụ #{id}",
+      "backToAdmin": "Quay lại admin",
+      "notFound": "Không tìm thấy tác vụ.",
+      "result": "Kết quả",
+      "viewDetail": "Xem",
       "columns": {
         "type": "Loại",
         "status": "Trạng thái",
+        "symbols": "Mã CK",
         "duration": "Thời lượng",
         "created": "Tạo lúc"
       }

@@ -2,7 +2,8 @@
 
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
-import { ChevronDown, Loader2, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ChevronDown, Loader2, ArrowUpDown, ArrowUp, ArrowDown, ExternalLink } from "lucide-react";
 import { useAdminJobs, useAdminJobDetail } from "@/lib/queries";
 import type { AdminJob } from "@/lib/types";
 import {
@@ -78,6 +79,7 @@ interface JobMonitorProps {
 
 export function JobMonitor({ focusedJobId, onFocusHandled }: JobMonitorProps) {
   const t = useTranslations("admin");
+  const router = useRouter();
   const { data, isLoading, isError } = useAdminJobs();
   const [expandedJobId, setExpandedJobId] = useState<number | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -243,6 +245,7 @@ export function JobMonitor({ focusedJobId, onFocusHandled }: JobMonitorProps) {
               </button>
             </TableHead>
             <TableHead className="w-10" />
+            <TableHead className="w-10" />
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -280,10 +283,22 @@ export function JobMonitor({ focusedJobId, onFocusHandled }: JobMonitorProps) {
                     )}
                   />
                 </TableCell>
+                <TableCell>
+                  <button
+                    className="text-muted-foreground hover:text-foreground transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      router.push(`/admin/jobs/${job.id}`);
+                    }}
+                    aria-label={t("jobs.viewDetail")}
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </button>
+                </TableCell>
               </TableRow>
               {expandedJobId === job.id && (
                 <TableRow key={`${job.id}-detail`}>
-                  <TableCell colSpan={5}>
+                  <TableCell colSpan={6}>
                     <JobDetailPanel jobId={job.id} />
                   </TableCell>
                 </TableRow>

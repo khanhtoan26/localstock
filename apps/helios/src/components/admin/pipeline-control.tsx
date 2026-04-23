@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   RefreshCw,
@@ -48,12 +49,11 @@ const PAGE_SIZE = 50;
 interface PipelineControlProps {
   onOperationTriggered: () => void;
   onReportTriggered?: (data: { jobId: number; symbols: string[] }) => void;
-  reportMinimized?: boolean;
-  onReportReopen?: () => void;
 }
 
-export function PipelineControl({ onOperationTriggered, onReportTriggered, reportMinimized, onReportReopen }: PipelineControlProps) {
+export function PipelineControl({ onOperationTriggered, onReportTriggered }: PipelineControlProps) {
   const t = useTranslations("admin");
+  const router = useRouter();
   const { data, isLoading } = useTrackedStocks();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
@@ -248,21 +248,17 @@ export function PipelineControl({ onOperationTriggered, onReportTriggered, repor
 
         <Button
           variant="outline"
-          disabled={reportMinimized ? false : (validSelected.size === 0 || triggerReport.isPending)}
-          onClick={() => {
-            if (reportMinimized) {
-              onReportReopen?.();
-              return;
-            }
+          disabled={validSelected.size === 0 || triggerReport.isPending}
+          onClick={() =>
             triggerReport.mutate([...validSelected], {
               onSuccess: (data) => {
                 handleSuccess(t("pipeline.report"));
                 onReportTriggered?.({ jobId: data.job_id, symbols: [...validSelected] });
+                router.push(`/admin/jobs/${data.job_id}`);
               },
               onError: handleMutationError,
-            });
-          }}
-          className="relative"
+            })
+          }
         >
           {triggerReport.isPending ? (
             <Loader2 className="h-4 w-4 mr-1 animate-spin" />
@@ -270,9 +266,6 @@ export function PipelineControl({ onOperationTriggered, onReportTriggered, repor
             <FileText className="h-4 w-4 mr-1" />
           )}
           {t("pipeline.report")}
-          {reportMinimized && (
-            <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-primary step-active-pulse" />
-          )}
         </Button>
 
         <Button

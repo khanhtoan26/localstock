@@ -195,9 +195,15 @@
       "filterType": "Type",
       "all": "All",
       "noResults": "No jobs match the selected filters.",
+      "detailTitle": "Job #{id}",
+      "backToAdmin": "Back to admin",
+      "notFound": "Job not found or could not be loaded.",
+      "result": "Result",
+      "viewDetail": "View",
       "columns": {
         "type": "Type",
         "status": "Status",
+        "symbols": "Symbols",
         "duration": "Duration",
         "created": "Created"
       }
