@@ -40,6 +40,10 @@
   - [x] 12.1-01-PLAN.md — Foundation: cache invalidation utility, job transition hook, i18n, CSS animation
   - [x] 12.1-02-PLAN.md — Integration: wire transitions into admin page, job row highlight + scroll
 - [ ] **Phase 13: AI Report Generation UI** - Generate AI reports for specific stocks from the admin console
+  **Plans:** 2 plans
+  Plans:
+  - [ ] 13-01-PLAN.md — Foundation: shadcn Sheet + Progress install, i18n keys, CSS animation
+  - [ ] 13-02-PLAN.md — Components + wiring: ReportProgress, ReportPreview, ReportGenerationSheet, admin page integration
 
 ## Phase Details
 
@@ -86,8 +90,10 @@ Plans:
   1. Generate Report button available per stock in admin console
   2. Report generation shows progress indicator while LLM is processing
   3. Generated report is immediately visible in the stock detail page
-**Plans**: TBD
-**UI hint**: yes
+**Plans**: 2 plans
+Plans:
+- [ ] 13-01-PLAN.md — Foundation: shadcn Sheet + Progress install, i18n keys, CSS animation
+- [ ] 13-02-PLAN.md — Components + wiring: ReportProgress, ReportPreview, ReportGenerationSheet, admin page integration
 
 ## Progress
 
@@ -106,7 +112,7 @@ Plans:
 | 11. Admin API Endpoints | v1.2 | 2/2 | Complete | 2026-04-22 |
 | 12. Admin Console UI | v1.2 | 2/2 | Complete   | 2026-04-22 |
 | 12.1 Performance & Polish | v1.2 | 2/2 | Complete | 2026-04-23 |
-| 13. AI Report Generation UI | v1.2 | 0/0 | Not started | - |
+| 13. AI Report Generation UI | v1.2 | 0/2 | Not started | - |
 
 ## Backlog
 
