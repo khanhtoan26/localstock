@@ -34,11 +34,11 @@
 
 - [x] **Phase 11: Admin API Endpoints** - Backend routes for stock management, pipeline control, job history (2/2 plans) — completed 2026-04-22
 - [x] **Phase 12: Admin Console UI** - Admin page with stock management, pipeline trigger, job monitoring (2/2 plans) (completed 2026-04-22)
-- [ ] **Phase 12.1: Performance & Polish** - Optimize admin table rendering, fix stale caches, improve UX polish
+- [x] **Phase 12.1: Performance & Polish** - Optimize admin table rendering, fix stale caches, improve UX polish
   **Plans:** 2 plans
   Plans:
   - [x] 12.1-01-PLAN.md — Foundation: cache invalidation utility, job transition hook, i18n, CSS animation
-  - [ ] 12.1-02-PLAN.md — Integration: wire transitions into admin page, job row highlight + scroll
+  - [x] 12.1-02-PLAN.md — Integration: wire transitions into admin page, job row highlight + scroll
 - [ ] **Phase 13: AI Report Generation UI** - Generate AI reports for specific stocks from the admin console
 
 ## Phase Details
@@ -105,6 +105,7 @@ Plans:
 | 10. Interactive Glossary Linking | v1.1 | 2/2 | Complete | 2026-04-21 |
 | 11. Admin API Endpoints | v1.2 | 2/2 | Complete | 2026-04-22 |
 | 12. Admin Console UI | v1.2 | 2/2 | Complete   | 2026-04-22 |
+| 12.1 Performance & Polish | v1.2 | 2/2 | Complete | 2026-04-23 |
 | 13. AI Report Generation UI | v1.2 | 0/0 | Not started | - |
 
 ## Backlog
