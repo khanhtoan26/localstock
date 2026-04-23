@@ -158,3 +158,14 @@
 [data-slot="collapsible-content"][data-closed] {
   height: 0;
 }
+
+/* Job row highlight animation for admin job focus (Phase 12.1) */
+@keyframes job-highlight {
+  0%   { background-color: color-mix(in srgb, var(--primary) 8%, transparent); }
+  13%  { background-color: color-mix(in srgb, var(--primary) 8%, transparent); }
+  100% { background-color: transparent; }
+}
+
+.job-row-highlight {
+  animation: job-highlight 2300ms ease-out forwards;
+}
