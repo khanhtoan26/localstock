@@ -173,7 +173,11 @@
         "name": "Name",
         "exchange": "Exchange",
         "industry": "Industry"
-      }
+      },
+      "removeConfirmTitle": "Confirm removal",
+      "removeConfirmDescription": "Are you sure you want to remove {symbol} from your watchlist?",
+      "removeConfirmCancel": "Cancel",
+      "removeConfirmAction": "Remove"
     },
     "pipeline": {
       "noSelection": "Select stocks from the table to run operations.",

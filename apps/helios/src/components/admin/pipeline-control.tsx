@@ -322,6 +322,8 @@ export function PipelineControl({ onOperationTriggered }: PipelineControlProps) 
                       <button
                         className="flex items-center gap-1 hover:text-foreground transition-colors"
                         onClick={() => toggleSort(key)}
+                        aria-label={t(`stocks.columns.${key}`) + (sortKey === key ? `, ${sortDir === "asc" ? "ascending" : "descending"}` : "")}
+                        aria-pressed={sortKey === key}
                       >
                         {t(`stocks.columns.${key}`)}
                         {sortKey === key ? (

@@ -119,6 +119,7 @@ export function useAddStock() {
         "/api/admin/stocks",
         { method: "POST", body: JSON.stringify({ symbol }) }
       ),
+    retry: 2,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "stocks"] });
     },
@@ -133,6 +134,7 @@ export function useRemoveStock() {
         `/api/admin/stocks/${symbol}`,
         { method: "DELETE" }
       ),
+    retry: 2,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "stocks"] });
     },
@@ -149,6 +151,7 @@ export function useTriggerAdminCrawl() {
         method: "POST",
         body: JSON.stringify({ symbols }),
       }),
+    retry: 2,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "jobs"] });
     },
@@ -163,6 +166,7 @@ export function useTriggerAdminAnalyze() {
         method: "POST",
         body: JSON.stringify({ symbols }),
       }),
+    retry: 2,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "jobs"] });
     },
@@ -177,6 +181,7 @@ export function useTriggerAdminScore() {
         method: "POST",
         body: JSON.stringify({ symbols }),
       }),
+    retry: 2,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "jobs"] });
     },
@@ -191,6 +196,7 @@ export function useTriggerAdminReport() {
         method: "POST",
         body: JSON.stringify({ symbols }),
       }),
+    retry: 2,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "jobs"] });
     },
@@ -205,6 +211,7 @@ export function useTriggerAdminPipeline() {
         method: "POST",
         body: JSON.stringify({ symbols }),
       }),
+    retry: 2,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "jobs"] });
     },

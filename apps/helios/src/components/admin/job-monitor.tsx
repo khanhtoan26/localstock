@@ -59,7 +59,13 @@ function JobDetailPanel({ jobId }: { jobId: number }) {
   if (detail.result)
     return (
       <pre className="text-sm whitespace-pre-wrap p-3 bg-muted rounded-md">
-        {JSON.stringify(detail.result, null, 2)}
+        {(() => {
+          try {
+            return JSON.stringify(detail.result, null, 2);
+          } catch {
+            return String(detail.result);
+          }
+        })()}
       </pre>
     );
   return <span className="text-sm text-muted-foreground">—</span>;
@@ -171,6 +177,8 @@ export function JobMonitor() {
               <button
                 className="flex items-center gap-1 hover:text-foreground transition-colors"
                 onClick={() => toggleSort("job_type")}
+                aria-label={`${t("jobs.columns.type")}${sortKey === "job_type" ? `, ${sortDir === "asc" ? "ascending" : "descending"}` : ""}`}
+                aria-pressed={sortKey === "job_type"}
               >
                 {t("jobs.columns.type")}
                 {sortKey === "job_type" ? (
@@ -184,6 +192,8 @@ export function JobMonitor() {
               <button
                 className="flex items-center gap-1 hover:text-foreground transition-colors"
                 onClick={() => toggleSort("status")}
+                aria-label={`${t("jobs.columns.status")}${sortKey === "status" ? `, ${sortDir === "asc" ? "ascending" : "descending"}` : ""}`}
+                aria-pressed={sortKey === "status"}
               >
                 {t("jobs.columns.status")}
                 {sortKey === "status" ? (
@@ -198,6 +208,8 @@ export function JobMonitor() {
               <button
                 className="flex items-center gap-1 hover:text-foreground transition-colors"
                 onClick={() => toggleSort("created_at")}
+                aria-label={`${t("jobs.columns.created")}${sortKey === "created_at" ? `, ${sortDir === "asc" ? "ascending" : "descending"}` : ""}`}
+                aria-pressed={sortKey === "created_at"}
               >
                 {t("jobs.columns.created")}
                 {sortKey === "created_at" ? (

@@ -173,7 +173,11 @@
         "name": "Tên",
         "exchange": "Sàn",
         "industry": "Ngành"
-      }
+      },
+      "removeConfirmTitle": "Xác nhận xóa",
+      "removeConfirmDescription": "Bạn có chắc muốn xóa mã {symbol} khỏi danh sách theo dõi?",
+      "removeConfirmCancel": "Hủy",
+      "removeConfirmAction": "Xóa"
     },
     "pipeline": {
       "noSelection": "Chọn mã cổ phiếu từ bảng để chạy thao tác.",

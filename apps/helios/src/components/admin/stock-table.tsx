@@ -19,6 +19,13 @@ import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertDialog,
+  AlertDialogPopup,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogClose,
+} from "@/components/ui/alert-dialog";
 
 type SortKey = "symbol" | "name" | "exchange" | "industry";
 type SortDir = "asc" | "desc";
@@ -35,6 +42,7 @@ export function StockTable() {
   const [sortKey, setSortKey] = useState<SortKey>("symbol");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [page, setPage] = useState(0);
+  const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
 
   const toggleSort = useCallback((key: SortKey) => {
     setSortKey((prev) => {
@@ -102,9 +110,11 @@ export function StockTable() {
   const handleRemove = useCallback((symbol: string) => {
     removeStock.mutate(symbol, {
       onSuccess: () => {
+        setConfirmRemove(null);
         toast(t("toast.stockRemoved", { symbol }));
       },
       onError: (error: Error) => {
+        setConfirmRemove(null);
         toast.error(t("toast.error", { detail: error.message }));
       },
     });
@@ -132,6 +142,8 @@ export function StockTable() {
             placeholder={t("stocks.placeholder")}
             value={symbolInput}
             onChange={(e) => setSymbolInput(e.target.value.toUpperCase())}
+            maxLength={10}
+            pattern="[A-Z0-9]*"
             className="max-w-xs"
           />
           <Button type="submit" disabled={addStock.isPending}>
@@ -174,6 +186,8 @@ export function StockTable() {
                       <button
                         className="flex items-center gap-1 hover:text-foreground transition-colors"
                         onClick={() => toggleSort(key)}
+                        aria-label={t(`stocks.columns.${key}`) + (sortKey === key ? `, ${sortDir === "asc" ? "ascending" : "descending"}` : "")}
+                        aria-pressed={sortKey === key}
                       >
                         {t(`stocks.columns.${key}`)}
                         {sortKey === key ? (
@@ -203,10 +217,15 @@ export function StockTable() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => handleRemove(stock.symbol)}
+                      onClick={() => setConfirmRemove(stock.symbol)}
+                      disabled={removeStock.isPending && removeStock.variables === stock.symbol}
                       aria-label={t("stocks.remove")}
                     >
-                      <X className="h-4 w-4" />
+                      {removeStock.isPending && removeStock.variables === stock.symbol ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <X className="h-4 w-4" />
+                      )}
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -247,6 +266,31 @@ export function StockTable() {
           )}
         </>
       )}
+      <AlertDialog open={!!confirmRemove} onOpenChange={(open) => { if (!open) setConfirmRemove(null); }}>
+        <AlertDialogPopup>
+          <AlertDialogTitle>{t("stocks.removeConfirmTitle")}</AlertDialogTitle>
+          <AlertDialogDescription>
+            {t("stocks.removeConfirmDescription", { symbol: confirmRemove ?? "" })}
+          </AlertDialogDescription>
+          <div className="flex justify-end gap-2 mt-4">
+            <AlertDialogClose>
+              <Button variant="outline" disabled={removeStock.isPending}>
+                {t("stocks.removeConfirmCancel")}
+              </Button>
+            </AlertDialogClose>
+            <Button
+              variant="destructive"
+              disabled={removeStock.isPending}
+              onClick={() => confirmRemove && handleRemove(confirmRemove)}
+            >
+              {removeStock.isPending ? (
+                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+              ) : null}
+              {t("stocks.removeConfirmAction")}
+            </Button>
+          </div>
+        </AlertDialogPopup>
+      </AlertDialog>
     </div>
   );
 }
