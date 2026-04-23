@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { ChevronDown, Loader2, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { useAdminJobs, useAdminJobDetail } from "@/lib/queries";
@@ -71,7 +71,12 @@ function JobDetailPanel({ jobId }: { jobId: number }) {
   return <span className="text-sm text-muted-foreground">—</span>;
 }
 
-export function JobMonitor() {
+interface JobMonitorProps {
+  focusedJobId?: number | null;
+  onFocusHandled?: () => void;
+}
+
+export function JobMonitor({ focusedJobId, onFocusHandled }: JobMonitorProps) {
   const t = useTranslations("admin");
   const { data, isLoading, isError } = useAdminJobs();
   const [expandedJobId, setExpandedJobId] = useState<number | null>(null);
@@ -79,6 +84,22 @@ export function JobMonitor() {
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [sortKey, setSortKey] = useState<JobSortKey>("created_at");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+
+  const rowRefs = useRef<Map<number, HTMLTableRowElement>>(new Map());
+
+  useEffect(() => {
+    if (focusedJobId == null) return;
+    const row = rowRefs.current.get(focusedJobId);
+    if (row) {
+      row.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      row.classList.add("job-row-highlight");
+      const timer = setTimeout(() => {
+        row.classList.remove("job-row-highlight");
+        onFocusHandled?.();
+      }, 2300); // Match CSS animation duration from globals.css
+      return () => clearTimeout(timer);
+    }
+  }, [focusedJobId, onFocusHandled]);
 
   function toggleSort(key: JobSortKey) {
     if (sortKey === key) {
@@ -226,6 +247,10 @@ export function JobMonitor() {
           {filteredAndSorted.map((job) => (
             <React.Fragment key={job.id}>
               <TableRow
+                ref={(el: HTMLTableRowElement | null) => {
+                  if (el) rowRefs.current.set(job.id, el);
+                  else rowRefs.current.delete(job.id);
+                }}
                 className="cursor-pointer"
                 onClick={() =>
                   setExpandedJobId(expandedJobId === job.id ? null : job.id)
