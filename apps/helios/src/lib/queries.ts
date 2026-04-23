@@ -1,5 +1,5 @@
 "use client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { apiFetch } from "./api";
 import type {
   TopScoresResponse,
@@ -12,6 +12,7 @@ import type {
   TechnicalData,
   FundamentalData,
   TrackedStocksResponse,
+  AdminJob,
   AdminJobsResponse,
   AdminJobDetail,
   TriggerResponse,
@@ -242,4 +243,59 @@ export function useAdminJobDetail(jobId: number | null) {
     queryFn: () => apiFetch<AdminJobDetail>(`/api/admin/jobs/${jobId}`),
     enabled: !!jobId,
   });
+}
+
+// --- Admin: Cache Invalidation (Phase 12.1 D-01) ---
+
+/** Extract symbols array from job params with type safety */
+export function getJobSymbols(job: AdminJob): string[] {
+  return Array.isArray(job.params?.symbols) ? (job.params.symbols as string[]) : [];
+}
+
+/** Invalidate caches affected by a completed job (per D-01: targeted by symbol + job type) */
+export function invalidateForJob(queryClient: QueryClient, job: AdminJob): void {
+  const symbols = getJobSymbols(job);
+
+  switch (job.job_type) {
+    case "crawl":
+      for (const s of symbols) {
+        queryClient.invalidateQueries({ queryKey: ["prices", s] });
+        queryClient.invalidateQueries({ queryKey: ["indicators", s] });
+      }
+      queryClient.invalidateQueries({ queryKey: ["admin", "stocks"] });
+      break;
+
+    case "analyze":
+      for (const s of symbols) {
+        queryClient.invalidateQueries({ queryKey: ["technical", s] });
+        queryClient.invalidateQueries({ queryKey: ["fundamental", s] });
+      }
+      break;
+
+    case "score":
+      for (const s of symbols) {
+        queryClient.invalidateQueries({ queryKey: ["scores", s] });
+      }
+      queryClient.invalidateQueries({ queryKey: ["scores", "top"] });
+      break;
+
+    case "report":
+      for (const s of symbols) {
+        queryClient.invalidateQueries({ queryKey: ["report", s] });
+      }
+      break;
+
+    case "pipeline":
+      for (const s of symbols) {
+        queryClient.invalidateQueries({ queryKey: ["prices", s] });
+        queryClient.invalidateQueries({ queryKey: ["indicators", s] });
+        queryClient.invalidateQueries({ queryKey: ["technical", s] });
+        queryClient.invalidateQueries({ queryKey: ["fundamental", s] });
+        queryClient.invalidateQueries({ queryKey: ["scores", s] });
+        queryClient.invalidateQueries({ queryKey: ["report", s] });
+      }
+      queryClient.invalidateQueries({ queryKey: ["scores", "top"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "stocks"] });
+      break;
+  }
 }

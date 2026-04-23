@@ -208,7 +208,12 @@
       "alreadyTracked": "Mã {symbol} đã được theo dõi",
       "operationStarted": "Đã bắt đầu {type}",
       "operationLocked": "Đang có tác vụ chạy. Vui lòng đợi.",
-      "error": "Thao tác thất bại: {detail}"
+      "error": "Thao tác thất bại: {detail}",
+      "jobCompleted": "{type} hoàn tất cho {symbols}",
+      "jobFailed": "{type} thất bại cho {symbols}",
+      "jobCompletedGeneric": "{type} hoàn tất thành công",
+      "jobFailedGeneric": "{type} thất bại",
+      "viewJob": "Xem tác vụ"
     }
   }
 }

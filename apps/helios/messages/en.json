@@ -208,7 +208,12 @@
       "alreadyTracked": "Stock {symbol} is already tracked",
       "operationStarted": "{type} operation started",
       "operationLocked": "An operation is already running. Please wait.",
-      "error": "Operation failed: {detail}"
+      "error": "Operation failed: {detail}",
+      "jobCompleted": "{type} completed for {symbols}",
+      "jobFailed": "{type} failed for {symbols}",
+      "jobCompletedGeneric": "{type} completed successfully",
+      "jobFailedGeneric": "{type} failed",
+      "viewJob": "View job"
     }
   }
 }
