@@ -169,3 +169,13 @@
 .job-row-highlight {
   animation: job-highlight 2300ms ease-out forwards;
 }
+
+/* Step pulse animation for report generation progress (Phase 13) */
+@keyframes step-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.step-active-pulse {
+  animation: step-pulse 2000ms ease-in-out infinite;
+}
