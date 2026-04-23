@@ -98,6 +98,8 @@ export function JobMonitor({ focusedJobId, onFocusHandled }: JobMonitorProps) {
         onFocusHandled?.();
       }, 2300); // Match CSS animation duration from globals.css
       return () => clearTimeout(timer);
+    } else {
+      onFocusHandled?.();
     }
   }, [focusedJobId, onFocusHandled]);
 
