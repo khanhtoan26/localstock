@@ -102,3 +102,16 @@ Plans:
 | 11. Admin API Endpoints | v1.2 | 2/2 | Complete | 2026-04-22 |
 | 12. Admin Console UI | v1.2 | 2/2 | Complete   | 2026-04-22 |
 | 13. AI Report Generation UI | v1.2 | 0/0 | Not started | - |
+
+## Backlog
+
+### Phase 999.1: Paper Trading Emulator (BACKLOG)
+
+**Goal:** Giả lập mua/bán cổ phiếu (paper trading) để kiểm chứng độ chính xác của khuyến nghị AI. Người dùng đặt lệnh mua thử với số lượng tùy chọn, hệ thống theo dõi P&L theo thời gian thực để đánh giá nhận định đúng/sai.
+
+**Requirements:** TBD
+
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd-review-backlog when ready)
