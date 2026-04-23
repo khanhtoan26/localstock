@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Admin Console
 status: executing
-stopped_at: Phase 12 complete, Phase 13 next
-last_updated: "2026-04-23T03:10:04.982Z"
-last_activity: 2026-04-22 -- Recommendation badges, docs generated & verified, pushed
+stopped_at: Phase 12.1 context gathered
+last_updated: "2026-04-23T03:44:41.856Z"
+last_activity: 2026-04-23 -- Phase 12.1 context gathered (cache freshness, job feedback polish, phase boundary)
 progress:
-  total_phases: 3
+  total_phases: 4
   completed_phases: 2
   total_plans: 4
   completed_plans: 4
-  percent: 67
+  percent: 50
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-22)
 
 **Core value:** Agent tự động phân tích và xếp hạng cổ phiếu HOSE — cho tôi danh sách gợi ý đáng mua kèm lý do rõ ràng, cập nhật hàng ngày, không tốn phí API.
-**Current focus:** Phase 13 — AI Report Generation UI
+**Current focus:** Phase 12.1 — Performance & Polish
 
 ## Current Position
 
-Phase: 13 (ai-report-generation-ui) — NOT STARTED
+Phase: 12.1 (performance-polish) — READY FOR PLANNING
 Plan: 0 of 0 (TBD)
-Status: Waiting for discuss/plan
-Last activity: 2026-04-22 -- Recommendation badges + 7 docs generated & verified
+Status: Context gathered, ready for planning
+Last activity: 2026-04-23 -- Phase 12.1 context gathered
 
-Progress: [██████░░░░] 67%
+Progress: [█████░░░░░] 50%
 
 ## Performance Metrics
 
@@ -66,6 +66,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-23T03:10:04.982Z
-Stopped at: Session resumed, awaiting next action for Phase 13
-Resume: `/gsd-discuss-phase 13` to begin AI Report Generation UI
+Last session: 2026-04-23T03:44:41.856Z
+Stopped at: Phase 12.1 context gathered
+Resume: `/gsd-plan-phase 12.1` to plan Performance & Polish before Phase 13
