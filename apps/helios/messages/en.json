@@ -214,6 +214,25 @@
       "jobCompletedGeneric": "{type} completed successfully",
       "jobFailedGeneric": "{type} failed",
       "viewJob": "View job"
+    },
+    "report": {
+      "sheetTitle": "Generate Report",
+      "sheetDescriptionSingle": "Generating AI report for {symbol}",
+      "sheetDescriptionBatch": "Generating AI reports for {count} stocks",
+      "stepQueued": "Queued",
+      "stepGenerating": "Generating report...",
+      "stepComplete": "Report generated",
+      "stepFailed": "Generation failed",
+      "batchProgress": "{completed} of {total} stocks completed",
+      "viewStockPage": "View stock page",
+      "retry": "Retry",
+      "close": "Close",
+      "errorHeading": "Report generation failed",
+      "errorOllamaOffline": "Ollama may be offline or unresponsive. Check that Ollama is running on localhost:11434.",
+      "errorTimeout": "Generation timed out. The LLM model may be overloaded. Try again with fewer stocks.",
+      "errorGeneric": "An unexpected error occurred. Check the Jobs tab for details.",
+      "emptyPreview": "Report will appear here after generation completes.",
+      "generatingFor": "Generating: {symbol}"
     }
   }
 }

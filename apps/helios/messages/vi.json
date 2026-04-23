@@ -214,6 +214,25 @@
       "jobCompletedGeneric": "{type} hoàn tất thành công",
       "jobFailedGeneric": "{type} thất bại",
       "viewJob": "Xem tác vụ"
+    },
+    "report": {
+      "sheetTitle": "Tạo báo cáo",
+      "sheetDescriptionSingle": "Đang tạo báo cáo AI cho {symbol}",
+      "sheetDescriptionBatch": "Đang tạo báo cáo AI cho {count} mã",
+      "stepQueued": "Đang chờ",
+      "stepGenerating": "Đang tạo báo cáo...",
+      "stepComplete": "Đã tạo xong",
+      "stepFailed": "Tạo thất bại",
+      "batchProgress": "Hoàn tất {completed}/{total} mã",
+      "viewStockPage": "Xem trang cổ phiếu",
+      "retry": "Thử lại",
+      "close": "Đóng",
+      "errorHeading": "Tạo báo cáo thất bại",
+      "errorOllamaOffline": "Ollama có thể đang offline. Kiểm tra Ollama đang chạy tại localhost:11434.",
+      "errorTimeout": "Quá thời gian chờ. LLM có thể đang quá tải. Thử lại với ít mã hơn.",
+      "errorGeneric": "Đã xảy ra lỗi. Kiểm tra tab Tác vụ để xem chi tiết.",
+      "emptyPreview": "Báo cáo sẽ hiển thị ở đây sau khi tạo xong.",
+      "generatingFor": "Đang tạo: {symbol}"
     }
   }
 }
