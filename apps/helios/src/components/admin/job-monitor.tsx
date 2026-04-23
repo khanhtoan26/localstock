@@ -97,7 +97,7 @@ export function JobMonitor() {
     return [...list].sort((a: AdminJob, b: AdminJob) => {
       let cmp: number;
       if (sortKey === "created_at") {
-        cmp = (a.created_at ?? "").localeCompare(b.created_at ?? "");
+        cmp = new Date(a.created_at ?? 0).getTime() - new Date(b.created_at ?? 0).getTime();
       } else {
         cmp = (a[sortKey] ?? "").localeCompare(b[sortKey] ?? "");
       }

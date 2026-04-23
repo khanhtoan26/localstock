@@ -174,7 +174,7 @@ export default function StockDetailPage() {
               <SubPanel
                 type="macd"
                 indicators={indicatorQuery.data.indicators}
-                height={160}
+                height={140}
               />
             </CardContent>
           </Card>
@@ -183,7 +183,7 @@ export default function StockDetailPage() {
               <SubPanel
                 type="rsi"
                 indicators={indicatorQuery.data.indicators}
-                height={160}
+                height={140}
               />
             </CardContent>
           </Card>
