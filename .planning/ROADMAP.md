@@ -94,11 +94,15 @@ Plans:
   2. Search input on rankings page filters stocks by symbol or name; the search term survives navigation to another page and back (persisted in URL params)
   3. Header displays a market session progress bar showing current HOSE phase (Pre-market / ATO / Trading / Lunch / ATC / Closed) with time remaining countdown
   4. Outside trading hours (evenings, weekends), session bar shows when market next opens (e.g., "Opens in Xh Ym" or "Reopens Monday")
-**Plans**: TBD
-**UI hint**: yes
+**Plans**: 6 plans
 
 Plans:
-- [ ] 16-01: TBD
+- [ ] 16-00-PLAN.md — Wave 0: Test stub files (sort-comparator, search-filter, hose-session)
+- [ ] 16-01-PLAN.md — nuqs install + NuqsAdapter in layout.tsx (TBL-04 foundation)
+- [ ] 16-02-PLAN.md — Table sort fix: sort-comparator.ts + stock-table.tsx (TBL-01, TBL-02)
+- [ ] 16-03-PLAN.md — Search bar: filter-stocks.ts + StockSearchInput + rankings page + i18n (TBL-03, TBL-04)
+- [ ] 16-04-PLAN.md — Market session bar: hose-session.ts + MarketSessionBar + app-shell + i18n (MKT-01, MKT-02)
+- [ ] 16-05-PLAN.md — Visual verification checkpoint
 
 ### Phase 17: Market Overview Metrics
 **Goal**: Market Overview page displays live market summary data powered by a real backend API
@@ -134,7 +138,7 @@ Plans:
 | 13. AI Report Generation UI | v1.2 | 2/2 | Complete | 2026-04-23 |
 | 14. Visual Foundation | v1.3 | 0/1 | Planning complete | - |
 | 15. Sidebar Float & Collapse | v1.3 | 1/3 | In progress | - |
-| 16. Table, Search & Session Bar | v1.3 | 0/0 | Not started | - |
+| 16. Table, Search & Session Bar | v1.3 | 0/6 | Planning complete | - |
 | 17. Market Overview Metrics | v1.3 | 0/0 | Not started | - |
 
 ## Backlog
