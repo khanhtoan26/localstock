@@ -9,9 +9,12 @@ Requirements for UI/UX Refinement milestone. Each maps to roadmap phases.
 
 ### Visual Foundation
 
-- [ ] **VIS-01**: Font chuyển sang Source Sans 3 với Vietnamese subset, load qua next/font
-- [ ] **VIS-02**: Color palette chuyển sang warm terracotta (kiểu Claude Desktop), thay thế blue ở buttons/titles
-- [ ] **VIS-03**: Dark mode cập nhật palette tương ứng, đảm bảo contrast WCAG AA
+- [x] **VIS-01
+**: Font chuyển sang Source Sans 3 với Vietnamese subset, load qua next/font
+- [x] **VIS-02
+**: Color palette chuyển sang warm terracotta (kiểu Claude Desktop), thay thế blue ở buttons/titles
+- [x] **VIS-03
+**: Dark mode cập nhật palette tương ứng, đảm bảo contrast WCAG AA
 
 ### Layout
 
