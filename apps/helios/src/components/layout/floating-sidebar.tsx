@@ -35,15 +35,15 @@ export function Sidebar({ open }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "fixed top-12 left-0 bottom-0 w-[260px] z-30",
-        "flex flex-col bg-sidebar text-sidebar-foreground border-r border-border",
+        "absolute top-2 left-2 bottom-2 w-[260px] z-30",
+        "flex flex-col rounded-xl bg-card text-card-foreground",
+        "shadow-[0_2px_8px_rgba(0,0,0,0.04)]",
         "transition-transform duration-[220ms] ease-out",
-        open ? "translate-x-0" : "-translate-x-full",
+        open ? "translate-x-0" : "-translate-x-[calc(100%+16px)]",
       )}
     >
       {/* ─── Top actions ─── */}
       <div className="shrink-0 p-2 space-y-1.5">
-        {/* New Analysis button */}
         <Link
           href="/rankings"
           className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm font-medium bg-accent hover:bg-accent/80 transition-colors"
@@ -52,7 +52,6 @@ export function Sidebar({ open }: SidebarProps) {
           {t("newAnalysis")}
         </Link>
 
-        {/* Search */}
         <div className="relative">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <input

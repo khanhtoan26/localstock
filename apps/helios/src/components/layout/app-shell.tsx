@@ -16,7 +16,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="h-screen flex flex-col bg-background">
-      {/* ─── Top header (full-width, fixed) ─── */}
+      {/* ─── Top header (full-width) ─── */}
       <header className="shrink-0 h-12 flex items-center justify-between px-4 border-b border-border bg-card z-40">
         <div className="flex items-center gap-3">
           <button
@@ -40,19 +40,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      {/* ─── Body (sidebar + main) ─── */}
+      {/* ─── Main container (relative for sidebar positioning) ─── */}
       <div className="flex-1 relative overflow-hidden">
-        {/* Sidebar (fixed below header, slides in/out) */}
+        {/* Sidebar (floating card, absolute, overlays main) */}
         <Sidebar open={sidebarOpen} />
 
-        {/* Main content (push pattern: margin-left when sidebar open) */}
+        {/* Main panel (always full-width, padding shifts content) */}
         <main
           className={cn(
-            "h-full overflow-y-auto p-6 transition-[margin-left] duration-[220ms] ease-out",
-            sidebarOpen ? "ml-[260px]" : "ml-0",
+            "h-full w-full overflow-y-auto transition-[padding-left] duration-[220ms] ease-out",
+            sidebarOpen ? "pl-[280px]" : "pl-6",
           )}
         >
-          {children}
+          <div className="py-6 pr-6">{children}</div>
         </main>
       </div>
 
