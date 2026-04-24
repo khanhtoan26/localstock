@@ -7,7 +7,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <FloatingSidebar />
-      <div className="ml-14">
+      <div className="ml-[80px]">
         <header className="flex items-center justify-end gap-2 px-6 py-3 border-b border-border">
           <LanguageToggle />
           <ThemeToggle />
