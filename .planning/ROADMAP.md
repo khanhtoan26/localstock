@@ -45,7 +45,7 @@
 
 **Milestone Goal:** Cải thiện giao diện và trải nghiệm người dùng — font, màu sắc, sidebar, table, search, market session indicator, market metrics.
 
-- [ ] **Phase 14: Visual Foundation** - Source Sans 3 font + warm neutral color palette (light & dark)
+- [x] **Phase 14: Visual Foundation** - Source Sans 3 font + warm neutral color palette (light & dark) — completed 2026-04-24
 - [ ] **Phase 15: Sidebar Float & Collapse** - Floating collapsible sidebar with icon rail and tab groups
 - [ ] **Phase 16: Table, Search & Session Bar** - Sort fix, search persistence, market session progress bar
 - [ ] **Phase 17: Market Overview Metrics** - Live 4-card market summary with new backend API
@@ -53,18 +53,18 @@
 ## Phase Details
 
 ### Phase 14: Visual Foundation
-**Goal**: All pages render with Source Sans 3 typography and warm terracotta color palette in both themes
+**Goal**: All pages render with Source Sans 3 typography and warm neutral color palette in both themes
 **Depends on**: Phase 13 (v1.2 complete)
 **Requirements**: VIS-01, VIS-02, VIS-03
 **Success Criteria** (what must be TRUE):
   1. All text across the application renders in Source Sans 3, including Vietnamese characters with diacritics
-  2. Buttons, links, and interactive elements use warm terracotta accent color instead of blue
+  2. Buttons, links, and interactive elements use warm neutral accent color instead of blue
   3. Dark mode uses corresponding warm palette with WCAG AA contrast on all text
   4. Financial indicator colors (stock-up green, stock-down red, warning yellow) remain visually distinct from the new primary accent
 **Plans**: 1 plan
 
 Plans:
-- [ ] 14-01-PLAN.md — Source Sans 3 font + neutral color palette (both themes) + hardcoded blue cleanup
+- [x] 14-01-PLAN.md — Source Sans 3 font + neutral color palette (both themes) + hardcoded blue cleanup ✅
 
 ### Phase 15: Sidebar Float & Collapse
 **Goal**: Sidebar operates as a floating, collapsible panel with icon navigation and persistent state
