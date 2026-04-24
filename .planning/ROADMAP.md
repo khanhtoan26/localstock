@@ -46,7 +46,7 @@
 **Milestone Goal:** Cải thiện giao diện và trải nghiệm người dùng — font, màu sắc, sidebar, table, search, market session indicator, market metrics.
 
 - [x] **Phase 14: Visual Foundation** - Source Sans 3 font + warm neutral color palette (light & dark) — completed 2026-04-24
-- [ ] **Phase 15: Sidebar Float & Collapse** - Floating collapsible sidebar with icon rail and tab groups
+- [x] **Phase 15: Sidebar Redesign** - Always-dark flex sidebar matching Claude Desktop style — completed 2026-04-24
 - [ ] **Phase 16: Table, Search & Session Bar** - Sort fix, search persistence, market session progress bar
 - [ ] **Phase 17: Market Overview Metrics** - Live 4-card market summary with new backend API
 
@@ -66,23 +66,22 @@
 Plans:
 - [x] 14-01-PLAN.md — Source Sans 3 font + neutral color palette (both themes) + hardcoded blue cleanup ✅
 
-### Phase 15: Sidebar Float & Collapse
-**Goal**: Sidebar operates as a floating, collapsible panel with icon navigation and persistent state
+### Phase 15: Sidebar Redesign
+**Goal**: Sidebar redesigned as an always-dark flex panel matching Claude Desktop visual style
 **Depends on**: Phase 14
-**Requirements**: LAY-01, LAY-02, LAY-03, LAY-04
+**Requirements**: LAY-01, LAY-03
 **Success Criteria** (what must be TRUE):
-  1. Sidebar collapses to a narrow icon rail (~56px) that is always visible; content area uses full width without left margin shift
-  2. Clicking an icon expands the sidebar as a floating overlay panel — content underneath is not pushed or shifted
-  3. Sidebar displays two tab groups (Main: Rankings, Market, Learn / Admin) with clear visual separation
-  4. Collapsed/expanded state persists across page reloads via localStorage
-  5. Clicking outside the expanded sidebar (backdrop area) collapses it back to the icon rail
-**Plans**: 3 plans
-**UI hint**: yes
+  1. Sidebar renders as a flex child (shrink-0, w-60) in a horizontal flex container — no position: fixed/absolute
+  2. Always-dark background (#1A1A1A) with soft white text (#E8E8E8) regardless of light/dark theme
+  3. Sidebar displays two nav groups (Main: Rankings, Market, Learn / Admin) with separator borders (#2A2A2A)
+  4. Nav items use subtle hover/active states (#2A2A2A bg, white text) — no bright accent colors
+  5. Logo area with "LocalStock" branding at top, admin section pinned to bottom
+**Plans**: 3 plans (design pivoted mid-execution from float/collapse to Claude Desktop style)
 
 Plans:
-- [x] 15-01-PLAN.md — Foundation primitives (useSidebarState hook + Tooltip component)
-- [ ] 15-02-PLAN.md — Floating sidebar component + layout restructuring
-- [ ] 15-03-PLAN.md — Visual verification checkpoint
+- [x] 15-01-PLAN.md — Foundation primitives (useSidebarState hook + Tooltip component) ✅
+- [x] 15-02-PLAN.md — Floating sidebar component + layout restructuring ✅
+- [x] 15-03-PLAN.md — Visual verification checkpoint ✅ (approved after redesign)
 
 ### Phase 16: Table, Search & Session Bar
 **Goal**: Tables sort correctly, search persists across navigation, and header shows live HOSE market session status
