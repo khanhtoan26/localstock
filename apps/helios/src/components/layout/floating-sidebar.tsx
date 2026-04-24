@@ -72,7 +72,7 @@ export function Sidebar({ open }: SidebarProps) {
 
       {/* ─── Tab switcher ─── */}
       <div className="shrink-0 px-2 pb-1">
-        <div className="flex gap-0.5">
+        <div className="flex gap-0.5 justify-center">
           {sidebarTabs.map(({ id, href, labelKey, icon: Icon }) => (
             <Link
               key={id}
