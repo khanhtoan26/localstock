@@ -5,14 +5,14 @@ import { Toaster } from "@/components/ui/sonner";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="flex h-screen">
       <FloatingSidebar />
-      <div className="ml-[80px]">
+      <div className="flex-1 flex flex-col min-h-screen overflow-auto bg-background text-foreground">
         <header className="flex items-center justify-end gap-2 px-6 py-3 border-b border-border">
           <LanguageToggle />
           <ThemeToggle />
         </header>
-        <main className="p-6">{children}</main>
+        <main className="flex-1 p-6">{children}</main>
       </div>
       <Toaster />
     </div>

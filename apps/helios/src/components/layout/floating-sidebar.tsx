@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation"
 import { useTranslations } from "next-intl"
 import { BarChart3, Globe, BookOpen, Shield } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { useSidebarState } from "@/hooks/use-sidebar-state"
 
 const mainNavItems = [
   { href: "/rankings", labelKey: "rankings" as const, icon: BarChart3 },
@@ -20,95 +19,58 @@ const adminNavItems = [
 export function FloatingSidebar() {
   const pathname = usePathname()
   const t = useTranslations("nav")
-  const { collapsed, toggle } = useSidebarState()
-
-  const handleNavClick = () => {
-    if (!collapsed) {
-      toggle()
-    }
-  }
 
   return (
-    <aside
-      className={cn(
-        "fixed left-3 top-3 bottom-3 z-30",
-        "rounded-xl shadow-md border border-sidebar-border bg-sidebar",
-        "flex flex-col overflow-hidden",
-        "transition-[width] duration-[180ms] ease-out",
-        collapsed ? "w-[56px]" : "w-60",
-      )}
-    >
-      {/* Header — visible only when expanded */}
-      <div
-        className={cn(
-          "border-b border-sidebar-border overflow-hidden transition-opacity duration-[180ms]",
-          collapsed ? "h-0 opacity-0 border-b-0" : "p-4 opacity-100",
-        )}
-      >
-        <h1 className="text-lg font-bold text-sidebar-primary whitespace-nowrap">
-          LocalStock
-        </h1>
-        <p className="text-xs text-muted-foreground whitespace-nowrap">
-          AI Stock Agent
-        </p>
+    <aside className="w-60 shrink-0 h-screen flex flex-col bg-[#1A1A1A] text-[#E8E8E8]">
+      {/* Logo / branding */}
+      <div className="px-3.5 py-4 border-b border-[#2A2A2A]">
+        <h1 className="text-base font-bold text-white">LocalStock</h1>
+        <p className="text-xs text-[#888]">AI Stock Agent</p>
       </div>
 
       {/* Main nav group */}
-      <nav className={cn("flex-1 flex flex-col gap-1", collapsed ? "items-center px-2 pt-3" : "p-2")}>
+      <nav className="flex-1 p-2 space-y-0.5">
         {mainNavItems.map(({ href, labelKey, icon: Icon }) => {
           const active = pathname.startsWith(href)
           return (
             <Link
               key={href}
               href={href}
-              onClick={collapsed ? toggle : handleNavClick}
-              title={collapsed ? t(labelKey) : undefined}
               className={cn(
-                "flex items-center rounded-md text-sm",
-                collapsed
-                  ? "justify-center w-10 h-10"
-                  : "gap-3 px-3 py-2",
+                "flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg text-sm",
                 active
-                  ? "bg-sidebar-accent text-sidebar-primary"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground",
+                  ? "bg-[#2A2A2A] text-white font-medium"
+                  : "text-[#AAAAAA] hover:bg-[#2A2A2A] hover:text-white",
               )}
             >
-              <Icon className="h-5 w-5 shrink-0" />
-              {!collapsed && <span className="whitespace-nowrap">{t(labelKey)}</span>}
+              <Icon className="h-4 w-4" />
+              {t(labelKey)}
             </Link>
           )
         })}
       </nav>
 
-      {/* Separator */}
-      <div className={cn("border-t border-sidebar-border", collapsed ? "mx-2" : "mx-2")} />
-
-      {/* Admin group — pinned to bottom */}
-      <nav className={cn("flex flex-col gap-1 pb-3", collapsed ? "items-center px-2 pt-2" : "p-2")}>
+      {/* Admin group — bottom */}
+      <div className="border-t border-[#2A2A2A] p-2 space-y-0.5">
         {adminNavItems.map(({ href, labelKey, icon: Icon }) => {
           const active = pathname.startsWith(href)
           return (
             <Link
               key={href}
               href={href}
-              onClick={collapsed ? toggle : handleNavClick}
-              title={collapsed ? t(labelKey) : undefined}
               className={cn(
-                "flex items-center rounded-md text-sm",
-                collapsed
-                  ? "justify-center w-10 h-10"
-                  : "gap-3 px-3 py-2",
+                "flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg text-sm",
                 active
-                  ? "bg-sidebar-accent text-sidebar-primary"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground",
+                  ? "bg-[#2A2A2A] text-white font-medium"
+                  : "text-[#AAAAAA] hover:bg-[#2A2A2A] hover:text-white",
               )}
             >
-              <Icon className="h-5 w-5 shrink-0" />
-              {!collapsed && <span className="whitespace-nowrap">{t(labelKey)}</span>}
+              <Icon className="h-4 w-4" />
+              {t(labelKey)}
             </Link>
           )
         })}
-      </nav>
+      </div>
     </aside>
   )
 }
