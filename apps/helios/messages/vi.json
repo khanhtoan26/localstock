@@ -14,7 +14,10 @@
     "newAnalysis": "Phân tích mới",
     "searchStocks": "Tìm mã cổ phiếu...",
     "navigation": "Điều hướng",
-    "settings": "Cài đặt"
+    "settings": "Cài đặt",
+    "tabScreener": "Lọc",
+    "tabWatchlist": "Theo dõi",
+    "tabReports": "Báo cáo"
   },
   "language": {
     "switchLabel": "Chuyển ngôn ngữ"

@@ -52,37 +52,38 @@
 :root {
   /* Claude-inspired neutral theme — warm near-black primary, warm backgrounds */
   --background:           hsl(48 33.3% 97.1%);     /* Claude bg-100: warm off-white #FAF9F5 */
-  --foreground:           hsl(60 2.6% 7.6%);       /* Claude text-100: near-black #141413 */
-  --card:                 hsl(0 0% 100%);           /* Claude bg-000: pure white */
-  --card-foreground:      hsl(60 2.6% 7.6%);
+  --background:           hsl(44 25% 94.5%);       /* #f5f4ee warm cream app bg */
+  --foreground:           hsl(0 0% 10%);            /* #1a1a1a */
+  --card:                 hsl(0 0% 100%);           /* #ffffff pure white main panel */
+  --card-foreground:      hsl(0 0% 10%);
   --popover:              hsl(0 0% 100%);
-  --popover-foreground:   hsl(60 2.6% 7.6%);
-  --primary:              hsl(60 2% 15%);           /* warm near-black ~#272725 */
+  --popover-foreground:   hsl(0 0% 10%);
+  --primary:              hsl(0 0% 17%);            /* #2c2c2c */
   --primary-foreground:   hsl(0 0% 100%);
-  --secondary:            hsl(53 28.6% 94.5%);     /* Claude bg-200 */
-  --secondary-foreground: hsl(60 2.5% 23.3%);      /* Claude text-200 */
-  --muted:                hsl(53 28.6% 94.5%);     /* Claude bg-200 */
-  --muted-foreground:     hsl(51 3.1% 43.7%);      /* Claude text-400 */
-  --accent:               hsl(48 25% 92.2%);       /* Claude bg-300: hover bg */
-  --accent-foreground:    hsl(60 2.6% 7.6%);
-  --destructive:          hsl(0 56.2% 45.4%);      /* Claude danger-100 */
-  --border:               hsl(50 20.7% 88.6%);     /* Claude bg-400 */
-  --input:                hsl(50 20.7% 88.6%);
-  --ring:                 hsl(60 3% 40%);           /* medium warm gray for focus */
+  --secondary:            hsl(44 20% 92%);          /* warm cream secondary */
+  --secondary-foreground: hsl(0 0% 17%);
+  --muted:                hsl(44 20% 92%);
+  --muted-foreground:     hsl(0 0% 60%);            /* #9a9a9a section headers, icons */
+  --accent:               hsl(44 15% 93%);          /* subtle hover bg */
+  --accent-foreground:    hsl(0 0% 10%);
+  --destructive:          hsl(0 56.2% 45.4%);
+  --border:               hsl(44 15% 88%);
+  --input:                hsl(44 15% 88%);
+  --ring:                 hsl(0 0% 40%);
   --chart-1:              hsl(142 72% 29%);         /* green */
-  --chart-2:              hsl(60 2% 35%);           /* warm gray (was blue) */
+  --chart-2:              hsl(0 0% 35%);            /* warm gray */
   --chart-3:              hsl(48 96% 40%);          /* yellow */
-  --chart-4:              hsl(15 54.2% 51.2%);     /* terracotta (brand accent) */
+  --chart-4:              hsl(15 54% 51%);          /* terracotta — brand accent, sparingly */
   --chart-5:              hsl(0 72% 42%);           /* red */
-  --radius: 0.625rem;
-  --sidebar:              hsl(48 33.3% 97.1%);     /* Claude bg-100 */
-  --sidebar-foreground:   hsl(60 2.6% 7.6%);
-  --sidebar-primary:      hsl(60 2% 15%);          /* match primary */
+  --radius: 0.375rem;                               /* 6px base radius */
+  --sidebar:              hsl(44 30% 97%);          /* #faf9f5 slightly lighter than app bg */
+  --sidebar-foreground:   hsl(0 0% 10%);
+  --sidebar-primary:      hsl(0 0% 17%);
   --sidebar-primary-foreground: hsl(0 0% 100%);
-  --sidebar-accent:       hsl(48 25% 92.2%);      /* Claude bg-300 */
-  --sidebar-accent-foreground: hsl(60 2.6% 7.6%);
-  --sidebar-border:       hsl(50 20.7% 88.6%);    /* Claude bg-400 */
-  --sidebar-ring:         hsl(60 3% 40%);          /* match ring */
+  --sidebar-accent:       hsl(44 15% 93%);
+  --sidebar-accent-foreground: hsl(0 0% 10%);
+  --sidebar-border:       hsl(44 15% 88%);
+  --sidebar-ring:         hsl(0 0% 40%);
 
   /* Financial semantic tokens — warm-light values (per D-08, D-09) */
   --stock-up:       hsl(142 72% 29%);     /* green-700 ≈ #15803D, ~6:1 on cream */
@@ -94,38 +95,38 @@
 }
 
 .dark {
-  /* Claude-inspired neutral dark theme — warm grays, neutral interactive elements */
-  --background:           hsl(60 2.7% 14.5%);      /* Claude bg-100: warm dark #262624 */
-  --foreground:           hsl(48 33.3% 97.1%);     /* Claude text-000: warm white #FAF9F5 */
-  --card:                 hsl(60 2.1% 18.4%);      /* Claude bg-000: #2F2F2C */
-  --card-foreground:      hsl(48 33.3% 97.1%);
-  --popover:              hsl(60 2.1% 18.4%);
-  --popover-foreground:   hsl(48 33.3% 97.1%);
-  --primary:              hsl(48 10% 90%);          /* warm light gray */
-  --primary-foreground:   hsl(60 2.7% 14.5%);      /* dark bg color as text */
-  --secondary:            hsl(30 3.3% 11.8%);      /* Claude bg-200: #1F1E1D */
-  --secondary-foreground: hsl(48 33.3% 97.1%);
-  --muted:                hsl(30 3.3% 11.8%);
-  --muted-foreground:     hsl(50 9% 73.7%);        /* Claude text-200: #C2C0B6 */
-  --accent:               hsl(30 3.3% 11.8%);
-  --accent-foreground:    hsl(48 33.3% 97.1%);
-  --destructive:          hsl(0 67% 59.6%);        /* Claude danger-100 dark */
-  --border:               hsl(60 2.5% 23.3%);      /* Claude text-200 as border */
-  --input:                hsl(30 3.3% 11.8%);
-  --ring:                 hsl(48 5% 55%);           /* medium warm gray for focus on dark bg */
-  --chart-1:              hsl(142 70.6% 45.3%);    /* green-500 */
-  --chart-2:              hsl(48 5% 65%);           /* warm gray (was blue) */
-  --chart-3:              hsl(48 96% 53%);          /* yellow */
-  --chart-4:              hsl(15 63.1% 59.6%);     /* terracotta brand */
-  --chart-5:              hsl(0 67% 59.6%);        /* red */
-  --sidebar:              hsl(60 2.7% 14.5%);
-  --sidebar-foreground:   hsl(48 33.3% 97.1%);
-  --sidebar-primary:      hsl(48 10% 90%);         /* match primary */
-  --sidebar-primary-foreground: hsl(48 33.3% 97.1%);
-  --sidebar-accent:       hsl(30 3.3% 11.8%);
-  --sidebar-accent-foreground: hsl(48 33.3% 97.1%);
-  --sidebar-border:       hsl(60 2.5% 23.3%);
-  --sidebar-ring:         hsl(48 5% 55%);          /* match ring */
+  /* Claude dark — #262624 app bg, #1f1e1d sidebar, #2a2927 slightly elevated */
+  --background:           hsl(60 3% 12%);            /* #1f1e1d */
+  --foreground:           hsl(44 20% 92%);           /* warm white */
+  --card:                 hsl(60 3% 12%);            /* #1f1e1d same as bg */
+  --card-foreground:      hsl(44 20% 92%);
+  --popover:              hsl(50 3% 16%);
+  --popover-foreground:   hsl(44 20% 92%);
+  --primary:              hsl(44 10% 88%);
+  --primary-foreground:   hsl(60 3% 12%);
+  --secondary:            hsl(50 3% 16%);            /* #2a2927 elevated */
+  --secondary-foreground: hsl(44 20% 92%);
+  --muted:                hsl(50 3% 16%);
+  --muted-foreground:     hsl(0 0% 60%);             /* #9a9a9a muted */
+  --accent:               hsl(50 3% 18%);            /* hover bg */
+  --accent-foreground:    hsl(44 20% 92%);
+  --destructive:          hsl(0 67% 60%);
+  --border:               hsl(50 3% 22%);
+  --input:                hsl(50 3% 16%);
+  --ring:                 hsl(0 0% 55%);
+  --chart-1:              hsl(142 71% 45%);
+  --chart-2:              hsl(0 0% 65%);
+  --chart-3:              hsl(48 96% 53%);
+  --chart-4:              hsl(15 63% 60%);           /* terracotta */
+  --chart-5:              hsl(0 67% 60%);
+  --sidebar:              hsl(50 3% 16%);            /* #2a2927 slightly elevated */
+  --sidebar-foreground:   hsl(44 20% 92%);
+  --sidebar-primary:      hsl(44 10% 88%);
+  --sidebar-primary-foreground: hsl(44 20% 92%);
+  --sidebar-accent:       hsl(50 3% 20%);
+  --sidebar-accent-foreground: hsl(44 20% 92%);
+  --sidebar-border:       hsl(50 3% 22%);
+  --sidebar-ring:         hsl(0 0% 55%);
 
   /* Financial semantic tokens — dark theme values */
   --stock-up:       #22c55e;

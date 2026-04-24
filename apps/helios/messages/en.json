@@ -14,7 +14,10 @@
     "newAnalysis": "New Analysis",
     "searchStocks": "Search stocks...",
     "navigation": "Navigation",
-    "settings": "Settings"
+    "settings": "Settings",
+    "tabScreener": "Screener",
+    "tabWatchlist": "Watchlist",
+    "tabReports": "Reports"
   },
   "language": {
     "switchLabel": "Switch language"
