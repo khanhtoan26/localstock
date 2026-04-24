@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useTranslations } from "next-intl"
@@ -25,9 +24,9 @@ const mainNavItems = [
 ]
 
 const sidebarTabs = [
-  { id: "screener" as const, labelKey: "tabScreener" as const, icon: TrendingUp },
-  { id: "watchlist" as const, labelKey: "tabWatchlist" as const, icon: Star },
-  { id: "reports" as const, labelKey: "tabReports" as const, icon: FileText },
+  { id: "screener" as const, href: "/rankings", labelKey: "tabScreener" as const, icon: TrendingUp },
+  { id: "watchlist" as const, href: "/market", labelKey: "tabWatchlist" as const, icon: Star },
+  { id: "reports" as const, href: "/admin", labelKey: "tabReports" as const, icon: FileText },
 ]
 
 interface SidebarProps {
@@ -37,7 +36,6 @@ interface SidebarProps {
 export function Sidebar({ open }: SidebarProps) {
   const pathname = usePathname()
   const t = useTranslations("nav")
-  const [activeTab, setActiveTab] = useState<string>("screener")
 
   return (
     <aside
@@ -73,22 +71,22 @@ export function Sidebar({ open }: SidebarProps) {
       </div>
 
       {/* ─── Tab switcher ─── */}
-      <div className="shrink-0 px-2 pb-1">
-        <div className="flex gap-0.5">
-          {sidebarTabs.map(({ id, labelKey, icon: Icon }) => (
-            <button
+      <div className="shrink-0 px-2 pb-1 overflow-x-auto">
+        <div className="flex gap-0.5 min-w-0">
+          {sidebarTabs.map(({ id, href, labelKey, icon: Icon }) => (
+            <Link
               key={id}
-              onClick={() => setActiveTab(id)}
+              href={href}
               className={cn(
-                "flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[13px] transition-colors",
-                activeTab === id
+                "flex items-center gap-1.5 px-2 py-1.5 rounded-md text-[13px] transition-colors whitespace-nowrap shrink-0",
+                pathname.startsWith(href)
                   ? "bg-black/[0.05] dark:bg-white/[0.06] font-medium text-foreground"
                   : "text-muted-foreground hover:bg-black/[0.03] dark:hover:bg-white/[0.03]",
               )}
             >
-              <Icon className="h-4 w-4" />
+              <Icon className="h-4 w-4 shrink-0" />
               <span>{t(labelKey)}</span>
-            </button>
+            </Link>
           ))}
         </div>
       </div>
