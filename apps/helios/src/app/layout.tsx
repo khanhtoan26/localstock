@@ -5,6 +5,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { AppShell } from "@/components/layout/app-shell";
 import { QueryProvider } from "@/lib/query-provider";
+import { NuqsAdapter } from "nuqs/adapters/next/app";
 import "./globals.css";
 
 const sourceSans = Source_Sans_3({
@@ -42,7 +43,9 @@ export default async function RootLayout({
         <NextIntlClientProvider messages={messages}>
           <ThemeProvider>
             <QueryProvider>
-              <AppShell>{children}</AppShell>
+              <NuqsAdapter>
+                <AppShell>{children}</AppShell>
+              </NuqsAdapter>
             </QueryProvider>
           </ThemeProvider>
         </NextIntlClientProvider>
