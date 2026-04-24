@@ -46,7 +46,7 @@
 **Milestone Goal:** Cải thiện giao diện và trải nghiệm người dùng — font, màu sắc, sidebar, table, search, market session indicator, market metrics.
 
 - [x] **Phase 14: Visual Foundation** - Source Sans 3 font + warm neutral color palette (light & dark) — completed 2026-04-24
-- [x] **Phase 15: Sidebar Redesign** - Always-dark flex sidebar matching Claude Desktop style — completed 2026-04-24
+- [x] **Phase 15: Sidebar Redesign** - Claude Desktop floating card sidebar with tabs, push-content layout — completed 2026-04-24
 - [ ] **Phase 16: Table, Search & Session Bar** - Sort fix, search persistence, market session progress bar
 - [ ] **Phase 17: Market Overview Metrics** - Live 4-card market summary with new backend API
 
@@ -67,16 +67,18 @@ Plans:
 - [x] 14-01-PLAN.md — Source Sans 3 font + neutral color palette (both themes) + hardcoded blue cleanup ✅
 
 ### Phase 15: Sidebar Redesign
-**Goal**: Sidebar redesigned as an always-dark flex panel matching Claude Desktop visual style
+**Goal**: Sidebar redesigned as a Claude Desktop-style floating card with full-width header, tab switcher, and push-content layout
 **Depends on**: Phase 14
-**Requirements**: LAY-01, LAY-03
+**Requirements**: LAY-01, LAY-02, LAY-03, LAY-04
 **Success Criteria** (what must be TRUE):
-  1. Sidebar renders as a flex child (shrink-0, w-60) in a horizontal flex container — no position: fixed/absolute
-  2. Always-dark background (#1A1A1A) with soft white text (#E8E8E8) regardless of light/dark theme
-  3. Sidebar displays two nav groups (Main: Rankings, Market, Learn / Admin) with separator borders (#2A2A2A)
-  4. Nav items use subtle hover/active states (#2A2A2A bg, white text) — no bright accent colors
-  5. Logo area with "LocalStock" branding at top, admin section pinned to bottom
-**Plans**: 3 plans (design pivoted mid-execution from float/collapse to Claude Desktop style)
+  1. Full-width top header (48px) with toggle button, logo, theme/language controls
+  2. Sidebar is a floating card (rounded-xl, shadow, 260px) overlaying main content, 8px inset from edges
+  3. Sidebar slides in/out via translateX with 220ms transition; state persists in localStorage
+  4. Tab switcher (Screener/Watchlist/Reports) with icon-only centered display
+  5. Three-zone structure: New Analysis + Search → Tabs + Nav (Rankings/Market/Learn) + Pinned/Recents → Footer (avatar + settings)
+  6. Claude color palette: #f5f4ee app bg, #faf9f5 sidebar, #ffffff main panel; dark mode #1f1e1d/#2a2927
+  7. Main panel uses padding-left push pattern (280px open, 24px closed) — always full-width background
+**Plans**: 3 plans (design pivoted multiple times — final is Claude Desktop floating card)
 
 Plans:
 - [x] 15-01-PLAN.md — Foundation primitives (useSidebarState hook + Tooltip component) ✅
