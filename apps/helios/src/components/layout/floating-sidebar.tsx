@@ -21,7 +21,7 @@ export function FloatingSidebar() {
   const t = useTranslations("nav")
 
   return (
-    <aside className="w-[220px] shrink-0 h-[calc(100vh-24px)] flex flex-col bg-white rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.08)]">
+    <aside className="w-[220px] shrink-0 h-full flex flex-col bg-white rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.08)]">
       {/* Logo / branding */}
       <div className="px-3.5 py-4 border-b border-[#E5E5E5]">
         <h1 className="text-base font-bold text-[#111]">LocalStock</h1>
