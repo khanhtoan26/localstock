@@ -35,7 +35,7 @@ export function formatVolume(value: number | null | undefined): string {
 /** Grade color map — returns Tailwind classes for badge styling */
 export const gradeColors: Record<string, string> = {
   A: "bg-green-500/20 text-green-700 dark:text-green-400 border-green-500/30",
-  B: "bg-blue-500/20 text-blue-700 dark:text-blue-400 border-blue-500/30",
+  B: "bg-stone-500/20 text-stone-700 dark:text-stone-400 border-stone-500/30",
   C: "bg-yellow-500/20 text-yellow-700 dark:text-yellow-400 border-yellow-500/30",
   D: "bg-orange-500/20 text-orange-700 dark:text-orange-400 border-orange-500/30",
   F: "bg-red-500/20 text-red-700 dark:text-red-400 border-red-500/30",

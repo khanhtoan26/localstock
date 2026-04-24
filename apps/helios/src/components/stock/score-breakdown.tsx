@@ -4,7 +4,7 @@ import { cn, formatScore } from "@/lib/utils";
 import type { StockScore } from "@/lib/types";
 
 const DIMENSION_KEYS = [
-  { key: "technical_score" as const, tKey: "technical" as const, color: "bg-blue-500" },
+  { key: "technical_score" as const, tKey: "technical" as const, color: "bg-stone-500" },
   { key: "fundamental_score" as const, tKey: "fundamental" as const, color: "bg-emerald-500" },
   { key: "sentiment_score" as const, tKey: "sentiment" as const, color: "bg-amber-500" },
   { key: "macro_score" as const, tKey: "macro" as const, color: "bg-violet-500" },

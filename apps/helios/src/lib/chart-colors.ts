@@ -25,10 +25,10 @@ const LIGHT_COLORS: ChartColorSet = {
   candleDown: "#b91c1c",     // red-700 for cream bg
   volumeUp: "#15803d60",     // 37.5% alpha on cream (higher than dark for visibility)
   volumeDown: "#b91c1c60",   // 37.5% alpha on cream
-  sma20: "#2563eb",          // blue-600
+  sma20: "#57534e",          // stone-600 (neutral)
   ema12: "#7c3aed",          // violet-600
   bbBands: "#6b728080",
-  macdLine: "#2563eb",
+  macdLine: "#57534e",       // stone-600 (neutral)
   macdSignal: "#ea580c",     // orange-600
   macdHistPositive: "#15803d",
   macdHistNegative: "#b91c1c",
@@ -45,10 +45,10 @@ const DARK_COLORS: ChartColorSet = {
   candleDown: "#ef4444",
   volumeUp: "#22c55e40",     // 25% alpha on dark
   volumeDown: "#ef444440",
-  sma20: "#3b82f6",
+  sma20: "#a8a29e",          // stone-400 (neutral)
   ema12: "#a855f7",
   bbBands: "#6b728080",
-  macdLine: "#3b82f6",
+  macdLine: "#a8a29e",       // stone-400 (neutral)
   macdSignal: "#f97316",
   macdHistPositive: "#22c55e",
   macdHistNegative: "#ef4444",
