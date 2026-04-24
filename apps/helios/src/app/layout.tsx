@@ -1,10 +1,17 @@
 import type { Metadata } from "next";
+import { Source_Sans_3 } from "next/font/google";
 import { getLocale, getMessages, getTranslations } from "next-intl/server";
 import { NextIntlClientProvider } from "next-intl";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import { AppShell } from "@/components/layout/app-shell";
 import { QueryProvider } from "@/lib/query-provider";
 import "./globals.css";
+
+const sourceSans = Source_Sans_3({
+  subsets: ["latin", "vietnamese"],
+  display: "swap",
+  variable: "--font-sans",
+});
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("metadata");
@@ -23,7 +30,7 @@ export default async function RootLayout({
   const messages = await getMessages();
 
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <html lang={locale} className={sourceSans.variable} suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
