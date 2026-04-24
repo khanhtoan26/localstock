@@ -80,7 +80,7 @@ Plans:
 **UI hint**: yes
 
 Plans:
-- [ ] 15-01-PLAN.md — Foundation primitives (useSidebarState hook + Tooltip component)
+- [x] 15-01-PLAN.md — Foundation primitives (useSidebarState hook + Tooltip component)
 - [ ] 15-02-PLAN.md — Floating sidebar component + layout restructuring
 - [ ] 15-03-PLAN.md — Visual verification checkpoint
 
@@ -132,7 +132,7 @@ Plans:
 | 12.1 Performance & Polish | v1.2 | 2/2 | Complete | 2026-04-23 |
 | 13. AI Report Generation UI | v1.2 | 2/2 | Complete | 2026-04-23 |
 | 14. Visual Foundation | v1.3 | 0/1 | Planning complete | - |
-| 15. Sidebar Float & Collapse | v1.3 | 0/0 | Not started | - |
+| 15. Sidebar Float & Collapse | v1.3 | 1/3 | In progress | - |
 | 16. Table, Search & Session Bar | v1.3 | 0/0 | Not started | - |
 | 17. Market Overview Metrics | v1.3 | 0/0 | Not started | - |
 
