@@ -76,11 +76,13 @@ Plans:
   3. Sidebar displays two tab groups (Main: Rankings, Market, Learn / Admin) with clear visual separation
   4. Collapsed/expanded state persists across page reloads via localStorage
   5. Clicking outside the expanded sidebar (backdrop area) collapses it back to the icon rail
-**Plans**: TBD
+**Plans**: 3 plans
 **UI hint**: yes
 
 Plans:
-- [ ] 15-01: TBD
+- [ ] 15-01-PLAN.md — Foundation primitives (useSidebarState hook + Tooltip component)
+- [ ] 15-02-PLAN.md — Floating sidebar component + layout restructuring
+- [ ] 15-03-PLAN.md — Visual verification checkpoint
 
 ### Phase 16: Table, Search & Session Bar
 **Goal**: Tables sort correctly, search persists across navigation, and header shows live HOSE market session status
