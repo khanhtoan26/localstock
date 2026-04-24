@@ -18,9 +18,12 @@ Requirements for UI/UX Refinement milestone. Each maps to roadmap phases.
 
 ### Layout
 
-- [ ] **LAY-01**: Sidebar float overlay thay vì fixed, content không bị đẩy khi sidebar mở
-- [ ] **LAY-02**: Sidebar collapse thành icon rail (~56px), expand khi click
-- [ ] **LAY-03**: Sidebar có 2 icon tab groups: Main (Rankings, Market, Learn) và Admin
+- [x] **LAY-01
+**: Sidebar float overlay thay vì fixed, content không bị đẩy khi sidebar mở
+- [x] **LAY-02
+**: Sidebar collapse thành icon rail (~56px), expand khi click
+- [x] **LAY-03
+**: Sidebar có 2 icon tab groups: Main (Rankings, Market, Learn) và Admin
 - [x] **LAY-04
 **: Sidebar state (collapsed/expanded) persist qua localStorage
 
