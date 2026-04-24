@@ -20,9 +20,9 @@ Three modes:
 </objective>
 
 <execution_context>
-@/home/toanak/playground/localstock/.claude/get-shit-done/workflows/undo.md
-@/home/toanak/playground/localstock/.claude/get-shit-done/references/ui-brand.md
-@/home/toanak/playground/localstock/.claude/get-shit-done/references/gate-prompts.md
+@/home/toanak/workspace/localstock/.claude/get-shit-done/workflows/undo.md
+@/home/toanak/workspace/localstock/.claude/get-shit-done/references/ui-brand.md
+@/home/toanak/workspace/localstock/.claude/get-shit-done/references/gate-prompts.md
 </execution_context>
 
 <context>
@@ -30,5 +30,5 @@ $ARGUMENTS
 </context>
 
 <process>
-Execute the undo workflow from @/home/toanak/playground/localstock/.claude/get-shit-done/workflows/undo.md end-to-end.
+Execute the undo workflow from @/home/toanak/workspace/localstock/.claude/get-shit-done/workflows/undo.md end-to-end.
 </process>

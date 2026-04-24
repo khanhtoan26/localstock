@@ -24,17 +24,17 @@ Designed for power users who want to parallelize work across phases from one ter
 </objective>
 
 <execution_context>
-@/home/toanak/playground/localstock/.claude/get-shit-done/workflows/manager.md
-@/home/toanak/playground/localstock/.claude/get-shit-done/references/ui-brand.md
+@/home/toanak/workspace/localstock/.claude/get-shit-done/workflows/manager.md
+@/home/toanak/workspace/localstock/.claude/get-shit-done/references/ui-brand.md
 </execution_context>
 
 <context>
 No arguments required. Requires an active milestone with ROADMAP.md and STATE.md.
 
-Project context, phase list, dependencies, and recommendations are resolved inside the workflow using `gsd-tools.cjs init manager`. No upfront context loading needed.
+Project context, phase list, dependencies, and recommendations are resolved inside the workflow using `gsd-sdk query init.manager`. No upfront context loading needed.
 </context>
 
 <process>
-Execute the manager workflow from @/home/toanak/playground/localstock/.claude/get-shit-done/workflows/manager.md end-to-end.
+Execute the manager workflow from @/home/toanak/workspace/localstock/.claude/get-shit-done/workflows/manager.md end-to-end.
 Maintain the dashboard refresh loop until the user exits or all phases complete.
 </process>

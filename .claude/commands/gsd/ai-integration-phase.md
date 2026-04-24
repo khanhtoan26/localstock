@@ -21,9 +21,9 @@ Flow: Select Framework → Research Docs → Research Domain → Design Eval Str
 </objective>
 
 <execution_context>
-@/home/toanak/playground/localstock/.claude/get-shit-done/workflows/ai-integration-phase.md
-@/home/toanak/playground/localstock/.claude/get-shit-done/references/ai-frameworks.md
-@/home/toanak/playground/localstock/.claude/get-shit-done/references/ai-evals.md
+@/home/toanak/workspace/localstock/.claude/get-shit-done/workflows/ai-integration-phase.md
+@/home/toanak/workspace/localstock/.claude/get-shit-done/references/ai-frameworks.md
+@/home/toanak/workspace/localstock/.claude/get-shit-done/references/ai-evals.md
 </execution_context>
 
 <context>
@@ -31,6 +31,6 @@ Phase number: $ARGUMENTS — optional, auto-detects next unplanned phase if omit
 </context>
 
 <process>
-Execute @/home/toanak/playground/localstock/.claude/get-shit-done/workflows/ai-integration-phase.md end-to-end.
+Execute @/home/toanak/workspace/localstock/.claude/get-shit-done/workflows/ai-integration-phase.md end-to-end.
 Preserve all workflow gates.
 </process>

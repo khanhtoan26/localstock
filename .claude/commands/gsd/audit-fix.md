@@ -25,9 +25,9 @@ Flags:
 </objective>
 
 <execution_context>
-@/home/toanak/playground/localstock/.claude/get-shit-done/workflows/audit-fix.md
+@/home/toanak/workspace/localstock/.claude/get-shit-done/workflows/audit-fix.md
 </execution_context>
 
 <process>
-Execute the audit-fix workflow from @/home/toanak/playground/localstock/.claude/get-shit-done/workflows/audit-fix.md end-to-end.
+Execute the audit-fix workflow from @/home/toanak/workspace/localstock/.claude/get-shit-done/workflows/audit-fix.md end-to-end.
 </process>

@@ -19,8 +19,8 @@ Routes to the profile-user workflow which orchestrates the full flow: consent ga
 </objective>
 
 <execution_context>
-@/home/toanak/playground/localstock/.claude/get-shit-done/workflows/profile-user.md
-@/home/toanak/playground/localstock/.claude/get-shit-done/references/ui-brand.md
+@/home/toanak/workspace/localstock/.claude/get-shit-done/workflows/profile-user.md
+@/home/toanak/workspace/localstock/.claude/get-shit-done/references/ui-brand.md
 </execution_context>
 
 <context>

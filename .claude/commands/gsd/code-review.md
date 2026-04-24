@@ -27,7 +27,7 @@ Output: {padded_phase}-REVIEW.md in phase directory + inline summary of findings
 </objective>
 
 <execution_context>
-@/home/toanak/playground/localstock/.claude/get-shit-done/workflows/code-review.md
+@/home/toanak/workspace/localstock/.claude/get-shit-done/workflows/code-review.md
 </execution_context>
 
 <context>
@@ -37,13 +37,13 @@ Optional flags parsed from $ARGUMENTS:
 - `--depth=VALUE` — Depth override (quick|standard|deep). If provided, overrides workflow.code_review_depth config.
 - `--files=file1,file2,...` — Explicit file list override. Has highest precedence for file scoping per D-08. When provided, workflow skips SUMMARY.md extraction and git diff fallback entirely.
 
-Context files (CLAUDE.md, SUMMARY.md, phase state) are resolved inside the workflow via `gsd-tools init phase-op` and delegated to agent via `<files_to_read>` blocks.
+Context files (CLAUDE.md, SUMMARY.md, phase state) are resolved inside the workflow via `gsd-sdk query init.phase-op` and delegated to agent via `<files_to_read>` blocks.
 </context>
 
 <process>
 This command is a thin dispatch layer. It parses arguments and delegates to the workflow.
 
-Execute the code-review workflow from @/home/toanak/playground/localstock/.claude/get-shit-done/workflows/code-review.md end-to-end.
+Execute the code-review workflow from @/home/toanak/workspace/localstock/.claude/get-shit-done/workflows/code-review.md end-to-end.
 
 The workflow (not this command) enforces these gates:
 - Phase validation (before config gate)

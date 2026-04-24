@@ -18,9 +18,9 @@ Lightweight alternative to `/gsd-map-codebase` — spawns one mapper agent inste
 </objective>
 
 <execution_context>
-@/home/toanak/playground/localstock/.claude/get-shit-done/workflows/scan.md
+@/home/toanak/workspace/localstock/.claude/get-shit-done/workflows/scan.md
 </execution_context>
 
 <process>
-Execute the scan workflow from @/home/toanak/playground/localstock/.claude/get-shit-done/workflows/scan.md end-to-end.
+Execute the scan workflow from @/home/toanak/workspace/localstock/.claude/get-shit-done/workflows/scan.md end-to-end.
 </process>

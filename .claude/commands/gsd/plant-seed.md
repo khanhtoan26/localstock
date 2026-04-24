@@ -20,9 +20,9 @@ Consumed by: /gsd-new-milestone (scans seeds and presents matches)
 </objective>
 
 <execution_context>
-@/home/toanak/playground/localstock/.claude/get-shit-done/workflows/plant-seed.md
+@/home/toanak/workspace/localstock/.claude/get-shit-done/workflows/plant-seed.md
 </execution_context>
 
 <process>
-Execute the plant-seed workflow from @/home/toanak/playground/localstock/.claude/get-shit-done/workflows/plant-seed.md end-to-end.
+Execute the plant-seed workflow from @/home/toanak/workspace/localstock/.claude/get-shit-done/workflows/plant-seed.md end-to-end.
 </process>

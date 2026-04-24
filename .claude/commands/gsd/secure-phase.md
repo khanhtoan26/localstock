@@ -22,7 +22,7 @@ Output: updated SECURITY.md.
 </objective>
 
 <execution_context>
-@/home/toanak/playground/localstock/.claude/get-shit-done/workflows/secure-phase.md
+@/home/toanak/workspace/localstock/.claude/get-shit-done/workflows/secure-phase.md
 </execution_context>
 
 <context>
@@ -30,6 +30,6 @@ Phase: $ARGUMENTS — optional, defaults to last completed phase.
 </context>
 
 <process>
-Execute @/home/toanak/playground/localstock/.claude/get-shit-done/workflows/secure-phase.md.
+Execute @/home/toanak/workspace/localstock/.claude/get-shit-done/workflows/secure-phase.md.
 Preserve all workflow gates.
 </process>

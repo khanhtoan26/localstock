@@ -33,14 +33,14 @@ Initialize a new project through unified flow: questioning → research (optiona
 </objective>
 
 <execution_context>
-@/home/toanak/playground/localstock/.claude/get-shit-done/workflows/new-project.md
-@/home/toanak/playground/localstock/.claude/get-shit-done/references/questioning.md
-@/home/toanak/playground/localstock/.claude/get-shit-done/references/ui-brand.md
-@/home/toanak/playground/localstock/.claude/get-shit-done/templates/project.md
-@/home/toanak/playground/localstock/.claude/get-shit-done/templates/requirements.md
+@/home/toanak/workspace/localstock/.claude/get-shit-done/workflows/new-project.md
+@/home/toanak/workspace/localstock/.claude/get-shit-done/references/questioning.md
+@/home/toanak/workspace/localstock/.claude/get-shit-done/references/ui-brand.md
+@/home/toanak/workspace/localstock/.claude/get-shit-done/templates/project.md
+@/home/toanak/workspace/localstock/.claude/get-shit-done/templates/requirements.md
 </execution_context>
 
 <process>
-Execute the new-project workflow from @/home/toanak/playground/localstock/.claude/get-shit-done/workflows/new-project.md end-to-end.
+Execute the new-project workflow from @/home/toanak/workspace/localstock/.claude/get-shit-done/workflows/new-project.md end-to-end.
 Preserve all workflow gates (validation, approvals, commits, routing).
 </process>

@@ -25,7 +25,7 @@ Flag handling rule:
 </objective>
 
 <execution_context>
-@/home/toanak/playground/localstock/.claude/get-shit-done/workflows/docs-update.md
+@/home/toanak/workspace/localstock/.claude/get-shit-done/workflows/docs-update.md
 </execution_context>
 
 <context>
@@ -43,6 +43,6 @@ Arguments: $ARGUMENTS
 </context>
 
 <process>
-Execute the docs-update workflow from @/home/toanak/playground/localstock/.claude/get-shit-done/workflows/docs-update.md end-to-end.
+Execute the docs-update workflow from @/home/toanak/workspace/localstock/.claude/get-shit-done/workflows/docs-update.md end-to-end.
 Preserve all workflow gates (preservation_check, flag handling, wave execution, monorepo dispatch, commit, reporting).
 </process>

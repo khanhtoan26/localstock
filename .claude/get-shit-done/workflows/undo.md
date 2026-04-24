@@ -3,8 +3,8 @@ Safe git revert workflow. Rolls back GSD phase or plan commits using the phase m
 </purpose>
 
 <required_reading>
-@/home/toanak/playground/localstock/.claude/get-shit-done/references/ui-brand.md
-@/home/toanak/playground/localstock/.claude/get-shit-done/references/gate-prompts.md
+@/home/toanak/workspace/localstock/.claude/get-shit-done/references/ui-brand.md
+@/home/toanak/workspace/localstock/.claude/get-shit-done/references/gate-prompts.md
 </required_reading>
 
 <process>
@@ -279,7 +279,7 @@ Show next steps:
 ```
 ───────────────────────────────────────────────────────────────
 
-## ▶ Next Up
+## ▶ Next Up — [${PROJECT_CODE}] ${PROJECT_TITLE}
 
 **Review state** — verify project is in expected state after revert
 

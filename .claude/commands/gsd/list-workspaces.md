@@ -10,10 +10,10 @@ Scan `~/gsd-workspaces/` for workspace directories containing `WORKSPACE.md` man
 </objective>
 
 <execution_context>
-@/home/toanak/playground/localstock/.claude/get-shit-done/workflows/list-workspaces.md
-@/home/toanak/playground/localstock/.claude/get-shit-done/references/ui-brand.md
+@/home/toanak/workspace/localstock/.claude/get-shit-done/workflows/list-workspaces.md
+@/home/toanak/workspace/localstock/.claude/get-shit-done/references/ui-brand.md
 </execution_context>
 
 <process>
-Execute the list-workspaces workflow from @/home/toanak/playground/localstock/.claude/get-shit-done/workflows/list-workspaces.md end-to-end.
+Execute the list-workspaces workflow from @/home/toanak/workspace/localstock/.claude/get-shit-done/workflows/list-workspaces.md end-to-end.
 </process>

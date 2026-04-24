@@ -16,7 +16,7 @@ Extract structured learnings from completed phase artifacts (PLAN.md, SUMMARY.md
 </objective>
 
 <execution_context>
-@/home/toanak/playground/localstock/.claude/get-shit-done/workflows/extract_learnings.md
+@/home/toanak/workspace/localstock/.claude/get-shit-done/workflows/extract_learnings.md
 </execution_context>
 
-Execute the extract-learnings workflow from @/home/toanak/playground/localstock/.claude/get-shit-done/workflows/extract_learnings.md end-to-end.
+Execute the extract-learnings workflow from @/home/toanak/workspace/localstock/.claude/get-shit-done/workflows/extract_learnings.md end-to-end.

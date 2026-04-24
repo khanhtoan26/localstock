@@ -1,6 +1,7 @@
 ---
 name: gsd:progress
-description: Check project progress, show context, and route to next action (execute or plan)
+description: Check project progress, show context, and route to next action (execute or plan). Use --forensic to append a 6-check integrity audit after the standard report.
+argument-hint: "[--forensic]"
 allowed-tools:
   - Read
   - Bash
@@ -15,10 +16,10 @@ Provides situational awareness before continuing work.
 </objective>
 
 <execution_context>
-@/home/toanak/playground/localstock/.claude/get-shit-done/workflows/progress.md
+@/home/toanak/workspace/localstock/.claude/get-shit-done/workflows/progress.md
 </execution_context>
 
 <process>
-Execute the progress workflow from @/home/toanak/playground/localstock/.claude/get-shit-done/workflows/progress.md end-to-end.
+Execute the progress workflow from @/home/toanak/workspace/localstock/.claude/get-shit-done/workflows/progress.md end-to-end.
 Preserve all routing logic (Routes A through F) and edge case handling.
 </process>
