@@ -533,7 +533,7 @@ function getVNTimeParts(now: Date): { h: number; m: number; dow: number } {
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Grade sort comparator direction**
    - What we know: `GRADE_RANK["A+"] = 1` (lowest number = best grade). User wants desc = A+ first.
