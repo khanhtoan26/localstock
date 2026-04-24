@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react"
 
 const STORAGE_KEY = "localstock-sidebar-collapsed"
-const DEFAULT_COLLAPSED = true
+const DEFAULT_COLLAPSED = false
 
 export function useSidebarState() {
   const [collapsed, setCollapsedRaw] = useState<boolean>(() => {

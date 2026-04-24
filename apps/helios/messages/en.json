@@ -10,7 +10,11 @@
     "rankings": "Rankings",
     "market": "Market",
     "learn": "Learn",
-    "admin": "Admin"
+    "admin": "Admin",
+    "newAnalysis": "New Analysis",
+    "searchStocks": "Search stocks...",
+    "navigation": "Navigation",
+    "settings": "Settings"
   },
   "language": {
     "switchLabel": "Switch language"
@@ -242,5 +246,11 @@
       "emptyPreview": "Report will appear here after generation completes.",
       "generatingFor": "Generating: {symbol}"
     }
+  },
+  "sidebar": {
+    "appName": "LocalStock",
+    "appSubtitle": "AI Stock Agent",
+    "collapse": "Collapse sidebar",
+    "expand": "Expand sidebar"
   }
 }

@@ -10,7 +10,11 @@
     "rankings": "Xếp Hạng",
     "market": "Thị Trường",
     "learn": "Học",
-    "admin": "Quản trị"
+    "admin": "Quản trị",
+    "newAnalysis": "Phân tích mới",
+    "searchStocks": "Tìm mã cổ phiếu...",
+    "navigation": "Điều hướng",
+    "settings": "Cài đặt"
   },
   "language": {
     "switchLabel": "Chuyển ngôn ngữ"
@@ -242,5 +246,11 @@
       "emptyPreview": "Báo cáo sẽ hiển thị ở đây sau khi tạo xong.",
       "generatingFor": "Đang tạo: {symbol}"
     }
+  },
+  "sidebar": {
+    "appName": "LocalStock",
+    "appSubtitle": "AI Stock Agent",
+    "collapse": "Thu gọn sidebar",
+    "expand": "Mở rộng sidebar"
   }
 }
