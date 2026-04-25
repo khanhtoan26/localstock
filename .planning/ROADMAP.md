@@ -72,7 +72,13 @@
   2. For a stock with avg_volume >= 100k shares/day, the system returns a volume divergence signal (MFI/CMF/OBV-based); for a low-liquidity stock below that threshold, it returns null without error
   3. The system reads sector momentum from SectorSnapshot and returns it as a named scalar value ready for LLM prompt injection per stock
   4. All three signal methods are independently unit-testable with a synthetic DataFrame — no live DB or network calls required
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 18-01-PLAN.md — Test stubs + signals.py module stub (Wave 0)
+- [ ] 18-02-PLAN.md — compute_candlestick_patterns() + SIGNAL-01 tests (Wave 1)
+- [ ] 18-03-PLAN.md — compute_volume_divergence() + SIGNAL-02 tests (Wave 1)
+- [ ] 18-04-PLAN.md — compute_sector_momentum() + SIGNAL-03 tests (Wave 2)
 
 ### Phase 19: Prompt & Schema Restructuring
 **Goal**: The StockReport Pydantic model and Ollama prompt are restructured to accommodate new trade guidance fields, with the context window enlarged and output validated post-generation
@@ -131,7 +137,7 @@
 | 15. Sidebar Redesign | v1.3 | 3/3 | Complete | 2026-04-24 |
 | 16. Table, Search & Session Bar | v1.3 | 6/6 | Complete | 2026-04-25 |
 | 17. Market Overview Metrics | v1.3 | 4/4 | Complete | 2026-04-25 |
-| 18. Signal Computation | v1.4 | 0/? | Not started | - |
+| 18. Signal Computation | v1.4 | 0/4 | Planned | - |
 | 19. Prompt & Schema Restructuring | v1.4 | 0/? | Not started | - |
 | 20. Service Wiring & Report Content | v1.4 | 0/? | Not started | - |
 | 21. Frontend Trade Plan Display | v1.4 | 0/? | Not started | - |
