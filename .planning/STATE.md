@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: UI/UX Refinement
-status: executing
-stopped_at: Planned Phase 17 — Market Overview Metrics
+status: milestone_complete
+stopped_at: Phase 17 fully executed and human-approved
 last_updated: "2026-04-25T12:00:00.000Z"
-last_activity: 2026-04-25 -- Phase 17 planned (4 plans, 4 waves)
+last_activity: 2026-04-25 -- Phase 17 complete (backend API + MarketSummaryCards + visual approval)
 progress:
-  total_phases: 5
-  completed_phases: 3
+  total_phases: 4
+  completed_phases: 4
   total_plans: 15
-  completed_plans: 11
-  percent: 60
+  completed_plans: 15
+  percent: 100
 ---
 
 # Project State
@@ -21,22 +21,22 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-23)
 
 **Core value:** Agent tự động phân tích và xếp hạng cổ phiếu HOSE — cho tôi danh sách gợi ý đáng mua kèm lý do rõ ràng, cập nhật hàng ngày, không tốn phí API.
-**Current focus:** Phase 17 — Market Metrics
+**Current focus:** v1.3 milestone complete — ready for milestone completion or v1.4
 
 ## Current Position
 
-Phase: 17 — PLANNING COMPLETE
-Plan: 4 plans (17-00 through 17-03), 4 waves
-Status: Ready to execute
-Last activity: 2026-04-25 — Phase 17 planned (market summary API + 4 metric cards)
+Phase: 17 — COMPLETE (all 4 plans executed, human-approved)
+Milestone: v1.3 UI/UX Refinement — ALL PHASES COMPLETE
+Status: Milestone complete, pending /gsd-complete-milestone
+Last activity: 2026-04-25 — Phase 17 executed (GET /api/market/summary + MarketSummaryCards + 8 tests)
 
-Progress: [██████░░░░] 60%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 41 (v1.0: 27, v1.1: 12, v1.2: 8, v1.3: 8)
+- Total plans completed: 45 (v1.0: 27, v1.1: 12, v1.2: 8, v1.3: 15 [4 waves × Phase 17])
 - Average duration: —
 - Total execution time: —
 
@@ -51,12 +51,15 @@ Full decision history from v1.0 archived in `.planning/milestones/v1.0-ROADMAP.m
 - Phase 14: Source Sans 3 variable font with Vietnamese subset via next/font/google
 - FloatingSidebar: icon rail (w-14) always visible + overlay panel (w-60) with 180ms CSS transform slide animation
 - Phase 16: Removed nuqs/URL search persistence — search uses local useState only
+- Phase 17: Silent zero-to-null coercion + hardcoded English strings flagged in REVIEW.md (3 warnings)
 
 ### Recent Work (2026-04-25)
 
+- Phase 17 complete: GET /api/market/summary backend + PriceRepository.get_market_aggregate() + MarketSummaryCards frontend + 8 tests passing
+- Phase 17 code review: 3 warnings (silent coercion, hardcoded strings, date-alignment silent failure), 0 critical
+- Phase 17-03 visual checkpoint: APPROVED by human
 - Phase 16 completed: sort fix, search bar, HOSE session bar (6 plans, 44 tests)
 - nuqs dependency removed — StockSearchInput is now a controlled component
-- Phase 15 Plan 01 completed: useSidebarState hook + Tooltip UI component
 
 ### Pending Todos
 
@@ -64,10 +67,21 @@ None.
 
 ### Blockers/Concerns
 
-- Phase 17 (Market Metrics): Backend API `GET /api/market/summary` doesn't exist yet. Frontend can ship with fallback, but backend work needed.
+- Code review Phase 17: 3 warnings in REVIEW.md not yet fixed (silent zero-to-null, hardcoded strings, date-alignment)
+
+## Deferred Items
+
+Items acknowledged and deferred at milestone close on 2026-04-25:
+
+| Category | Item | Status |
+|----------|------|--------|
+| uat | Phase 07: 07-UAT.md — 9 pending scenarios | testing |
+| verification | Phase 09: 09-VERIFICATION.md | human_needed |
+
+Known deferred items at close: 2 (v1.1 artifacts, non-blocking for v1.3)
 
 ## Session Continuity
 
 Last session: 2026-04-25
-Stopped at: Phase 17 context gathered, ready for planning
-Resume: /gsd-plan-phase 17
+Stopped at: v1.3 milestone close in progress
+Resume: /gsd-new-milestone

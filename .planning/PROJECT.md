@@ -8,21 +8,11 @@ LocalStock là một AI Stock Agent cá nhân cho thị trường chứng khoán
 
 Agent tự động phân tích và xếp hạng cổ phiếu HOSE — cho tôi danh sách gợi ý đáng mua kèm lý do rõ ràng, cập nhật hàng ngày, không tốn phí API.
 
-## Current Milestone: v1.3 UI/UX Refinement
+## Current State: v1.3 Shipped
 
-**Goal:** Cải thiện giao diện và trải nghiệm người dùng — font, màu sắc, sidebar, table, search, market session indicator, market metrics.
+**Shipped:** 2026-04-25 — UI/UX Refinement complete (Phases 14–17, 14 plans)
 
-**Target features:**
-
-- Font Source Sans 3 (kiểu Anthropic)
-- Màu sắc Claude Desktop palette (thay blue buttons/titles hiện tại)
-- Sidebar float + collapsible, 2 icon tabs (Main pages / Admin)
-- Fix hành vi sort trên tables
-- Search state persist khi chuyển trang/tab
-- Market session progress bar trên header (giờ giao dịch HOSE, thời gian còn lại)
-- Market overview 4 ô metrics hoạt động với data thật
-
-**Triết lý:** Polish và nhất quán — giao diện chuyên nghiệp, trải nghiệm mượt mà, data live.
+All v1.3 goals delivered: Source Sans 3 typography, warm neutral palette, Claude Desktop floating sidebar, numeric table sort, live market session bar, live market metrics cards with real backend data.
 
 ## Requirements
 
@@ -49,15 +39,17 @@ Agent tự động phân tích và xếp hạng cổ phiếu HOSE — cho tôi d
 - ✓ Pipeline control: trigger crawl/analysis/scoring/report từ UI — v1.2
 - ✓ Job monitoring: xem trạng thái pipeline, lịch sử chạy, errors — v1.2
 
+- ✓ Font Source Sans 3 (Vietnamese subset, FOUC-free via next/font) — v1.3
+- ✓ Color palette Claude Desktop warm neutral (bỏ blue, warm near-black/gray) — v1.3
+- ✓ Sidebar float collapsible: icon rail (w-14) + overlay panel (w-60), localStorage persist — v1.3
+- ✓ Fix sort behavior trên tables (numeric + grade semantic, tiebreaker) — v1.3
+- ✓ Search bar filter stocks theo symbol/tên (local state) — v1.3
+- ✓ Market session progress bar trên header (HOSE phases, countdown) — v1.3
+- ✓ Market overview 4 metrics với data thật (GET /api/market/summary) — v1.3
+
 ### Active
 
-- [ ] Font Source Sans 3 thay thế font hiện tại — v1.3
-- [ ] Color palette Claude Desktop (bỏ blue, dùng warm neutral + accent) — v1.3
-- [ ] Sidebar float collapsible với 2 icon tabs (Main / Admin) — v1.3
-- [ ] Fix sort behavior trên tables — v1.3
-- [ ] Search state persist khi chuyển trang/tab — v1.3
-- [ ] Market session progress bar trên header — v1.3
-- [ ] Market overview 4 metrics hoạt động với data thật — v1.3
+(No active requirements — planning v1.4)
 
 ### Out of Scope
 
@@ -71,14 +63,14 @@ Agent tự động phân tích và xếp hạng cổ phiếu HOSE — cho tôi d
 
 ## Context
 
-- **Current version:** v1.2 shipped 2026-04-23
-- **Codebase:** ~8,500 LOC Python (backend) + ~41,200 LOC TypeScript (frontend) + ~4,100 LOC CSS
+- **Current version:** v1.3 shipped 2026-04-25
+- **Codebase:** ~8,500 LOC Python (backend) + ~41,200 LOC TypeScript (frontend) + ~4,100 LOC CSS (v1.2 baseline; +31,495/-3,786 LOC in v1.3 across 399 files)
 - **Backend:** Python + FastAPI + SQLAlchemy + Alembic + PostgreSQL (Supabase)
 - **Frontend:** Next.js 16 + shadcn/ui + Tailwind v4 + lightweight-charts v5
 - **AI:** Ollama local LLM (RTX 3060, 12GB VRAM) for sentiment analysis and report generation
 - **Notifications:** Telegram bot via python-telegram-bot
 - **Automation:** APScheduler daily pipeline after market close (15:30)
-- **Tests:** 324 backend unit tests + 28 E2E Playwright tests passing
+- **Tests:** 324 backend unit tests + 8 new market API tests (332 total) + 44 frontend vitest tests
 - **Thị trường mục tiêu:** Sàn HOSE (~400 mã có thanh khoản cao)
 
 ## Constraints
@@ -102,6 +94,12 @@ Agent tự động phân tích và xếp hạng cổ phiếu HOSE — cho tôi d
 | lightweight-charts v5 cho biểu đồ | Nhẹ, chuyên cho financial charts, TradingView quality | ✓ Good — candlestick + volume overlay tốt |
 | APScheduler cho automation | Đơn giản, chạy trong process, không cần Celery/Redis | ✓ Good — daily pipeline ổn định |
 | Telegram cho notifications | User quen dùng, API đơn giản, push notification miễn phí | ✓ Good — daily digest + alert hoạt động tốt |
+| Source Sans 3 via next/font/google | FOUC-free, Vietnamese subset, no paid hosting | ✓ Good — v1.3 |
+| Warm neutral palette thay blue | Claude Desktop aesthetic, warm cream on light/dark | ✓ Good — v1.3 |
+| FloatingSidebar: icon rail + overlay | No push-content layout complexity, always-visible icon rail | ✓ Good — v1.3 |
+| nuqs removed — search dùng local useState | URL persistence thêm complexity không cần thiết cho tool cá nhân | ✓ Good — v1.3 |
+| GET /api/market/summary dùng MAX(date) | Robust với weekends/holidays — không bao giờ dùng date.today() | ✓ Good — v1.3 |
+| MarketSummaryCards staleTime 30min | Khớp với daily crawl rhythm — tránh refetch thừa | ✓ Good — v1.3 |
 
 ## Evolution
 
@@ -121,4 +119,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-23 after milestone v1.3 kickoff*
+*Last updated: 2026-04-25 after milestone v1.3 complete*

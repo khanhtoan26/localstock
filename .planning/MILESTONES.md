@@ -42,3 +42,20 @@
 **Known deferred items at close:** 4 (UAT gaps in phases 7/12, human verification in phases 9/13)
 
 ---
+
+## v1.3 UI/UX Refinement (Shipped: 2026-04-25)
+
+**Phases completed:** 4 phases (14–17), 14 plans
+
+**Key accomplishments:**
+
+- Visual foundation: Source Sans 3 variable font (Vietnamese subset) + warm neutral color palette replacing all blue — Claude Desktop aesthetic across light and dark themes
+- Floating sidebar: Claude Desktop-style icon rail (w-14) always visible + overlay panel (w-60) with 180ms CSS transform, localStorage persistence, Admin nav group
+- Table & search: Numeric sort with grade semantic ordering (sort-comparator.ts), live stock search filter with StockSearchInput (local state)
+- HOSE market session bar: Live progress bar in header showing current session phase (ATO/Trading/Lunch/ATC/Closed) with countdown — pure hose-session.ts, SSR-safe
+- Market metrics: GET /api/market/summary backend API + MarketSummaryCards frontend (4 cards: VN-Index, volume, advances/declines, breadth) with auto-refresh
+- Test coverage: 52 new tests (44 Phase 16 + 8 Phase 17), code review fixes applied (zero-to-null coercion, i18n, debug logging)
+
+**Known deferred items at close:** 2 (Phase 07 UAT, Phase 09 verification — v1.1 artifacts)
+
+---
