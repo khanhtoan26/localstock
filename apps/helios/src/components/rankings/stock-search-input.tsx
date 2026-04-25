@@ -7,11 +7,11 @@ import { useQueryState, parseAsString } from "nuqs";
 
 export function StockSearchInput() {
   const t = useTranslations("rankings.search");
-  // nuqs throttleMs: state updates synchronously (input is responsive), URL update throttled.
-  // This avoids the local-state debounce race where setQ(null) fired before nuqs restored q from URL.
+  // shallow: false keeps the Next.js router cache in sync so back-navigation restores the search term.
+  // throttleMs: 150 throttles router.replace calls to avoid excessive navigations while typing.
   const [q, setQ] = useQueryState(
     "q",
-    parseAsString.withDefault("").withOptions({ shallow: true, throttleMs: 150 })
+    parseAsString.withDefault("").withOptions({ shallow: false, throttleMs: 150 })
   );
 
   return (
