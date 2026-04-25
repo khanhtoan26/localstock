@@ -32,12 +32,16 @@ async def process_pending_jobs() -> None:
     if _admin_lock.locked():
         return  # A job is already running
 
-    session_factory = get_session_factory()
-    async with session_factory() as session:
-        repo = JobRepository(session)
-        job = await repo.get_oldest_pending()
-        if not job:
-            return
+    try:
+        session_factory = get_session_factory()
+        async with session_factory() as session:
+            repo = JobRepository(session)
+            job = await repo.get_oldest_pending()
+            if not job:
+                return
+    except Exception as e:
+        logger.debug(f"Admin worker: DB unavailable, skipping poll ({e.__class__.__name__})")
+        return
 
     job_id = job.id
     job_type = job.job_type

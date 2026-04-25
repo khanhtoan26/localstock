@@ -27,6 +27,7 @@ def get_engine():
             max_overflow=5,
             pool_recycle=300,
             pool_pre_ping=True,
+            connect_args={"prepared_statement_cache_size": 0, "statement_cache_size": 0},
         )
     return _engine
 

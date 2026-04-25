@@ -3,6 +3,7 @@
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
 
 
@@ -22,6 +23,15 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql+asyncpg://localhost:5432/localstock"
     database_url_migration: str = ""
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def ensure_asyncpg_driver(cls, v: str) -> str:
+        if isinstance(v, str) and (v.startswith("postgresql://") or v.startswith("postgres://")):
+            v = v.replace("postgres://", "postgresql+asyncpg://", 1)
+            v = v.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return v
+
     vnstock_source: str = "VCI"
     vnstock_api_key: str = ""  # Set via VNSTOCK_API_KEY env var
     crawl_delay_seconds: float = 1.0
