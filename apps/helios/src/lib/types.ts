@@ -86,6 +86,21 @@ export interface SectorsLatestResponse {
   sectors: SectorPerformance[];
 }
 
+export interface VnindexData {
+  value: number | null;
+  change_pct: number | null;
+}
+
+export interface MarketSummaryResponse {
+  vnindex: VnindexData | null;
+  total_volume: number | null;
+  total_volume_change_pct: number | null;
+  advances: number;
+  declines: number;
+  breadth: number | null;
+  as_of: string | null;
+}
+
 export interface StockReport {
   symbol: string;
   report_type?: string;

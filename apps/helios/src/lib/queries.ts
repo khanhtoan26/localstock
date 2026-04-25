@@ -7,6 +7,7 @@ import type {
   IndicatorHistoryResponse,
   MacroLatestResponse,
   SectorsLatestResponse,
+  MarketSummaryResponse,
   StockScore,
   StockReport,
   TechnicalData,
@@ -93,6 +94,14 @@ export function useSectorsLatest() {
     queryKey: ["sectors", "latest"],
     queryFn: () => apiFetch<SectorsLatestResponse>(`/api/sectors/latest`),
     staleTime: 60 * 60 * 1000,
+  });
+}
+
+export function useMarketSummary() {
+  return useQuery({
+    queryKey: ["market", "summary"],
+    queryFn: () => apiFetch<MarketSummaryResponse>(`/api/market/summary`),
+    staleTime: 30 * 60 * 1000, // D-10: 30 minutes — daily crawl data rhythm
   });
 }
 
