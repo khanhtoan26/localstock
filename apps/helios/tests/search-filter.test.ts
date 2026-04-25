@@ -1,43 +1,68 @@
-// These imports will resolve after Wave 2 creates the filter-stocks module.
-// For now, stubs are written to fail with "not implemented".
 import { filterStocks } from "../src/components/rankings/filter-stocks";
 
 import { describe, it, expect } from "vitest";
+import type { StockScore } from "../src/lib/types";
+
+function makeStock(symbol: string, extraProps?: Record<string, unknown>): StockScore {
+  return {
+    symbol,
+    date: "2024-01-01",
+    total_score: 80,
+    grade: "A",
+    rank: 1,
+    technical_score: null,
+    fundamental_score: null,
+    sentiment_score: null,
+    macro_score: null,
+    dimensions_used: 0,
+    weights: null,
+    recommendation: null,
+    ...extraProps,
+  } as StockScore;
+}
+
+const vnm = makeStock("VNM", { name: "Công ty Vinamilk" });
+const fpt = makeStock("FPT", { name: "Công ty FPT" });
+const aaa = makeStock("AAA", { name: null });
 
 describe("filterStocks", () => {
   it("empty query returns all stocks unchanged", () => {
-    // STUB: filterStocks([stock1, stock2, stock3], "")
-    // Expected: result.length === 3 (all stocks returned)
-    expect(true).toBe(false); // not implemented
+    const stocks = [vnm, fpt, aaa];
+    const result = filterStocks(stocks, "");
+    expect(result).toHaveLength(3);
   });
 
   it("'vnm' matches symbol 'VNM' (case-insensitive prefix match)", () => {
-    // STUB: filterStocks([{symbol:'VNM', ...}, {symbol:'FPT', ...}], "vnm")
-    // Expected: result.length === 1 && result[0].symbol === 'VNM'
-    expect(true).toBe(false); // not implemented
+    const stocks = [vnm, fpt];
+    const result = filterStocks(stocks, "vnm");
+    expect(result).toHaveLength(1);
+    expect(result[0].symbol).toBe("VNM");
   });
 
   it("'NM' does NOT match symbol 'VNM' (substring that is not a prefix is rejected)", () => {
-    // STUB: filterStocks([{symbol:'VNM', ...}], "NM")
-    // Expected: result.length === 0 (NM is not a prefix of VNM)
-    expect(true).toBe(false); // not implemented
+    const stocks = [vnm, fpt];
+    const result = filterStocks(stocks, "NM");
+    expect(result).toHaveLength(0);
   });
 
   it("name substring match — 'vinamilk' matches stock with name containing 'Vinamilk'", () => {
-    // STUB: filterStocks([{symbol:'VNM', name:'Công ty Vinamilk', ...}], "vinamilk")
-    // Expected: result.length === 1 (name substring match, case-insensitive)
-    expect(true).toBe(false); // not implemented
+    const stocks = [vnm, fpt];
+    const result = filterStocks(stocks, "vinamilk");
+    expect(result).toHaveLength(1);
+    expect(result[0].symbol).toBe("VNM");
   });
 
   it("null name field — treated as empty string, no crash", () => {
-    // STUB: filterStocks([{symbol:'AAA', name: null, ...}], "vinamilk")
-    // Expected: no error thrown, result.length === 0 (null name treated as empty string)
-    expect(true).toBe(false); // not implemented
+    const stocks = [aaa];
+    let result: StockScore[] | undefined;
+    expect(() => {
+      result = filterStocks(stocks, "vinamilk");
+    }).not.toThrow();
+    expect(result).toHaveLength(0);
   });
 
   it("whitespace-only query — treated as empty, returns all stocks", () => {
-    // STUB: filterStocks([stock1, stock2], "   ")
-    // Expected: result.length === 2 (whitespace trimmed to empty, all stocks returned)
-    expect(true).toBe(false); // not implemented
+    const stocks = [vnm, fpt, aaa];
+    expect(filterStocks(stocks, "   ")).toHaveLength(3);
   });
 });
