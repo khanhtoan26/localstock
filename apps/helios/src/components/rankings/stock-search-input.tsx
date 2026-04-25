@@ -8,10 +8,11 @@ import { useQueryState, parseAsString } from "nuqs";
 export function StockSearchInput() {
   const t = useTranslations("rankings.search");
   // shallow: false keeps the Next.js router cache in sync so back-navigation restores the search term.
-  // throttleMs: 150 throttles router.replace calls to avoid excessive navigations while typing.
+  // No throttleMs: committing the URL immediately eliminates the race where a fast click navigates
+  // away before router.replace fires, which would leave the history entry without ?q=.
   const [q, setQ] = useQueryState(
     "q",
-    parseAsString.withDefault("").withOptions({ shallow: false, throttleMs: 150 })
+    parseAsString.withDefault("").withOptions({ shallow: false })
   );
 
   return (
