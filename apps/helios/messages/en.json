@@ -36,6 +36,11 @@
   "rankings": {
     "title": "Stock Rankings",
     "emptyBody": "No ranking results yet. Run the analysis pipeline to get started.",
+    "noResults": "No stocks match \"{query}\". Try a different symbol.",
+    "search": {
+      "placeholder": "Filter by symbol or name...",
+      "clear": "Clear search"
+    },
     "columns": {
       "rank": "#",
       "symbol": "Symbol",

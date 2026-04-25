@@ -36,6 +36,11 @@
   "rankings": {
     "title": "Xếp Hạng Cổ Phiếu",
     "emptyBody": "Chưa có kết quả xếp hạng. Chạy pipeline phân tích để bắt đầu.",
+    "noResults": "Không tìm thấy mã \"{query}\". Thử tìm mã khác.",
+    "search": {
+      "placeholder": "Lọc theo mã hoặc tên...",
+      "clear": "Xóa tìm kiếm"
+    },
     "columns": {
       "rank": "#",
       "symbol": "Mã CK",
