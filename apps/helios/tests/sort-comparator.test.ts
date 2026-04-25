@@ -1,8 +1,5 @@
-// These imports will resolve after Wave 1 extracts the sort logic to a separate module.
-// For now, stubs are written to fail with "not implemented".
-import { sortStocks } from "../src/components/rankings/sort-comparator";
-
 import { describe, it, expect } from "vitest";
+import { sortStocks } from "../src/components/rankings/sort-comparator";
 import type { StockScore } from "../src/lib/types";
 
 // Helper to create a minimal StockScore stub for testing
@@ -26,50 +23,84 @@ function makeStock(overrides: Partial<StockScore>): StockScore {
 
 describe("sortStocks", () => {
   it("numeric desc — stock with score 80 appears before stock with score 70", () => {
-    // STUB: sortStocks([{total_score:70}, {total_score:80}], "total_score", "desc")
-    // Expected: result[0].total_score === 80
-    expect(true).toBe(false); // not implemented
+    const data: StockScore[] = [
+      makeStock({ symbol: "VNM", total_score: 70 }),
+      makeStock({ symbol: "FPT", total_score: 80 }),
+    ];
+    const result = sortStocks(data, "total_score", "desc");
+    expect(result[0].symbol).toBe("FPT");
+    expect(result[1].symbol).toBe("VNM");
   });
 
   it("numeric asc — stock with score 70 appears before stock with score 80", () => {
-    // STUB: sortStocks([{total_score:80}, {total_score:70}], "total_score", "asc")
-    // Expected: result[0].total_score === 70
-    expect(true).toBe(false); // not implemented
+    const data: StockScore[] = [
+      makeStock({ symbol: "FPT", total_score: 80 }),
+      makeStock({ symbol: "VNM", total_score: 70 }),
+    ];
+    const result = sortStocks(data, "total_score", "asc");
+    expect(result[0].symbol).toBe("VNM");
+    expect(result[1].symbol).toBe("FPT");
   });
 
   it("null values — null score stock appears last in desc (via -Infinity sentinel)", () => {
-    // STUB: sortStocks([{total_score:null}, {total_score:80}], "total_score", "desc")
-    // Expected: result[1].total_score === null (null stock last)
-    expect(true).toBe(false); // not implemented
+    const data: StockScore[] = [
+      makeStock({ symbol: "NULL", technical_score: null }),
+      makeStock({ symbol: "HIGH", technical_score: 80 }),
+    ];
+    const result = sortStocks(data, "technical_score", "desc");
+    expect(result[0].symbol).toBe("HIGH");
+    expect(result[1].symbol).toBe("NULL");
   });
 
   it("tiebreaker — two stocks with equal scores sorted A→Z by symbol ('AAA' before 'BBB')", () => {
-    // STUB: sortStocks([{symbol:'BBB', total_score:75}, {symbol:'AAA', total_score:75}], "total_score", "desc")
-    // Expected: result[0].symbol === 'AAA'
-    expect(true).toBe(false); // not implemented
+    const data: StockScore[] = [
+      makeStock({ symbol: "BBB", total_score: 75 }),
+      makeStock({ symbol: "AAA", total_score: 75 }),
+    ];
+    const result = sortStocks(data, "total_score", "desc");
+    expect(result[0].symbol).toBe("AAA");
+    expect(result[1].symbol).toBe("BBB");
   });
 
   it("grade desc — A+ (rank 1) appears before C (rank 5) when sortDir is 'desc'", () => {
-    // STUB: sortStocks([{grade:'C'}, {grade:'A+'}], "grade", "desc")
-    // Expected: result[0].grade === 'A+'
-    expect(true).toBe(false); // not implemented
+    const data: StockScore[] = [
+      makeStock({ symbol: "BAD", grade: "C" }),
+      makeStock({ symbol: "TOP", grade: "A+" }),
+    ];
+    const result = sortStocks(data, "grade", "desc");
+    expect(result[0].grade).toBe("A+");
+    expect(result[1].grade).toBe("C");
   });
 
   it("grade asc — C (rank 5) appears before A+ (rank 1) when sortDir is 'asc'", () => {
-    // STUB: sortStocks([{grade:'A+'}, {grade:'C'}], "grade", "asc")
-    // Expected: result[0].grade === 'C'
-    expect(true).toBe(false); // not implemented
+    const data: StockScore[] = [
+      makeStock({ symbol: "TOP", grade: "A+" }),
+      makeStock({ symbol: "BAD", grade: "C" }),
+    ];
+    const result = sortStocks(data, "grade", "asc");
+    expect(result[0].grade).toBe("C");
+    expect(result[1].grade).toBe("A+");
   });
 
   it("grade unknown — unknown grade string falls back to rank 99, appears last", () => {
-    // STUB: sortStocks([{grade:'UNKNOWN'}, {grade:'C'}], "grade", "desc")
-    // Expected: result[1].grade === 'UNKNOWN' (unknown grade last)
-    expect(true).toBe(false); // not implemented
+    const data: StockScore[] = [
+      makeStock({ symbol: "UNK", grade: "Z" }),
+      makeStock({ symbol: "BAD", grade: "C" }),
+    ];
+    const result = sortStocks(data, "grade", "desc");
+    // C has rank 5, Z (unknown) has rank 99 — so C appears first in desc (best first)
+    expect(result[0].grade).toBe("C");
+    expect(result[1].grade).toBe("Z");
   });
 
   it("recommendation guard — calling sort with key 'recommendation' returns unchanged order", () => {
-    // STUB: sortStocks([stockA, stockB], "recommendation", "desc")
-    // Expected: result order is identical to input order (recommendation is non-sortable)
-    expect(true).toBe(false); // not implemented
+    const data: StockScore[] = [
+      makeStock({ symbol: "FIRST", recommendation: "MUA" }),
+      makeStock({ symbol: "SECOND", recommendation: "GIU" }),
+    ];
+    const result = sortStocks(data, "recommendation", "desc");
+    // Original order preserved
+    expect(result[0].symbol).toBe("FIRST");
+    expect(result[1].symbol).toBe("SECOND");
   });
 });
