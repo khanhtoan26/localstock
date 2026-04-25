@@ -14,6 +14,7 @@ import {
   Star,
   FileText,
   User,
+  ShieldCheck,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -21,6 +22,10 @@ const mainNavItems = [
   { href: "/rankings", labelKey: "rankings" as const, icon: BarChart3 },
   { href: "/market", labelKey: "market" as const, icon: Globe },
   { href: "/learn", labelKey: "learn" as const, icon: BookOpen },
+]
+
+const adminNavItems = [
+  { href: "/admin", labelKey: "admin" as const, icon: ShieldCheck },
 ]
 
 const sidebarTabs = [
@@ -91,26 +96,51 @@ export function Sidebar({ open }: SidebarProps) {
         </div>
       </div>
 
-      {/* ─── Nav items (no section header) ─── */}
-      <nav className="px-2 py-1 space-y-0.5">
-        {mainNavItems.map(({ href, labelKey, icon: Icon }) => {
-          const active = pathname.startsWith(href)
-          return (
-            <Link
-              key={href}
-              href={href}
-              className={cn(
-                "flex items-center gap-2.5 px-2.5 h-8 rounded-md text-[13px] transition-colors",
-                active
-                  ? "bg-black/[0.05] dark:bg-white/[0.06] text-foreground font-medium"
-                  : "text-muted-foreground hover:bg-black/[0.03] dark:hover:bg-white/[0.03] hover:text-foreground",
-              )}
-            >
-              <Icon className="h-4 w-4 text-muted-foreground" />
-              <span className="truncate">{t(labelKey)}</span>
-            </Link>
-          )
-        })}
+      {/* ─── Nav items ─── */}
+      <nav className="px-2 py-1">
+        <div className="space-y-0.5">
+          {mainNavItems.map(({ href, labelKey, icon: Icon }) => {
+            const active = pathname.startsWith(href)
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={cn(
+                  "flex items-center gap-2.5 px-2.5 h-8 rounded-md text-[13px] transition-colors",
+                  active
+                    ? "bg-black/[0.05] dark:bg-white/[0.06] text-foreground font-medium"
+                    : "text-muted-foreground hover:bg-black/[0.03] dark:hover:bg-white/[0.03] hover:text-foreground",
+                )}
+              >
+                <Icon className="h-4 w-4 text-muted-foreground" />
+                <span className="truncate">{t(labelKey)}</span>
+              </Link>
+            )
+          })}
+        </div>
+
+        {/* ─── Separator + Admin group ─── */}
+        <div className="my-1.5 border-t border-border" />
+        <div className="space-y-0.5">
+          {adminNavItems.map(({ href, labelKey, icon: Icon }) => {
+            const active = pathname.startsWith(href)
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={cn(
+                  "flex items-center gap-2.5 px-2.5 h-8 rounded-md text-[13px] transition-colors",
+                  active
+                    ? "bg-black/[0.05] dark:bg-white/[0.06] text-foreground font-medium"
+                    : "text-muted-foreground hover:bg-black/[0.03] dark:hover:bg-white/[0.03] hover:text-foreground",
+                )}
+              >
+                <Icon className="h-4 w-4 text-muted-foreground" />
+                <span className="truncate">{t(labelKey)}</span>
+              </Link>
+            )
+          })}
+        </div>
       </nav>
 
       {/* ─── Pinned section ─── */}
