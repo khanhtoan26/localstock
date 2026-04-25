@@ -79,7 +79,7 @@ async def get_market_summary(
 
     advances: int = aggregate["advances"]
     declines: int = aggregate["declines"]
-    total_volume: int | None = aggregate["total_volume"] or None
+    total_volume: int | None = aggregate["total_volume"]  # repo returns int or None
     total_volume_change_pct: float | None = aggregate["total_volume_change_pct"]
     as_of_date = aggregate["as_of"]
 
