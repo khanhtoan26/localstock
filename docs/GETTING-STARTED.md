@@ -60,12 +60,14 @@ Mở file `.env` và cập nhật **ít nhất** các biến bắt buộc:
 
 ```env
 # === BẮT BUỘC ===
-# Port 6543 = PgBouncer transaction pooling (cho ứng dụng)
-DATABASE_URL=postgresql+asyncpg://postgres.YOUR_PROJECT_REF:YOUR_PASSWORD@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?prepared_statement_cache_size=0
+# Port 6543 = Transaction mode pooler (cho ứng dụng)
+DATABASE_URL=postgresql://postgres.YOUR_PROJECT_REF:YOUR_PASSWORD@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres
 
 # Port 5432 = Session mode (cho Alembic migrations)
-DATABASE_URL_MIGRATION=postgresql+asyncpg://postgres.YOUR_PROJECT_REF:YOUR_PASSWORD@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres
+DATABASE_URL_MIGRATION=postgresql://postgres.YOUR_PROJECT_REF:YOUR_PASSWORD@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres
 ```
+
+> Dán URL trực tiếp từ Supabase — ứng dụng tự xử lý driver và prepared statement settings. Xem chi tiết tại [DATABASE.md](DATABASE.md).
 
 Các biến còn lại đều có giá trị mặc định hợp lý — xem [CONFIGURATION.md](CONFIGURATION.md) để tùy chỉnh chi tiết.
 

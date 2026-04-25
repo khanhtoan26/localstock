@@ -18,18 +18,18 @@
 1. Đăng ký tại [supabase.com](https://supabase.com) (miễn phí)
 2. Tạo project mới, chọn region **Singapore** (`ap-southeast-1`)
 3. Lấy connection string:
-   - Vào **Settings → Database → Connection string (URI)**
-   - Copy 2 URLs:
+   - Vào **Settings → Database → Connection pooling**
+   - Copy 2 URLs và dán trực tiếp vào `.env`:
 
 ```env
-# Port 6543 = PgBouncer transaction pooling (cho ứng dụng)
-DATABASE_URL=postgresql+asyncpg://postgres.YOUR_PROJECT_REF:YOUR_PASSWORD@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres?prepared_statement_cache_size=0
+# Port 6543 = Transaction mode pooler (cho ứng dụng)
+DATABASE_URL=postgresql://postgres.YOUR_PROJECT_REF:YOUR_PASSWORD@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres
 
 # Port 5432 = Session mode (cho Alembic migrations)
-DATABASE_URL_MIGRATION=postgresql+asyncpg://postgres.YOUR_PROJECT_REF:YOUR_PASSWORD@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres
+DATABASE_URL_MIGRATION=postgresql://postgres.YOUR_PROJECT_REF:YOUR_PASSWORD@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres
 ```
 
-> ⚠️ **Quan trọng:** Port 6543 dùng PgBouncer (nhanh hơn, connection pool). Port 5432 dùng session mode (bắt buộc cho Alembic).
+> Dán URL trực tiếp — ứng dụng tự xử lý driver và prepared statement settings. Xem giải thích chi tiết tại [DATABASE.md](DATABASE.md).
 
 ### Chạy migrations
 
