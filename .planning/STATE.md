@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: UI/UX Refinement
 status: executing
-stopped_at: Completed Phase 16 — Table, Search & Session Bar
-last_updated: "2026-04-25T09:55:00.000Z"
-last_activity: 2026-04-25 -- Phase 16 completed
+stopped_at: Planned Phase 17 — Market Overview Metrics
+last_updated: "2026-04-25T12:00:00.000Z"
+last_activity: 2026-04-25 -- Phase 17 planned (4 plans, 4 waves)
 progress:
   total_phases: 5
   completed_phases: 3
-  total_plans: 11
+  total_plans: 15
   completed_plans: 11
   percent: 60
 ---
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-04-23)
 
 ## Current Position
 
-Phase: 17 — READY TO PLAN
-Plan: —
-Status: Phase 16 complete; Phase 17 next
-Last activity: 2026-04-25 — Phase 16 closed (nuqs removed, search uses local state)
+Phase: 17 — PLANNING COMPLETE
+Plan: 4 plans (17-00 through 17-03), 4 waves
+Status: Ready to execute
+Last activity: 2026-04-25 — Phase 17 planned (market summary API + 4 metric cards)
 
 Progress: [██████░░░░] 60%
 
