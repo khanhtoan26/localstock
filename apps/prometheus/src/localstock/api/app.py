@@ -10,6 +10,7 @@ from localstock.api.routes.automation import router as automation_router
 from localstock.api.routes.dashboard import router as dashboard_router
 from localstock.api.routes.health import router as health_router
 from localstock.api.routes.macro import router as macro_router
+from localstock.api.routes.market import router as market_router
 from localstock.api.routes.news import router as news_router
 from localstock.api.routes.prices import router as prices_router
 from localstock.api.routes.reports import router as reports_router
@@ -51,6 +52,7 @@ def create_app() -> FastAPI:
     app.include_router(scores_router, tags=["scores"])
     app.include_router(reports_router, tags=["reports"])
     app.include_router(macro_router, tags=["macro"])
+    app.include_router(market_router, tags=["market"])
     app.include_router(automation_router, tags=["automation"])
     app.include_router(prices_router, tags=["prices"])
     app.include_router(dashboard_router, tags=["dashboard"])
