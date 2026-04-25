@@ -67,7 +67,10 @@
       "vnindex": "VN-Index",
       "totalVolume": "Tổng khối lượng",
       "advances": "Tăng / Giảm",
-      "breadth": "Độ rộng thị trường"
+      "breadth": "Độ rộng thị trường",
+      "advancesDetail": "{advances} tăng · {declines} giảm",
+      "bullish": "Tăng trưởng",
+      "bearish": "Giảm sút"
     },
     "macroLabels": {
       "interest_rate": "Lãi Suất SBV",

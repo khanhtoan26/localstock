@@ -67,7 +67,10 @@
       "vnindex": "VN-Index",
       "totalVolume": "Total Volume",
       "advances": "Advances / Declines",
-      "breadth": "Market Breadth"
+      "breadth": "Market Breadth",
+      "advancesDetail": "{advances} up · {declines} down",
+      "bullish": "Bullish",
+      "bearish": "Bearish"
     },
     "macroLabels": {
       "interest_rate": "SBV Interest Rate",

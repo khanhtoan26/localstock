@@ -99,7 +99,7 @@ export function MarketSummaryCards({ data, isLoading }: MarketSummaryCardsProps)
           </p>
           {total > 0 ? (
             <p className="text-xs text-muted-foreground mt-1">
-              {advances} up · {declines} down
+              {t("summaryLabels.advancesDetail", { advances, declines })}
             </p>
           ) : (
             <p className="text-xs text-muted-foreground mt-1">—</p>
@@ -116,7 +116,7 @@ export function MarketSummaryCards({ data, isLoading }: MarketSummaryCardsProps)
           </p>
           {breadth != null ? (
             <p className={`text-xs mt-1 ${breadth >= 50 ? "text-green-600 dark:text-green-500" : "text-red-500 dark:text-red-400"}`}>
-              {breadth >= 50 ? "↑" : "↓"} {breadth >= 50 ? "Bullish" : "Bearish"}
+              {breadth >= 50 ? "↑" : "↓"} {breadth >= 50 ? t("summaryLabels.bullish") : t("summaryLabels.bearish")}
             </p>
           ) : (
             <p className="text-xs text-muted-foreground mt-1">—</p>
