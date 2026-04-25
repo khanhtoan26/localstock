@@ -8,11 +8,19 @@ LocalStock là một AI Stock Agent cá nhân cho thị trường chứng khoán
 
 Agent tự động phân tích và xếp hạng cổ phiếu HOSE — cho tôi danh sách gợi ý đáng mua kèm lý do rõ ràng, cập nhật hàng ngày, không tốn phí API.
 
-## Current State: v1.3 Shipped
+## Current Milestone: v1.4 AI Analysis Depth
 
-**Shipped:** 2026-04-25 — UI/UX Refinement complete (Phases 14–17, 14 plans)
+**Goal:** Transform robotic AI recommendations into actionable trade guidance — with price levels, signal conflict resolution, recent catalysts, and explicit risk ratings.
 
-All v1.3 goals delivered: Source Sans 3 typography, warm neutral palette, Claude Desktop floating sidebar, numeric table sort, live market session bar, live market metrics cards with real backend data.
+**Target features:**
+- Specific entry/exit/stop-loss price levels in each stock report
+- Signal conflict explanation (when technical and fundamental signals disagree)
+- Recent catalyst section (what changed this week that affects the recommendation)
+- Explicit risk rating per recommendation (high/medium/low with reasoning)
+- More signals fed to LLM (candlestick patterns, volume analysis, sector trend)
+- Restructured prompts to extract structured, actionable outputs
+
+**Previous milestone:** v1.3 UI/UX Refinement shipped 2026-04-25 (Phases 14–17, 14 plans)
 
 ## Requirements
 
@@ -49,7 +57,12 @@ All v1.3 goals delivered: Source Sans 3 typography, warm neutral palette, Claude
 
 ### Active
 
-(No active requirements — planning v1.4)
+- [ ] Specific entry/exit/stop-loss price levels generated in stock report
+- [ ] Signal conflict explanation (technical vs fundamental disagreement surfaced explicitly)
+- [ ] Recent catalyst section in report (what changed this week)
+- [ ] Explicit risk rating per recommendation (high/medium/low with reasoning)
+- [ ] Additional signals fed to LLM: candlestick patterns, volume divergence, sector momentum
+- [ ] Restructured AI prompts producing structured, actionable JSON output
 
 ### Out of Scope
 
@@ -119,4 +132,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-25 after milestone v1.3 complete*
+*Last updated: 2026-04-25 after milestone v1.4 started*
