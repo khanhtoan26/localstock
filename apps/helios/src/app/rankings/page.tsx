@@ -1,8 +1,7 @@
 "use client";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useTopScores, useTriggerPipeline } from "@/lib/queries";
 import { useTranslations } from "next-intl";
-import { useQueryState, parseAsString } from "nuqs";
 import { StockTable } from "@/components/rankings/stock-table";
 import { StockSearchInput } from "@/components/rankings/stock-search-input";
 import { filterStocks } from "@/components/rankings/filter-stocks";
@@ -15,8 +14,7 @@ export default function RankingsPage() {
   const triggerPipeline = useTriggerPipeline();
   const t = useTranslations("rankings");
   const tc = useTranslations("common");
-  // Hooks must come before early returns
-  const [q] = useQueryState("q", parseAsString.withDefault(""));
+  const [q, setQ] = useState("");
   const filtered = useMemo(
     () => filterStocks(data?.stocks ?? [], q),
     [data?.stocks, q]
@@ -60,7 +58,7 @@ export default function RankingsPage() {
   return (
     <div>
       <h1 className="text-xl font-semibold mb-6">{t("title")}</h1>
-      <StockSearchInput />
+      <StockSearchInput value={q} onChange={setQ} />
       {filtered.length === 0 && q.trim() ? (
         <p className="text-sm text-muted-foreground py-8 text-center">
           {t("noResults", { query: q })}

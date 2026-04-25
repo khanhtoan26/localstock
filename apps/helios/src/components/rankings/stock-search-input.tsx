@@ -3,17 +3,14 @@
 import { useTranslations } from "next-intl";
 import { Search, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { useQueryState, parseAsString } from "nuqs";
 
-export function StockSearchInput() {
+interface StockSearchInputProps {
+  value: string;
+  onChange: (value: string) => void;
+}
+
+export function StockSearchInput({ value, onChange }: StockSearchInputProps) {
   const t = useTranslations("rankings.search");
-  // shallow: false keeps the Next.js router cache in sync so back-navigation restores the search term.
-  // No throttleMs: committing the URL immediately eliminates the race where a fast click navigates
-  // away before router.replace fires, which would leave the history entry without ?q=.
-  const [q, setQ] = useQueryState(
-    "q",
-    parseAsString.withDefault("").withOptions({ shallow: false })
-  );
 
   return (
     <div className="relative max-w-xs mb-4">
@@ -24,18 +21,18 @@ export function StockSearchInput() {
       <Input
         id="rankings-search"
         type="text"
-        value={q}
-        onChange={(e) => setQ(e.target.value || null)}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
         onKeyDown={(e) => {
-          if (e.key === "Escape") setQ(null);
+          if (e.key === "Escape") onChange("");
         }}
         placeholder={t("placeholder")}
         className="h-9 pl-8 pr-8 text-sm"
       />
-      {q && (
+      {value && (
         <button
           type="button"
-          onClick={() => setQ(null)}
+          onClick={() => onChange("")}
           className="absolute right-2 top-2.5 text-muted-foreground hover:text-foreground transition-colors"
           aria-label={t("clear")}
         >
