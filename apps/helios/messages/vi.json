@@ -60,6 +60,15 @@
     "macroError": "Không thể tải dữ liệu vĩ mô.",
     "sectorError": "Không thể tải dữ liệu ngành.",
     "emptyBody": "Chưa có dữ liệu vĩ mô. Chạy pipeline để thu thập dữ liệu thị trường.",
+    "summaryTitle": "Tổng quan thị trường",
+    "summaryError": "Không thể tải dữ liệu tổng quan thị trường.",
+    "asOf": "Cập nhật: {date}",
+    "summaryLabels": {
+      "vnindex": "VN-Index",
+      "totalVolume": "Tổng khối lượng",
+      "advances": "Tăng / Giảm",
+      "breadth": "Độ rộng thị trường"
+    },
     "macroLabels": {
       "interest_rate": "Lãi Suất SBV",
       "exchange_rate_usd_vnd": "Tỷ Giá USD/VND",

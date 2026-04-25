@@ -60,6 +60,15 @@
     "macroError": "Unable to load macro data.",
     "sectorError": "Unable to load sector data.",
     "emptyBody": "No macro data available. Run pipeline to collect market data.",
+    "summaryTitle": "Market Summary",
+    "summaryError": "Unable to load market summary.",
+    "asOf": "As of {date}",
+    "summaryLabels": {
+      "vnindex": "VN-Index",
+      "totalVolume": "Total Volume",
+      "advances": "Advances / Declines",
+      "breadth": "Market Breadth"
+    },
     "macroLabels": {
       "interest_rate": "SBV Interest Rate",
       "exchange_rate_usd_vnd": "USD/VND Exchange Rate",
