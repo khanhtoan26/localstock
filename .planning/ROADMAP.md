@@ -112,11 +112,13 @@ Plans:
   1. Market Overview page shows 4 metric cards (VN-Index, total volume, advances vs declines, market breadth) populated with real data from the backend
   2. Backend exposes a new API endpoint (GET /api/market/summary) returning current market summary data
   3. Metric cards auto-refresh periodically and display loading skeleton / error fallback gracefully when API is slow or unavailable
-**Plans**: TBD
-**UI hint**: yes
+**Plans**: 4 plans
 
 Plans:
-- [ ] 17-01: TBD
+- [ ] 17-00-PLAN.md — Wave 0: test stub file (test_market_route.py) — Nyquist RED state
+- [ ] 17-01-PLAN.md — Backend: PriceRepository.get_market_aggregate() + market.py router + app.py registration (MKT-04)
+- [ ] 17-02-PLAN.md — Frontend: types + hook + MarketSummaryCards component + page integration + i18n (MKT-03)
+- [ ] 17-03-PLAN.md — Visual verification checkpoint
 
 ## Progress
 
@@ -139,7 +141,7 @@ Plans:
 | 14. Visual Foundation | v1.3 | 0/1 | Planning complete | - |
 | 15. Sidebar Float & Collapse | v1.3 | 1/3 | In progress | - |
 | 16. Table, Search & Session Bar | v1.3 | 0/6 | Planning complete | - |
-| 17. Market Overview Metrics | v1.3 | 0/0 | Not started | - |
+| 17. Market Overview Metrics | v1.3 | 0/4 | Planning complete | - |
 
 ## Backlog
 
