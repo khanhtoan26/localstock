@@ -220,6 +220,12 @@ class PriceRepository:
         avg_vol_result = await self.session.execute(avg_vol_stmt)
         avg_vol_20d = avg_vol_result.scalar()
 
+        if avg_vol_20d is None:
+            logger.debug(
+                f"No avg_volume_20 found for TechnicalIndicator on {latest_date}; "
+                "analyze step may not have run yet — total_volume_change_pct will be None"
+            )
+
         total_volume_change_pct: float | None = None
         if avg_vol_20d and avg_vol_20d > 0:
             total_volume_change_pct = (total_volume - avg_vol_20d) / avg_vol_20d * 100
