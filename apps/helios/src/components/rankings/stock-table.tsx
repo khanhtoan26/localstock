@@ -9,14 +9,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { ChevronUp, ChevronDown } from "lucide-react";
 import { GradeBadge } from "./grade-badge";
 import { RecommendationBadge } from "@/components/stock/recommendation-badge";
-import { formatScore } from "@/lib/utils";
+import { formatScore, cn } from "@/lib/utils";
 import type { StockScore } from "@/lib/types";
 import { useState } from "react";
-
-type SortKey = keyof StockScore;
-type SortDir = "asc" | "desc";
+import { sortStocks } from "./sort-comparator";
+import type { SortKey, SortDir } from "./sort-comparator";
 
 interface StockTableProps {
   data: StockScore[];
@@ -29,6 +29,7 @@ export function StockTable({ data }: StockTableProps) {
   const [sortDir, setSortDir] = useState<SortDir>("desc");
 
   const handleSort = (key: SortKey) => {
+    if (key === "recommendation") return; // D-03: Recommendation is not sortable
     if (sortKey === key) {
       setSortDir(sortDir === "asc" ? "desc" : "asc");
     } else {
@@ -37,16 +38,7 @@ export function StockTable({ data }: StockTableProps) {
     }
   };
 
-  const sorted = [...data].sort((a, b) => {
-    const aVal = a[sortKey] ?? -Infinity;
-    const bVal = b[sortKey] ?? -Infinity;
-    if (aVal < bVal) return sortDir === "asc" ? -1 : 1;
-    if (aVal > bVal) return sortDir === "asc" ? 1 : -1;
-    return 0;
-  });
-
-  const sortIndicator = (key: SortKey) =>
-    sortKey === key ? (sortDir === "asc" ? " ↑" : " ↓") : "";
+  const sorted = sortStocks(data, sortKey, sortDir);
 
   const columns: { key: SortKey; header: string; width: string }[] = [
     { key: "rank", header: t("rank"), width: "w-[50px]" },
@@ -67,10 +59,24 @@ export function StockTable({ data }: StockTableProps) {
           {columns.map((col) => (
             <TableHead
               key={col.key}
-              className={`${col.width} cursor-pointer select-none text-xs hover:text-foreground`}
+              className={cn(
+                col.width,
+                "select-none text-xs hover:text-foreground",
+                col.key !== "recommendation" && "cursor-pointer"
+              )}
               onClick={() => handleSort(col.key)}
             >
-              {col.header}{sortIndicator(col.key)}
+              <span className="inline-flex items-center gap-0.5">
+                {col.header}
+                {sortKey === col.key && col.key !== "recommendation" && (
+                  <span className="inline-flex align-middle">
+                    {sortDir === "asc"
+                      ? <ChevronUp className="h-3 w-3" />
+                      : <ChevronDown className="h-3 w-3" />
+                    }
+                  </span>
+                )}
+              </span>
             </TableHead>
           ))}
         </TableRow>
