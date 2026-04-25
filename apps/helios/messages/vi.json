@@ -260,5 +260,16 @@
     "appSubtitle": "AI Stock Agent",
     "collapse": "Thu gọn sidebar",
     "expand": "Mở rộng sidebar"
+  },
+  "sessionBar": {
+    "preMarket": "Trước giờ",
+    "ato": "ATO",
+    "morning": "Sáng",
+    "lunch": "Trưa",
+    "afternoon": "Chiều",
+    "atc": "ATC",
+    "closed": "Đóng cửa",
+    "left": "còn {time}",
+    "opensIn": "Mở cửa sau {time}"
   }
 }

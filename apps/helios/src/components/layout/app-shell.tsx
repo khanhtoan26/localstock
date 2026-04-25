@@ -3,6 +3,7 @@
 import { Sidebar } from "./floating-sidebar";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { LanguageToggle } from "@/components/i18n/language-toggle";
+import { MarketSessionBar } from "./market-session-bar";
 import { Toaster } from "@/components/ui/sonner";
 import { useSidebarState } from "@/hooks/use-sidebar-state";
 import { useTranslations } from "next-intl";
@@ -33,6 +34,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </span>
           </div>
         </div>
+
+        {/* Center section — MarketSessionBar (D-11) */}
+        <MarketSessionBar />
 
         <div className="flex items-center gap-2">
           <LanguageToggle />

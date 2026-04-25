@@ -260,5 +260,16 @@
     "appSubtitle": "AI Stock Agent",
     "collapse": "Collapse sidebar",
     "expand": "Expand sidebar"
+  },
+  "sessionBar": {
+    "preMarket": "Pre-market",
+    "ato": "ATO",
+    "morning": "Morning",
+    "lunch": "Lunch",
+    "afternoon": "Afternoon",
+    "atc": "ATC",
+    "closed": "Closed",
+    "left": "{time} left",
+    "opensIn": "Opens in {time}"
   }
 }
