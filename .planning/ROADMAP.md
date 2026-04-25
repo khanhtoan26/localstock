@@ -117,7 +117,7 @@ Plans:
 Plans:
 - [x] 17-00-PLAN.md — Wave 0: test stub file (test_market_route.py) — Nyquist RED state
 - [x] 17-01-PLAN.md — Backend: PriceRepository.get_market_aggregate() + market.py router + app.py registration (MKT-04)
-- [ ] 17-02-PLAN.md — Frontend: types + hook + MarketSummaryCards component + page integration + i18n (MKT-03)
+- [x] 17-02-PLAN.md — Frontend: types + hook + MarketSummaryCards component + page integration + i18n (MKT-03)
 - [ ] 17-03-PLAN.md — Visual verification checkpoint
 
 ## Progress
