@@ -1,349 +1,269 @@
-# Stack Research — LocalStock v1.3 (UI/UX Refinement)
+# Stack Research
 
-**Domain:** Next.js 16 + React 19 + Tailwind v4 + shadcn/ui (base-nova) — UI polish milestone
-**Researched:** 2026-04-24
-**Confidence:** HIGH (stack inspected directly; font data verified in `node_modules/next/dist/compiled/@next/font/dist/google/font-data.json`; all primitives verified in `node_modules/@base-ui/react/`)
+**Domain:** AI analysis depth additions — candlestick patterns, volume divergence, sector momentum, structured LLM output
+**Researched:** 2026-04-25
+**Confidence:** HIGH
 
-> Scoped to **v1.3 UI/UX refinement only**. Backend, database, LLM pipeline — all unchanged.
+## Context: What Already Exists (DO NOT RE-RESEARCH)
 
----
+This is a subsequent milestone. The following are validated and must NOT be changed:
 
-## Executive Pick (TL;DR)
-
-| Feature | Decision | Rationale |
-|---------|----------|-----------|
-| **Font** | `next/font/google` → `Source_Sans_3` with `vietnamese` + `latin` subsets | Variable font (200–900 wght), has Vietnamese subset. `next/font` handles self-hosting, `font-display: swap`, and CSS var injection. **Zero new dependencies.** |
-| **Color palette** | Modify CSS variables in `globals.css` — change 10 blue `hsl(210 70.9% 51.6%)` values to warm terracotta accent | Pure CSS change. No library needed. Map `--primary` to warm accent `hsl(24 70% 50%)` style. |
-| **Sidebar** | Custom component rewrite of existing `sidebar.tsx` — CSS transitions + `localStorage` for collapse state | Already have `lucide-react` icons, `@base-ui/react/tooltip` for icon labels, `@base-ui/react/collapsible` for animation. **No new dependencies.** |
-| **Tooltip** | `shadcn add tooltip` (uses `@base-ui/react/tooltip`, already installed) | Need tooltip for collapsed sidebar icon labels. One CLI command. |
-| **Table sort fix** | Fix existing `StockTable` sort logic (pure code change) | Bug in current sort — no library needed. |
-| **Search persistence** | `nuqs` v2 for URL-based search state management | Type-safe, Next.js App Router native, handles `useSearchParams` edge cases. **Only new dependency.** |
-| **Market session bar** | Custom component using existing `Progress` primitive + `Date` API | HOSE hours (9:00–15:00 ICT) with live countdown. Uses existing `@base-ui/react/progress`. **No new deps.** |
-| **Market overview metrics** | Enhance existing `MacroCards` component + new API queries | Uses existing TanStack Query hooks + existing `Card` component. **No new deps.** |
-
-**Total new dependencies: 1** (`nuqs`)
-**New shadcn components: 1** (`tooltip`)
+| Existing | Version | Status |
+|----------|---------|--------|
+| pandas-ta | 0.4.71b0 | Installed; OBV/MFI/CMF/VWAP all confirmed in volume category |
+| ollama (Python SDK) | >=0.6 | Structured output via `format=schema` works in production |
+| pydantic | >=2.13 | `model_json_schema()` + `model_validate_json()` proven in `ai/client.py` |
+| numpy | >=2.0 | Installed; scipy is NOT installed (and not needed) |
+| SectorSnapshot DB table | — | Exists with `avg_score_change` column populated by `SectorService` |
+| AnalysisReport DB table | — | `content_json` (JSONB) stores full structured report; add nullable columns for SQL access |
+| TechnicalIndicator DB table | — | 26 existing columns; add candlestick JSONB + volume divergence fields via Alembic |
 
 ---
 
-## Existing Stack (DO NOT RE-INSTALL)
+## Recommended Stack for v1.4
 
-| Package | Installed | Role in v1.3 |
-|---------|-----------|--------------|
-| `next` | 16.2.4 | `next/font/google` for Source Sans 3 loading |
-| `react` / `react-dom` | 19.2.4 | Runtime |
-| `tailwindcss` + `@tailwindcss/postcss` | ^4 | `@theme inline` for color tokens, `@custom-variant dark` |
-| `@base-ui/react` | 1.4.0 | `tooltip/`, `collapsible/`, `progress/` primitives |
-| `shadcn` CLI | 4.2.0 | `shadcn add tooltip` for sidebar |
-| `lucide-react` | 1.8.0 | Sidebar icons, ChevronLeft/Right for collapse toggle |
-| `next-themes` | 0.4.6 | Theme switching (light/dark) — untouched |
-| `@tanstack/react-query` | 5.99.0 | Market metrics data fetching |
-| `next-intl` | 4.9.1 | i18n — untouched |
-| `class-variance-authority`, `clsx`, `tailwind-merge` | — | shadcn invariants |
-| `tw-animate-css` | 1.4.0 | Transition/animation utilities |
+### No New Libraries Required for Core Features
+
+All four v1.4 capabilities use already-installed packages. The research confirmed this after inspecting the installed pandas-ta 0.4.71b0, the existing Ollama client, and the DB schema.
 
 ---
 
-## New Dependencies
+### Core Technologies
 
-### 1. `nuqs` — URL Search Params State Manager
+| Technology | Version | Purpose | Why Recommended |
+|------------|---------|---------|-----------------|
+| pandas-ta (existing) | 0.4.71b0 | Candlestick patterns (`cdl_doji`, `cdl_inside`), volume signals (`mfi`, `cmf`, `vwap`) | Verified: MFI/CMF/VWAP confirmed in `ta.Category['volume']`; doji/inside confirmed native without TA-Lib |
+| pandas + numpy (existing) | >=2.2, >=2.0 | Hammer, Engulfing, Shooting Star via OHLC math; OBV divergence via rolling correlation | 5 key patterns in <50 lines each; OBV already computed, divergence is pure rolling math |
+| pydantic (existing) | >=2.13 | Expand `StockReport` model with `price_levels`, `risk_rating`, `catalysts`, `signal_conflicts` | `Literal` types, nested models, `Optional[float]` all render correctly in JSON schema for Ollama `format=` |
+| ollama Python SDK (existing) | >=0.6 | Pass expanded `StockReport.model_json_schema()` as `format=` parameter | Proven with 9-field nested schemas; adding 4 fields changes nothing about the mechanism |
+| SQLAlchemy + Alembic (existing) | >=2.0 | Add `candlestick_patterns` JSONB and volume divergence fields to `TechnicalIndicator`; add price/risk columns to `AnalysisReport` | One Alembic migration covers all DB additions; no model redesign needed |
 
-| Field | Value |
-|-------|-------|
-| Package | `nuqs` |
-| Version | `^2.8.9` |
-| Purpose | Persist search/filter state in URL query params across navigation |
-| Why needed | Current search uses `useState` — state resets on page navigation. `nuqs` provides `useQueryState` that syncs React state with URL params. Type-safe, SSR-compatible, works with Next.js App Router. |
-| Why not alternatives | **`useSearchParams` raw**: Verbose, no type safety, requires manual serialization. **Zustand/Jotai**: Client-only state doesn't survive URL sharing or browser back. **`nuqs`**: Purpose-built for exactly this — URL state for filters/search in Next.js. |
+---
+
+### Supporting Libraries
+
+| Library | Version | Purpose | When to Use |
+|---------|---------|---------|-------------|
+| pandas-ta `cdl_doji` | 0.4.71b0 | Native doji detection (body < 10% of H-L range) | Use directly via `df.ta.cdl_doji(append=True)` — no TA-Lib needed |
+| pandas-ta `cdl_inside` | 0.4.71b0 | Native inside bar detection | Use directly via `df.ta.cdl_inside(append=True)` |
+| pandas-ta `mfi` | 0.4.71b0 | Money Flow Index (14-period) overbought/oversold | Add to `compute_volume_analysis()` — `df.ta.mfi(append=True)` |
+| pandas-ta `cmf` | 0.4.71b0 | Chaikin Money Flow — buying vs selling pressure | Add to `compute_volume_analysis()` alongside MFI |
+| pydantic `Literal` | stdlib with pydantic >=2.13 | Constrain `risk_rating` to `"high" | "medium" | "low"` | Already imported in pydantic; Literal renders as `enum` in JSON schema which Ollama respects |
+
+---
+
+### Development Tools
+
+| Tool | Purpose | Notes |
+|------|---------|-------|
+| Alembic | Generate and apply DB migration for new columns | `uv run alembic revision --autogenerate -m "v1.4_ai_depth_fields"` then `upgrade head` |
+| ruff | Lint new analysis code | `uv run ruff check src/` — no config change needed |
+| pytest-asyncio | Test new candlestick and volume methods | Existing `asyncio_mode = "auto"` covers new sync methods called from async context |
+
+---
+
+## Feature-by-Feature Integration Plan
+
+### Feature 1: Candlestick Pattern Detection
+
+**Pattern**: Extend `TechnicalAnalyzer` in `analysis/technical.py` with new method `compute_candlestick_patterns(df)`.
+
+**Approach**: Pure pandas math for 3 patterns + pandas-ta native for 2 patterns. No TA-Lib.
+
+```python
+# In TechnicalAnalyzer.compute_candlestick_patterns(df) -> dict[str, int]:
+
+# 1. Doji — use pandas-ta native (more precise than manual)
+doji = df.ta.cdl_doji()
+CDL_DOJI = int(doji.iloc[-1] != 0) if doji is not None else 0
+
+# 2. Inside Bar — use pandas-ta native
+inside = df.ta.cdl_inside()
+CDL_INSIDE = int(inside.iloc[-1] != 0) if inside is not None else 0
+
+# 3. Hammer — pure pandas (TA-Lib NOT installed)
+body = abs(df['close'] - df['open'])
+lower_shadow = df[['open', 'close']].min(axis=1) - df['low']
+upper_shadow = df['high'] - df[['open', 'close']].max(axis=1)
+CDL_HAMMER = int((lower_shadow >= 2 * body) & (upper_shadow <= 0.5 * body) & (body > 0)).iloc[-1]
+
+# 4. Bullish/Bearish Engulfing — pure pandas
+bull_eng = (df['close'] > df['open'].shift(1)) & (df['open'] < df['close'].shift(1)) & (df['close'].shift(1) < df['open'].shift(1))
+bear_eng = (df['close'] < df['open'].shift(1)) & (df['open'] > df['close'].shift(1)) & (df['close'].shift(1) > df['open'].shift(1))
+CDL_ENGULFING = 1 if bull_eng.iloc[-1] else (-1 if bear_eng.iloc[-1] else 0)
+
+# 5. Shooting Star — pure pandas (inverse hammer)
+CDL_SHOOTING_STAR = int((upper_shadow >= 2 * body) & (lower_shadow <= 0.5 * body) & (body > 0)).iloc[-1]
+
+return {"CDL_DOJI": CDL_DOJI, "CDL_INSIDE": CDL_INSIDE, "CDL_HAMMER": CDL_HAMMER,
+        "CDL_ENGULFING": CDL_ENGULFING, "CDL_SHOOTING_STAR": CDL_SHOOTING_STAR}
+```
+
+**Storage**: Add `candlestick_patterns` JSON column to `TechnicalIndicator` via Alembic. JSONB avoids adding 5+ boolean columns; allows future pattern additions without migrations. Example stored value: `{"CDL_HAMMER": 1, "CDL_DOJI": 0, "CDL_ENGULFING": -1, "CDL_INSIDE": 0, "CDL_SHOOTING_STAR": 0}`.
+
+**LLM Integration**: In `reports/generator.py`, format active patterns as human-readable text: `"Phát hiện mô hình nến: Hammer (đảo chiều tăng tiềm năng)"` and inject into prompt.
+
+---
+
+### Feature 2: Volume Divergence Analysis
+
+**Pattern**: Extend `TechnicalAnalyzer.compute_volume_analysis()` to add MFI, CMF, and OBV divergence.
+
+```python
+# In compute_volume_analysis(), after existing avg_volume_20 / relative_volume:
+
+# MFI (Money Flow Index) — overbought/oversold
+mfi_series = df.ta.mfi(length=14)
+mfi = float(mfi_series.iloc[-1]) if mfi_series is not None and not pd.isna(mfi_series.iloc[-1]) else None
+
+# CMF (Chaikin Money Flow) — buying vs selling pressure (-1 to +1)
+cmf_series = df.ta.cmf(length=20)
+cmf = float(cmf_series.iloc[-1]) if cmf_series is not None and not pd.isna(cmf_series.iloc[-1]) else None
+
+# OBV divergence: compare 5-day OBV trend direction vs 5-day price trend direction
+if len(df) >= 10:
+    obv_series = df.ta.obv()
+    price_rising = df['close'].tail(5).mean() > df['close'].tail(10).head(5).mean()
+    obv_rising = obv_series.tail(5).mean() > obv_series.tail(10).head(5).mean()
+    if price_rising and not obv_rising:
+        volume_divergence = "bearish"   # Price up, volume down = suspect rally
+    elif not price_rising and obv_rising:
+        volume_divergence = "bullish"   # Price down, volume up = accumulation
+    else:
+        volume_divergence = "none"
+else:
+    volume_divergence = None
+```
+
+**Storage**: Add `mfi_14` (Float), `cmf_20` (Float), `volume_divergence` (String(10)) to `TechnicalIndicator` via same Alembic migration.
+
+**LLM Integration**: Include in prompt as: `"MFI: {mfi:.0f} | CMF: {cmf:.2f} | Phân kỳ khối lượng: {volume_divergence}"`.
+
+---
+
+### Feature 3: Sector Momentum Signals
+
+**Pattern**: Extend `SectorService` with `get_sector_momentum(group_code)` method. Uses existing `SectorSnapshot` data, no new table.
+
+```python
+# In SectorService — new method:
+async def get_sector_momentum(self, group_code: str, window: int = 5) -> str:
+    """Returns 'rising', 'falling', or 'neutral' based on rolling avg_score_change."""
+    snapshots = await self.sector_repo.get_recent(group_code, limit=window)
+    if len(snapshots) < 2:
+        return "neutral"
+    changes = [s.avg_score_change for s in snapshots if s.avg_score_change is not None]
+    if not changes:
+        return "neutral"
+    rolling_mean = sum(changes) / len(changes)
+    if rolling_mean > 0.5:
+        return "rising"
+    elif rolling_mean < -0.5:
+        return "falling"
+    return "neutral"
+```
+
+**LLM Integration**: In `ReportService._generate_for_symbol()`, fetch the stock's industry group code, call `get_sector_momentum()`, and pass result to `ReportDataBuilder.build()` as `sector_momentum`. Add to prompt template: `"Động lực ngành: {sector_momentum} (5 phiên gần nhất)"`.
+
+**No new DB table or migration needed** — reads from existing `sector_snapshots`.
+
+---
+
+### Feature 4: Structured LLM Output (Price Levels, Risk Rating, Catalysts)
+
+**Pattern**: Expand `StockReport` Pydantic model in `ai/client.py`.
+
+```python
+from typing import Literal
+from pydantic import BaseModel, Field
+
+class PriceLevels(BaseModel):
+    entry_price: float | None = Field(None, description="Giá vào lệnh gợi ý (VND)")
+    exit_price: float | None = Field(None, description="Giá chốt lời mục tiêu (VND)")
+    stop_loss: float | None = Field(None, description="Giá cắt lỗ (VND)")
+    rationale: str = Field(description="Cơ sở tính toán các mức giá từ S/R và ATR")
+
+class StockReport(BaseModel):
+    # --- Existing 9 fields unchanged ---
+    summary: str
+    technical_analysis: str
+    fundamental_analysis: str
+    sentiment_analysis: str
+    macro_impact: str
+    long_term_suggestion: str
+    swing_trade_suggestion: str
+    recommendation: str
+    confidence: str
+    # --- 4 new fields for v1.4 ---
+    price_levels: PriceLevels = Field(description="Các mức giá giao dịch cụ thể")
+    risk_rating: Literal["high", "medium", "low"] = Field(description="Mức độ rủi ro tổng thể")
+    risk_reasoning: str = Field(description="Lý do đánh giá rủi ro (D/E, biến động, tin tức)")
+    catalysts: list[str] = Field(description="Yếu tố xúc tác tuần này, tối đa 3 mục")
+    signal_conflicts: str = Field(description="Giải thích mâu thuẫn giữa tín hiệu kỹ thuật và cơ bản nếu có, hoặc 'Không có mâu thuẫn'")
+```
+
+**Context window**: Adding 4 new output fields increases LLM output by ~200-400 tokens. Current `num_ctx: 4096` covers it. No change to `options` needed.
+
+**DB storage**: `AnalysisReport.content_json` (JSONB) stores the full `StockReport` dict automatically — new fields are included without migration. Add `entry_price` (Float, nullable), `stop_loss` (Float, nullable), `risk_rating` (String(10), nullable) as direct columns for SQL-queryable fast access (add to same Alembic migration).
+
+**Prompt changes**: Update `REPORT_SYSTEM_PROMPT` to explicitly instruct the LLM to compute price levels from support/resistance data (which is already passed in the prompt via `nearest_support`, `nearest_resistance`, `pivot_point`).
+
+---
+
+## Installation
+
+No new Python packages are needed. All dependencies are in `apps/prometheus/pyproject.toml` already.
 
 ```bash
-npm install nuqs
-```
+# Verify volume indicators are available in installed pandas-ta 0.4.71b0
+uv run python -c "import pandas_ta as ta; print([x for x in ta.Category.get('volume', []) if x in ['mfi', 'cmf', 'vwap', 'obv']])"
+# Expected: ['cmf', 'mfi', 'obv', 'vwap']
 
-**Usage pattern:**
-```typescript
-// In StockTable or RankingsPage
-import { useQueryState, parseAsString } from 'nuqs';
+# Verify native candlestick pattern functions
+uv run python -c "import pandas_ta as ta; print([x for x in dir(ta) if x.startswith('cdl')])"
+# Expected: ['cdl', 'cdl_doji', 'cdl_inside', 'cdl_pattern', 'cdl_z']
 
-const [search, setSearch] = useQueryState('q', parseAsString.withDefault(''));
-const [sortKey, setSortKey] = useQueryState('sort', parseAsString.withDefault('total_score'));
-const [sortDir, setSortDir] = useQueryState('dir', parseAsString.withDefault('desc'));
-```
-
-**Integration:** Wrap app in `<NuqsAdapter>` in layout.tsx (required for Next.js App Router). Drop-in replacement for `useState` in search/sort state.
-
-### 2. `tooltip` shadcn component (not a new npm dep)
-
-```bash
-npx shadcn@latest add tooltip
-```
-
-This installs `src/components/ui/tooltip.tsx` using the already-installed `@base-ui/react/tooltip` primitive. Needed for collapsed sidebar — icon-only nav items need hover labels.
-
----
-
-## Feature-Specific Stack Analysis
-
-### Feature 1: Source Sans 3 Font
-
-**Approach:** `next/font/google` (built into Next.js 16, zero deps)
-
-**Verified:** `Source Sans 3` exists in Next.js font data with:
-- Variable font: weights 200–900
-- Styles: normal, italic
-- Subsets: `cyrillic`, `cyrillic-ext`, `greek`, `greek-ext`, **`latin`**, `latin-ext`, **`vietnamese`** ✅
-
-**Implementation:**
-
-```typescript
-// src/app/layout.tsx
-import { Source_Sans_3 } from 'next/font/google';
-
-const sourceSans = Source_Sans_3({
-  subsets: ['latin', 'vietnamese'],
-  variable: '--font-sans',
-  display: 'swap',
-});
-
-// In <html>: className={sourceSans.variable}
-```
-
-**CSS changes in `globals.css`:**
-```css
-@layer base {
-  body {
-    @apply bg-background text-foreground;
-    /* REMOVE: font-family: system-ui, -apple-system, sans-serif; */
-    /* next/font injects --font-sans var via className on <html> */
-  }
-}
-```
-
-**Why `next/font/google` not CSS `@import`:**
-- Self-hosts font files at build time (no Google Fonts requests at runtime)
-- Automatic `font-display: swap` for no FOIT
-- Injects CSS variable via `variable` prop — integrates with Tailwind v4 `@theme inline`
-- Font subsetting is handled automatically
-- Zero layout shift via size-adjust fallback metrics
-
-**Why Source Sans 3 not Be Vietnam Pro (v1.1 choice):**
-- v1.3 spec explicitly requests "Source Sans 3 (kiểu Anthropic)"
-- Source Sans 3 has full Vietnamese subset ✅
-- Clean, professional sans-serif — matches Anthropic's design language
-- Variable font = single file for all weights
-
-### Feature 2: Claude Desktop Color Palette (Warm Neutral, No Blue)
-
-**Approach:** Modify existing CSS variables in `globals.css` — pure CSS, zero deps.
-
-**Current state:** Theme already has warm neutral backgrounds (cream `hsl(48 33.3% 97.1%)`), but uses **blue primary** (`hsl(210 70.9% 51.6%)`) for buttons, links, active states, ring, sidebar primary.
-
-**10 blue values to change** (in both `:root` and `.dark`):
-
-| Variable | Current (Blue) | Target (Warm Accent) | Used By |
-|----------|---------------|---------------------|---------|
-| `--primary` | `hsl(210 70.9% 51.6%)` | Warm terracotta ~`hsl(24 70% 50%)` | Buttons, links, active text |
-| `--primary-foreground` | `hsl(0 0% 100%)` | Keep white | Text on primary bg |
-| `--ring` | `hsl(210 70.9% 51.6%)` | Match new primary | Focus rings |
-| `--sidebar-primary` | `hsl(210 70.9% 51.6%)` | Match new primary | Sidebar active |
-| `--sidebar-ring` | `hsl(210 70.9% 51.6%)` | Match new primary | Sidebar focus |
-| `--chart-2` | `hsl(210 70.9% 51.6%)` | Different chart color | Chart series |
-
-**Claude Desktop reference palette** (warm neutral family):
-- Background: cream/off-white ✅ (already have `hsl(48 33.3% 97.1%)`)
-- Primary accent: warm terracotta/burnt orange — `hsl(24 70% 50%)` range
-- Text: near-black warm ✅ (already have `hsl(60 2.6% 7.6%)`)
-- Muted: warm gray ✅ (already have)
-- Borders: warm tan ✅ (already have `hsl(50 20.7% 88.6%)`)
-
-**Key principle:** The backgrounds, borders, text colors, and muted tones are ALREADY Claude-warm. Only the interactive/primary accent color needs to shift from blue to warm.
-
-**No new Tailwind plugins needed.** The `@theme inline` block and CSS variable system handle everything.
-
-### Feature 3: Sidebar Float/Overlay with Collapse
-
-**Approach:** Rewrite `src/components/layout/sidebar.tsx` + adjust `app-shell.tsx`.
-
-**Current sidebar:** Fixed left, 240px (`w-60`), always expanded, 4 nav items (Rankings, Market, Learn, Admin) with icons and labels. Main content has `ml-60`.
-
-**Target sidebar:**
-- Float/overlay (not pushing content — removes `ml-60`)
-- Collapsible: expanded (240px) ↔ collapsed (icon-only, ~56px `w-14`)
-- Collapse state persisted in `localStorage`
-- 2 icon tab groups: Main pages (Rankings, Market, Learn) / Admin (Admin)
-- Tooltips on icons when collapsed
-
-**Components needed:**
-- `@base-ui/react/tooltip` → for icon labels in collapsed mode (**already installed**)
-- `shadcn tooltip` component → run `shadcn add tooltip` to get the styled wrapper
-- `lucide-react` → `PanelLeftClose`, `PanelLeftOpen` (or `ChevronLeft`/`ChevronRight`) for collapse toggle
-- CSS `transition-[width]` for smooth collapse animation
-
-**No Sheet/Drawer needed.** The sidebar should be a permanent fixture that slides between narrow and wide, not a modal overlay. The "float" means it overlays content when expanded (z-index above main), and in collapsed state it sits as a narrow icon strip.
-
-**State management:**
-```typescript
-const [collapsed, setCollapsed] = useState(() => {
-  if (typeof window === 'undefined') return false;
-  return localStorage.getItem('sidebar-collapsed') === 'true';
-});
-```
-
-### Feature 4: Fix Table Sort Behavior
-
-**Approach:** Pure code fix in `StockTable` component.
-
-**Current bug analysis** (from `stock-table.tsx`):
-- Sort works but the comparator uses `?? -Infinity` fallback for all types including strings
-- String columns (`symbol`, `grade`, `recommendation`) compared numerically → incorrect ordering
-- Need to handle string vs number comparison properly
-
-**No dependencies needed.** Fix the comparator:
-```typescript
-const sorted = [...data].sort((a, b) => {
-  const aVal = a[sortKey];
-  const bVal = b[sortKey];
-  if (aVal == null && bVal == null) return 0;
-  if (aVal == null) return 1;
-  if (bVal == null) return -1;
-  if (typeof aVal === 'string' && typeof bVal === 'string') {
-    return sortDir === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
-  }
-  return sortDir === 'asc' ? (aVal as number) - (bVal as number) : (bVal as number) - (aVal as number);
-});
-```
-
-### Feature 5: Search State Persistence
-
-**Approach:** `nuqs` for URL-based state + `NuqsAdapter` wrapper.
-
-**Current search pattern** (found in 3 components):
-1. `admin/stock-table.tsx` — `useState("")` for `searchQuery`
-2. `admin/pipeline-control.tsx` — `useState("")` for `searchQuery`
-3. `learn/glossary-search.tsx` — `useState("")` for `query`
-
-**All use `useState`** — state is lost on navigation. Replace with `useQueryState` from `nuqs`:
-
-```typescript
-// Before:
-const [searchQuery, setSearchQuery] = useState("");
-
-// After:
-import { useQueryState, parseAsString } from 'nuqs';
-const [searchQuery, setSearchQuery] = useQueryState('q', parseAsString.withDefault(''));
-```
-
-**Integration requirement:** Add `<NuqsAdapter>` to `layout.tsx`:
-```typescript
-import { NuqsAdapter } from 'nuqs/adapters/next/app';
-// Wrap children inside QueryProvider, outside AppShell
-```
-
-### Feature 6: Market Session Progress Bar
-
-**Approach:** Custom component using existing `Progress` primitive.
-
-**HOSE trading hours (ICT, UTC+7):**
-- Pre-open: 9:00–9:15 (ATO)
-- Session 1: 9:15–11:30
-- Lunch: 11:30–13:00
-- Session 2: 13:00–14:30
-- ATC: 14:30–14:45
-- Post-close: 14:45–15:00
-
-**Component needs:**
-- Current time in ICT (use `Intl.DateTimeFormat` with `timeZone: 'Asia/Ho_Chi_Minh'`)
-- Progress percentage calculation
-- Session label display
-- Time remaining countdown
-- Auto-refresh via `setInterval` (1 minute)
-
-**Existing components used:**
-- `Progress`, `ProgressTrack`, `ProgressIndicator` from `@/components/ui/progress`
-- Clock icon from `lucide-react`
-
-**No new dependencies.** JavaScript `Date` + `Intl.DateTimeFormat` handles timezone conversion.
-
-### Feature 7: Market Overview Metrics with Real Data
-
-**Approach:** Enhance existing `MacroCards` component + new API query hook.
-
-**Current state:** `MacroCards` shows 4 cards (interest_rate, exchange_rate, CPI, GDP) using `useMacroLatest()`. These show static macro data.
-
-**Target:** 4 market overview cards showing recent market data:
-- VN-Index value + change
-- HOSE volume
-- Advancing/declining count
-- Market breadth or sector leader
-
-**Backend dependency:** New API endpoint needed from FastAPI:
-- `GET /api/market/overview` → `{ vn_index, change, change_pct, volume, advances, declines, unchanged }`
-
-**Frontend:** New TanStack Query hook:
-```typescript
-export function useMarketOverview() {
-  return useQuery({
-    queryKey: ["market", "overview"],
-    queryFn: () => apiFetch<MarketOverview>("/api/market/overview"),
-    staleTime: 5 * 60 * 1000,
-    refetchInterval: 60 * 1000,
-  });
-}
+# Generate Alembic migration after model changes (run from workspace root)
+cd apps/prometheus && uv run alembic revision --autogenerate -m "v1.4_ai_depth_fields"
+uv run alembic upgrade head
 ```
 
 ---
 
 ## What NOT to Add
 
-| Don't Add | Why Not |
-|-----------|---------|
-| `@radix-ui/*` | Project uses `@base-ui/react` (shadcn base-nova style). Don't mix primitive libraries. |
-| `vaul` (drawer library) | Not needed. Sidebar is not a drawer. |
-| `zustand` / `jotai` for search state | URL-based state via `nuqs` is better — survives navigation, shareable, browser-back friendly. |
-| `framer-motion` | Overkill for sidebar animation. CSS `transition-[width]` is sufficient. |
-| `@fontsource/source-sans-3` | `next/font/google` handles font self-hosting natively. No need for fontsource. |
-| `date-fns` / `dayjs` / `luxon` | Only need timezone-aware current time. `Intl.DateTimeFormat` handles it natively. |
-| `tailwind.config.ts` | Tailwind v4 uses CSS-only config via `@theme inline`. Don't create a JS config file. |
-| Any state management library | TanStack Query for server state. `nuqs` for URL state. `localStorage` for sidebar. No global state needed. |
+| Avoid | Why | Use Instead |
+|-------|-----|-------------|
+| TA-Lib (C library + Python wrapper) | Requires `sudo dpkg -i ta-lib_0.6.4_amd64.deb` on this WSL2/Linux system — adds a C binary dependency and system-level install step for 5 patterns solvable with pandas math | Pure pandas OHLC math for hammer/engulfing/shooting_star; pandas-ta native for doji/inside |
+| scipy | Not installed; would only replace the manual peak detection in `trend.py` which already works and has tests | Keep existing `find_peaks_manual` / `find_troughs_manual` in `trend.py` |
+| langchain / llm orchestration frameworks | Massive transitive dependency footprint (50+ packages) for a single-model, single-task usage | Direct `OllamaClient.generate_report()` already handles retries, health checks, structured output |
+| vector database (chromadb, qdrant, pgvector) | No RAG pattern needed; reports are per-stock daily with fixed context | PostgreSQL JSONB for structured report storage |
+| OpenAI/Anthropic API SDK | Explicitly out of scope (paid API, hardware constraint is RTX 3060 local-only) | Ollama local model |
+| Second LLM model (smaller/faster) | RTX 3060 12GB VRAM is at capacity with qwen2.5:14b; model switching adds complexity | Improve prompts for existing model — better prompts yield better results than model changes |
+| Any new frontend library | v1.4 is backend-only (new signals + new report fields); frontend will render new fields from existing `content_json` | Use existing `content_json` parsing in frontend |
 
 ---
 
-## Installation Summary
+## Alternatives Considered
 
-```bash
-# Only new npm dependency
-npm install nuqs
-
-# Add shadcn tooltip component (uses already-installed @base-ui/react)
-npx shadcn@latest add tooltip
-```
-
-**Total bundle impact:** `nuqs` is ~5KB gzipped. Tooltip component is a thin wrapper. Negligible.
+| Recommended | Alternative | When to Use Alternative |
+|-------------|-------------|-------------------------|
+| Pure pandas candlestick math (5 patterns) | TA-Lib (60 patterns) | If v2 requires 15+ patterns AND the team accepts a C build dependency |
+| JSONB for candlestick storage | Individual Boolean columns per pattern | If SQL filtering `WHERE CDL_HAMMER = 1 AND CDL_DOJI = 0` becomes a query need |
+| Expand `StockReport` Pydantic (one LLM call) | Separate LLM call for price levels only | If price-level reasoning needs a fresh context window not shared with narrative |
+| Sector momentum from existing `SectorSnapshot` | New crawl for sector index prices | If sector ETF price momentum (not score momentum) is needed for accuracy |
+| Rolling `avg_score_change` mean for momentum | MACD-style signal line on score series | If false signal suppression becomes important at v2 level |
 
 ---
 
-## Integration Points
+## Version Compatibility
 
-### `layout.tsx` Changes
-1. Add `Source_Sans_3` import from `next/font/google`
-2. Add font CSS variable to `<html>` via `className={sourceSans.variable}`
-3. Wrap children in `<NuqsAdapter>` for search state
-4. Remove `system-ui` font-family fallback from body (in globals.css)
-
-### `globals.css` Changes
-1. Update 10 `--primary`/`--ring`/`--sidebar-primary`/`--sidebar-ring` blue values → warm terracotta (in both `:root` and `.dark`)
-2. Remove `font-family: system-ui, -apple-system, sans-serif` from body rule
-3. Font-sans variable auto-injected by `next/font`
-
-### `app-shell.tsx` Changes
-1. Remove `ml-60` from main content wrapper
-2. Add overlay/z-index logic for sidebar float behavior
-
-### Component Changes (No New Deps)
-- `sidebar.tsx` → Full rewrite: collapsible, icon tabs, tooltip, localStorage
-- `stock-table.tsx` → Fix sort comparator
-- `macro-cards.tsx` → Enhance or create `MarketOverviewCards`
-- New: `market-session-bar.tsx` → Progress bar in header
+| Package | Current | Compatibility Note |
+|---------|---------|-------------------|
+| pandas-ta | 0.4.71b0 | `mfi()`, `cmf()`, `cdl_doji()`, `cdl_inside()` confirmed available in this exact version (verified via `ta.Category` and `dir(ta)`) |
+| ollama | >=0.6 | Nested Pydantic models with `Literal` types work as `format=model_json_schema()` — confirmed in Context7 docs with vision/structured output examples |
+| pydantic | >=2.13 | `Literal["high", "medium", "low"]` renders as `{"enum": ["high", "medium", "low"]}` in JSON schema — Ollama respects enum constraints |
+| SQLAlchemy | >=2.0 | `JSON` column type (used for `content_json`) already in production; adding more `Float`/`String` nullable columns is standard |
 
 ---
 
@@ -351,13 +271,15 @@ npx shadcn@latest add tooltip
 
 | Claim | Source | Confidence |
 |-------|--------|------------|
-| Source Sans 3 in `next/font/google` with Vietnamese subset | Verified in `node_modules/next/dist/compiled/@next/font/dist/google/font-data.json` — subsets include `vietnamese` | HIGH |
-| `@base-ui/react/tooltip` available | Verified: `ls node_modules/@base-ui/react/tooltip/` exists | HIGH |
-| `@base-ui/react/collapsible` available | Already used in `src/components/ui/collapsible.tsx` | HIGH |
-| `@base-ui/react/progress` available | Already used in `src/components/ui/progress.tsx` | HIGH |
-| `nuqs` v2.8.9 for Next.js App Router | npm registry shows v2.8.9 current, documented for App Router | HIGH |
-| `next/font` CSS variable injection | Standard Next.js pattern, project already uses `variable` prop pattern | HIGH |
-| HOSE trading hours 9:00–15:00 ICT | Project constraints in PROJECT.md, public market schedule | HIGH |
-| Tailwind v4 CSS-only config | Verified — no `tailwind.config.ts` exists, `@theme inline` in `globals.css` | HIGH |
-| Current blue primary values (10 occurrences) | Counted via `grep "210 70" globals.css` — 10 lines | HIGH |
-| Current search uses `useState` (3 components) | Grep of `searchQuery.*useState` across `src/` — confirmed 3 files | HIGH |
+| pandas-ta 0.4.71b0 `mfi`, `cmf`, `vwap`, `obv` in volume category | Direct: `uv run python -c "import pandas_ta as ta; print(ta.Category)"` | HIGH |
+| `cdl_doji`, `cdl_inside` native (no TA-Lib); `cdl_pattern` requires TA-Lib | Direct: inspected `cdl_pattern` source via `inspect.getsource`; confirmed `if Imports["talib"]` guard | HIGH |
+| TA-Lib requires `.deb` system package on Linux | Context7 `/ta-lib/ta-lib` docs — `sudo dpkg -i ta-lib_0.6.4_amd64.deb` for Debian | HIGH |
+| TA-Lib NOT installed on this system | Direct: `uv run python -c "import talib"` → ImportError | HIGH |
+| Ollama nested Pydantic schemas with `Literal` work as `format=` | Context7 `/ollama/ollama-python` + `/llmstxt/ollama_llms_txt` structured output docs | HIGH |
+| `SectorSnapshot` has `avg_score_change` column | Direct: `db/models.py` line 439, confirmed nullable Float | HIGH |
+| `AnalysisReport.content_json` is JSONB (stores arbitrary dict) | Direct: `db/models.py` line 387 — `Mapped[dict] = mapped_column(JSON)` | HIGH |
+| OBV already computed in `TechnicalIndicator` | Direct: `db/models.py` line 160, `analysis/technical.py` line 183 | HIGH |
+
+---
+*Stack research for: LocalStock v1.4 AI Analysis Depth*
+*Researched: 2026-04-25*
