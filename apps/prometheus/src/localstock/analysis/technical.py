@@ -273,7 +273,7 @@ def _is_hammer(row: pd.Series) -> bool:
         return False
     lower_shadow = min(row["open"], row["close"]) - row["low"]
     upper_shadow = row["high"] - max(row["open"], row["close"])
-    return (
+    return bool(
         body <= 0.3 * candle_range
         and lower_shadow >= 2.0 * body
         and upper_shadow <= 0.1 * candle_range
@@ -294,7 +294,7 @@ def _is_shooting_star(row: pd.Series) -> bool:
         return False
     lower_shadow = min(row["open"], row["close"]) - row["low"]
     upper_shadow = row["high"] - max(row["open"], row["close"])
-    return (
+    return bool(
         body <= 0.3 * candle_range
         and upper_shadow >= 2.0 * body
         and lower_shadow <= 0.1 * candle_range
