@@ -107,6 +107,62 @@ class TechnicalAnalyzer:
             "volume_trend": trend,
         }
 
+    def compute_candlestick_patterns(self, df: pd.DataFrame) -> dict:
+        """Detect 5 candlestick patterns on the latest bar (SIGNAL-01).
+
+        Uses pandas-ta native CDL functions for doji and inside_bar (no TA-Lib required).
+        Uses pure OHLC math for hammer, shooting_star, and engulfing.
+
+        Args:
+            df: OHLCV DataFrame (latest date last row). Minimum 2 rows required.
+
+        Returns:
+            Dict with keys: doji (bool), inside_bar (bool), hammer (bool),
+            shooting_star (bool), engulfing_detected (bool), engulfing_direction (str | None).
+            Returns all-False dict if df has < 2 rows.
+        """
+        _empty = {
+            "doji": False,
+            "inside_bar": False,
+            "hammer": False,
+            "shooting_star": False,
+            "engulfing_detected": False,
+            "engulfing_direction": None,
+        }
+
+        if df.empty or len(df) < 2:
+            return _empty
+
+        result = {}
+
+        # 1. Doji — pandas-ta native (no TA-Lib required)
+        # cdl_doji uses 10-bar rolling H-L average; returns None on very short DataFrames
+        try:
+            doji_series = ta.cdl_doji(df["open"], df["high"], df["low"], df["close"])
+            result["doji"] = bool(doji_series.iloc[-1] == 100.0) if doji_series is not None else False
+        except Exception as e:
+            logger.warning(f"cdl_doji failed: {e}")
+            result["doji"] = False
+
+        # 2. Inside bar — pandas-ta native (no TA-Lib required)
+        try:
+            inside_series = ta.cdl_inside(df["open"], df["high"], df["low"], df["close"])
+            result["inside_bar"] = bool(inside_series.iloc[-1] == 100.0) if inside_series is not None else False
+        except Exception as e:
+            logger.warning(f"cdl_inside failed: {e}")
+            result["inside_bar"] = False
+
+        # 3–5. Pure OHLC math (TA-Lib NOT available in this environment)
+        curr = df.iloc[-1]
+        prev = df.iloc[-2]
+        result["hammer"] = _is_hammer(curr)
+        result["shooting_star"] = _is_shooting_star(curr)
+        engulfing = _detect_engulfing(prev, curr)
+        result["engulfing_detected"] = engulfing is not None
+        result["engulfing_direction"] = engulfing  # "bullish" | "bearish" | None
+
+        return result
+
     def to_indicator_row(
         self,
         symbol: str,
@@ -201,3 +257,67 @@ class TechnicalAnalyzer:
         }
 
         return row
+
+
+def _is_hammer(row: pd.Series) -> bool:
+    """Hammer: small body in upper half, long lower shadow, tiny upper shadow.
+
+    Criteria (canonical TA formula):
+    - Body <= 30% of candle range
+    - Lower shadow >= 2x body
+    - Upper shadow <= 10% of candle range
+    """
+    body = abs(row["close"] - row["open"])
+    candle_range = row["high"] - row["low"]
+    if candle_range == 0:
+        return False
+    lower_shadow = min(row["open"], row["close"]) - row["low"]
+    upper_shadow = row["high"] - max(row["open"], row["close"])
+    return (
+        body <= 0.3 * candle_range
+        and lower_shadow >= 2.0 * body
+        and upper_shadow <= 0.1 * candle_range
+    )
+
+
+def _is_shooting_star(row: pd.Series) -> bool:
+    """Shooting star: small body at bottom, long upper shadow, tiny lower shadow.
+
+    Criteria (canonical TA formula):
+    - Body <= 30% of candle range
+    - Upper shadow >= 2x body
+    - Lower shadow <= 10% of candle range
+    """
+    body = abs(row["close"] - row["open"])
+    candle_range = row["high"] - row["low"]
+    if candle_range == 0:
+        return False
+    lower_shadow = min(row["open"], row["close"]) - row["low"]
+    upper_shadow = row["high"] - max(row["open"], row["close"])
+    return (
+        body <= 0.3 * candle_range
+        and upper_shadow >= 2.0 * body
+        and lower_shadow <= 0.1 * candle_range
+    )
+
+
+def _detect_engulfing(prev: pd.Series, curr: pd.Series) -> str | None:
+    """Detect bullish or bearish engulfing pattern (2-bar pure OHLC math).
+
+    Returns: 'bullish', 'bearish', or None.
+    """
+    # Bullish engulfing: prev bearish, curr bullish, curr body engulfs prev body
+    prev_bearish = prev["close"] < prev["open"]
+    curr_bullish = curr["close"] > curr["open"]
+    if prev_bearish and curr_bullish:
+        if curr["open"] <= prev["close"] and curr["close"] >= prev["open"]:
+            return "bullish"
+
+    # Bearish engulfing: prev bullish, curr bearish, curr body engulfs prev body
+    prev_bullish = prev["close"] > prev["open"]
+    curr_bearish = curr["close"] < curr["open"]
+    if prev_bullish and curr_bearish:
+        if curr["open"] >= prev["close"] and curr["close"] <= prev["open"]:
+            return "bearish"
+
+    return None
