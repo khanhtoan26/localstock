@@ -95,3 +95,73 @@ class TestToIndicatorRow:
         assert "bb_upper" in row
         assert "avg_volume_20" in row
         assert "relative_volume" in row
+
+
+class TestComputeCandlestickPatterns:
+    """Tests for TechnicalAnalyzer.compute_candlestick_patterns() (SIGNAL-01).
+
+    Covers: doji, inside_bar, hammer, shooting_star, engulfing_detected, engulfing_direction.
+    """
+
+    def test_doji_detected(self, analyzer, ohlcv_250):
+        """Doji detected when body is very small relative to candle range."""
+        pytest.skip("Not yet implemented — Wave 1")
+
+    def test_doji_not_present(self, analyzer, ohlcv_250):
+        """Doji absent on normal full-body candle."""
+        pytest.skip("Not yet implemented — Wave 1")
+
+    def test_inside_bar_detected(self, analyzer, ohlcv_250):
+        """Inside bar detected when current H-L is within prior bar H-L."""
+        pytest.skip("Not yet implemented — Wave 1")
+
+    def test_hammer_detected(self, analyzer):
+        """Hammer detected when lower shadow >= 2x body and upper shadow <= 10% range."""
+        pytest.skip("Not yet implemented — Wave 1")
+
+    def test_shooting_star_detected(self, analyzer):
+        """Shooting star detected when upper shadow >= 2x body and lower shadow <= 10% range."""
+        pytest.skip("Not yet implemented — Wave 1")
+
+    def test_engulfing_bullish(self, analyzer):
+        """Bullish engulfing: prev bearish body fully contained by curr bullish body."""
+        pytest.skip("Not yet implemented — Wave 1")
+
+    def test_engulfing_bearish(self, analyzer):
+        """Bearish engulfing: prev bullish body fully contained by curr bearish body."""
+        pytest.skip("Not yet implemented — Wave 1")
+
+    def test_empty_df(self, analyzer):
+        """Returns all-False dict (not None, not raises) when df has < 2 rows (T-18-01 guard)."""
+        pytest.skip("Not yet implemented — Wave 1")
+
+
+class TestComputeVolumeDivergence:
+    """Tests for TechnicalAnalyzer.compute_volume_divergence() (SIGNAL-02).
+
+    Covers: MFI thresholds, liquidity gate, short-df guard, output shape.
+    """
+
+    def test_bullish_signal(self, analyzer):
+        """Returns dict with signal='bullish' when MFI > 70."""
+        pytest.skip("Not yet implemented — Wave 1")
+
+    def test_bearish_signal(self, analyzer):
+        """Returns dict with signal='bearish' when MFI < 30."""
+        pytest.skip("Not yet implemented — Wave 1")
+
+    def test_neutral_signal(self, analyzer):
+        """Returns dict with signal='neutral' when 30 <= MFI <= 70."""
+        pytest.skip("Not yet implemented — Wave 1")
+
+    def test_low_liquidity_gate(self, analyzer):
+        """Returns None when avg_volume_20 < 100_000 (D-04)."""
+        pytest.skip("Not yet implemented — Wave 1")
+
+    def test_short_df(self, analyzer):
+        """Returns None when df has < 20 rows (can't compute avg_volume_20)."""
+        pytest.skip("Not yet implemented — Wave 1")
+
+    def test_output_shape(self, analyzer):
+        """Output dict has exactly keys: signal, value, indicator (D-02)."""
+        pytest.skip("Not yet implemented — Wave 1")
