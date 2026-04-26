@@ -9,9 +9,9 @@ Requirements for AI Analysis Depth milestone. All map to roadmap phases.
 
 ### Signal Computation
 
-- [ ] **SIGNAL-01**: System detects 5 candlestick patterns (doji, inside, hammer, engulfing, shooting star) from OHLCV data using pandas-ta native functions + pure OHLC math (no TA-Lib)
-- [ ] **SIGNAL-02**: System computes volume divergence signal (MFI/CMF/OBV-based), gated on avg_volume ≥ 100k shares/day — returns null for low-liquidity stocks
-- [ ] **SIGNAL-03**: System reads sector momentum from SectorSnapshot for injection into LLM prompt per stock
+- [x] **SIGNAL-01**: System detects 5 candlestick patterns (doji, inside, hammer, engulfing, shooting star) from OHLCV data using pandas-ta native functions + pure OHLC math (no TA-Lib)
+- [x] **SIGNAL-02**: System computes volume divergence signal (MFI/CMF/OBV-based), gated on avg_volume ≥ 100k shares/day — returns null for low-liquidity stocks
+- [x] **SIGNAL-03**: System reads sector momentum from SectorSnapshot for injection into LLM prompt per stock
 
 ### Prompt & Schema
 
@@ -65,9 +65,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SIGNAL-01 | Phase 18 | Pending |
-| SIGNAL-02 | Phase 18 | Pending |
-| SIGNAL-03 | Phase 18 | Pending |
+| SIGNAL-01 | Phase 18 | Complete |
+| SIGNAL-02 | Phase 18 | Complete |
+| SIGNAL-03 | Phase 18 | Complete |
 | PROMPT-01 | Phase 19 | Pending |
 | PROMPT-02 | Phase 19 | Pending |
 | PROMPT-03 | Phase 19 | Pending |

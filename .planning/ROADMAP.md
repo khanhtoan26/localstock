@@ -56,7 +56,7 @@
 
 **Milestone Goal:** Transform robotic AI recommendations into actionable trade guidance — with price levels, signal conflict resolution, recent catalysts, and explicit risk ratings.
 
-- [ ] **Phase 18: Signal Computation** - Candlestick pattern detection + volume divergence + sector momentum signal methods
+- [x] **Phase 18: Signal Computation** - Candlestick pattern detection + volume divergence + sector momentum signal methods
 - [ ] **Phase 19: Prompt & Schema Restructuring** - Expanded StockReport Pydantic model + restructured prompts + context window + post-generation validation
 - [ ] **Phase 20: Service Wiring & Report Content** - Full pipeline integration delivering entry/stop-loss/target/risk/conflict/catalyst in every report
 - [ ] **Phase 21: Frontend Trade Plan Display** - TradePlanSection on stock detail page with VND-formatted prices, risk badge, and conditional conflict section
@@ -75,10 +75,10 @@
 **Plans**: 4 plans
 
 Plans:
-- [ ] 18-01-PLAN.md — Test stubs + signals.py module stub (Wave 0)
-- [ ] 18-02-PLAN.md — compute_candlestick_patterns() + SIGNAL-01 tests (Wave 1)
-- [ ] 18-03-PLAN.md — compute_volume_divergence() + SIGNAL-02 tests (Wave 1)
-- [ ] 18-04-PLAN.md — compute_sector_momentum() + SIGNAL-03 tests (Wave 2)
+- [x] 18-01-PLAN.md — Test stubs + signals.py module stub (Wave 0)
+- [x] 18-02-PLAN.md — compute_candlestick_patterns() + SIGNAL-01 tests (Wave 1)
+- [x] 18-03-PLAN.md — compute_volume_divergence() + SIGNAL-02 tests (Wave 1)
+- [x] 18-04-PLAN.md — compute_sector_momentum() + SIGNAL-03 tests (Wave 2)
 
 ### Phase 19: Prompt & Schema Restructuring
 **Goal**: The StockReport Pydantic model and Ollama prompt are restructured to accommodate new trade guidance fields, with the context window enlarged and output validated post-generation
@@ -137,7 +137,7 @@ Plans:
 | 15. Sidebar Redesign | v1.3 | 3/3 | Complete | 2026-04-24 |
 | 16. Table, Search & Session Bar | v1.3 | 6/6 | Complete | 2026-04-25 |
 | 17. Market Overview Metrics | v1.3 | 4/4 | Complete | 2026-04-25 |
-| 18. Signal Computation | v1.4 | 0/4 | Planned | - |
+| 18. Signal Computation | v1.4 | 4/4 | Complete | 2026-04-26 |
 | 19. Prompt & Schema Restructuring | v1.4 | 0/? | Not started | - |
 | 20. Service Wiring & Report Content | v1.4 | 0/? | Not started | - |
 | 21. Frontend Trade Plan Display | v1.4 | 0/? | Not started | - |
