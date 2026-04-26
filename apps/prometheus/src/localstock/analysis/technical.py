@@ -163,6 +163,54 @@ class TechnicalAnalyzer:
 
         return result
 
+    def compute_volume_divergence(self, df: pd.DataFrame) -> dict | None:
+        """Compute MFI-based volume divergence signal (SIGNAL-02).
+
+        Uses a 20-day avg_volume liquidity gate (consistent with compute_volume_analysis).
+        Returns None for low-liquidity stocks (avg_volume < 100k) — per D-04.
+
+        Args:
+            df: OHLCV DataFrame (latest date last row).
+                Minimum 20 rows required for liquidity gate computation.
+
+        Returns:
+            Dict with keys: signal (str), value (float), indicator (str: "MFI").
+            signal values: "bullish" (MFI > 70), "bearish" (MFI < 30), "neutral" (30–70).
+            Returns None if insufficient data or below liquidity threshold.
+        """
+        # Guard 1: Need 20 rows minimum for avg_volume_20 (liquidity gate)
+        if df.empty or len(df) < 20:
+            return None
+
+        # Guard 2: Liquidity gate — consistent with compute_volume_analysis() 20-day window
+        avg_volume_20 = df["volume"].tail(20).mean()
+        if avg_volume_20 < 100_000:
+            return None  # Low liquidity — no signal (D-04)
+
+        try:
+            mfi = ta.mfi(df["high"], df["low"], df["close"], df["volume"], length=14)
+            last_mfi = mfi.iloc[-1]
+
+            # Guard 3: NaN check — MFI(14) warmup produces NaN for first 14 rows (T-18-02)
+            if pd.isna(last_mfi):
+                return None
+
+            mfi_value = round(float(last_mfi), 2)
+
+            # Classify by threshold (D-03)
+            if mfi_value > 70:
+                signal = "bullish"
+            elif mfi_value < 30:
+                signal = "bearish"
+            else:
+                signal = "neutral"
+
+            return {"signal": signal, "value": mfi_value, "indicator": "MFI"}
+
+        except Exception as e:
+            logger.warning(f"MFI computation failed: {e}")
+            return None
+
     def to_indicator_row(
         self,
         symbol: str,
