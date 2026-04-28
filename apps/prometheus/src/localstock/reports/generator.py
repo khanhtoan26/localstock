@@ -88,6 +88,72 @@ def _format_sector_momentum(mom: dict | None) -> str:
     return f"{mom['label']} ({sign}{mom['score_change']}, nhóm {mom['group_code']})"
 
 
+def compute_entry_zone(
+    nearest_support: float | None,
+    bb_upper: float | None,
+    close: float | None,
+    price_history_count: int,
+) -> tuple[float | None, float | None]:
+    """Compute entry zone as (lower, upper) price range.
+
+    Per D-02: lower = nearest_support, upper = bb_upper.
+    Per D-03: fallback to close ± 2% when < 40 price history rows
+    or when both indicators are None.
+    """
+    if close is None:
+        return None, None
+
+    if price_history_count < 40 or (nearest_support is None and bb_upper is None):
+        return round(close * 0.98, 1), round(close * 1.02, 1)
+
+    lower = nearest_support if nearest_support is not None else round(close * 0.98, 1)
+    upper = bb_upper if bb_upper is not None else round(close * 1.02, 1)
+
+    if lower >= upper:
+        lower, upper = round(close * 0.98, 1), round(close * 1.02, 1)
+
+    return round(lower, 1), round(upper, 1)
+
+
+def compute_stop_loss(support_2: float | None, close: float | None) -> float | None:
+    """Stop-loss = max(support_2, close × 0.93). HOSE ±7% daily limit aware."""
+    if close is None:
+        return None
+    floor = close * 0.93
+    if support_2 is not None:
+        return round(max(support_2, floor), 1)
+    return round(floor, 1)
+
+
+def compute_target_price(nearest_resistance: float | None, close: float | None) -> float | None:
+    """Target = nearest_resistance if available, else close × 1.10."""
+    if close is None:
+        return None
+    if nearest_resistance is not None:
+        return round(nearest_resistance, 1)
+    return round(close * 1.10, 1)
+
+
+def detect_signal_conflict(
+    tech_score: float | None,
+    fund_score: float | None,
+) -> str | None:
+    """Detect and format signal conflict for prompt injection.
+
+    Returns Vietnamese conflict description when |gap| > 25, else None.
+    """
+    if tech_score is None or fund_score is None:
+        return None
+    gap = tech_score - fund_score
+    if abs(gap) <= 25:
+        return None
+    direction = "kỹ thuật > cơ bản" if gap > 0 else "cơ bản > kỹ thuật"
+    return (
+        f"Xung đột tín hiệu: Tech={tech_score:.0f}, Fund={fund_score:.0f}, "
+        f"gap={'+' if gap > 0 else ''}{gap:.0f} ({direction})"
+    )
+
+
 RISK_RATING_MAP: dict[str, str] = {
     "high": "high",
     "medium": "medium",
