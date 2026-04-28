@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { Sidebar } from "./floating-sidebar";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
@@ -56,7 +56,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             sidebarOpen ? "pl-[280px]" : "pl-6",
           )}
         >
-          <div className="py-6 pr-6">{children}</div>
+          <div className="py-6 pl-6 pr-6">{children}</div>
         </main>
       </div>
 
