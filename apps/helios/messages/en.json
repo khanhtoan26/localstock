@@ -129,6 +129,18 @@
       "fundamental": "Fundamental",
       "sentiment": "Sentiment",
       "macro": "Macro"
+    },
+    "tradePlan": {
+      "title": "Trade Plan",
+      "entryZone": "Entry Zone",
+      "stopLoss": "Stop-Loss",
+      "targetPrice": "Target Price",
+      "riskLevel": "Risk Level",
+      "riskHigh": "High",
+      "riskMedium": "Medium",
+      "riskLow": "Low",
+      "signalConflict": "Signal Conflict",
+      "catalyst": "Catalyst"
     }
   },
   "timeframe": {

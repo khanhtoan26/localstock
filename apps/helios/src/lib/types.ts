@@ -114,6 +114,16 @@ export interface StockReport {
   generated_at: string;
 }
 
+/** Trade plan fields extracted from content_json (v1.4+). All null for pre-v1.4 reports. */
+export interface TradePlanData {
+  entry_price: number | null;
+  stop_loss: number | null;
+  target_price: number | null;
+  risk_rating: "high" | "medium" | "low" | null;
+  signal_conflicts: string | null;
+  catalyst: string | null;
+}
+
 export interface TopReportsResponse {
   reports: StockReport[];
   count: number;

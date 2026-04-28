@@ -129,6 +129,18 @@
       "fundamental": "Cơ Bản",
       "sentiment": "Tin Tức",
       "macro": "Vĩ Mô"
+    },
+    "tradePlan": {
+      "title": "Kế Hoạch Giao Dịch",
+      "entryZone": "Vùng vào lệnh",
+      "stopLoss": "Cắt lỗ",
+      "targetPrice": "Giá mục tiêu",
+      "riskLevel": "Mức rủi ro",
+      "riskHigh": "Cao",
+      "riskMedium": "Trung bình",
+      "riskLow": "Thấp",
+      "signalConflict": "Xung đột tín hiệu",
+      "catalyst": "Chất xúc tác"
     }
   },
   "timeframe": {
