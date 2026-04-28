@@ -327,17 +327,15 @@ def _normalize_risk_rating(report: StockReport) -> StockReport:
 
 **A2 verified:** Checked current `StockReport` class — no `model_config` override, Pydantic v2 defaults to mutable. [VERIFIED: codebase inspection]
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Ollama `anyOf` handling**
+1. **Ollama `anyOf` handling** — RESOLVED: accepted risk
    - What we know: Pydantic v2 generates `anyOf` for `Optional[float]`. Ollama 0.6.1 uses JSON Schema for constrained generation.
-   - What's unclear: Whether Qwen2.5 14B Q4_K_M correctly produces `null` values via `anyOf` schema. May always output `0.0` instead of `null`.
-   - Recommendation: Test empirically after implementation. If fails, use `json_schema_extra` or manual schema override to simplify Optional representation.
+   - Resolution: Test empirically post-implementation. If Qwen2.5 14B Q4_K_M fails to produce `null` via `anyOf` schema (outputs `0.0` instead), apply `json_schema_extra` or manual schema override as fallback.
 
-2. **Signal data availability in `report_service.py`**
-   - What we know: `compute_candlestick_patterns()` and `compute_volume_divergence()` require the OHLCV DataFrame, which is NOT currently loaded in `report_service.py` (it only loads the latest indicator row).
-   - What's unclear: Whether to load the full OHLCV DataFrame in report_service or pre-compute and store candlestick/volume signals in the indicator row.
-   - Recommendation: Pre-compute signals during the indicator computation step and store results. Then `report_service.py` reads them from `indicator_data` dict. **OR** the simplest approach: call signal functions in `report_service.py` after loading price history (which `price_repo` already provides). Check if price history is already loaded.
+2. **Signal data availability in `report_service.py`** — RESOLVED: Plan 03 Task 2
+   - What we know: `compute_candlestick_patterns()` and `compute_volume_divergence()` require the OHLCV DataFrame.
+   - Resolution: Plan 03 Task 2 loads price history in `report_service.py` (via `price_repo` which already provides this) and passes it to signal computation functions. No pre-computation step needed.
 
 ## Validation Architecture
 
