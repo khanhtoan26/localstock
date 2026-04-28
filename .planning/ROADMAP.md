@@ -7,6 +7,7 @@
 - ✅ **v1.2 Admin Console** — Phases 11-13 (shipped 2026-04-23) — [Archive](milestones/v1.2-ROADMAP.md)
 - ✅ **v1.3 UI/UX Refinement** — Phases 14-17 (shipped 2026-04-25) — [Archive](milestones/v1.3-ROADMAP.md)
 - ✅ **v1.4 AI Analysis Depth** — Phases 18-21 (shipped 2026-04-28) — [Archive](milestones/v1.4-ROADMAP.md)
+- 🚧 **v1.5 Performance & Data Quality** — Phases 22-28 (started 2026-04-28)
 
 ## Phases
 
@@ -62,6 +63,104 @@
 
 </details>
 
+<details open>
+<summary>🚧 v1.5 Performance & Data Quality (Phases 22-28) — IN PROGRESS</summary>
+
+- [ ] **Phase 22: Logging Foundation** — Structured JSON logs với request_id/run_id correlation, secret redaction, CI lint gate
+- [ ] **Phase 23: Metrics Primitives & /metrics** — Prometheus registry + endpoint, label-cardinality budget, idempotent init
+- [ ] **Phase 24: Instrumentation & Health** — `@observe`/`@timed_query` decorators, slow-query log, /health/{live,ready,pipeline,data}, scheduler error listener
+- [ ] **Phase 25: Data Quality** — Pandera Tier 1 validators, NaN/Inf JSONB sanitizer, per-stock isolation, stats persistence, quarantine table
+- [ ] **Phase 26: Caching** — `cachetools.TTLCache` với version-aware keys, single-flight lock, invalidation hooks, pre-warm, janitor job
+- [ ] **Phase 27: Pipeline Performance** — `asyncio.Semaphore(8)` crawler, token-bucket + circuit breaker, tenacity retries, pool tuning, fire-and-forget Telegram
+- [ ] **Phase 28: Database Optimization** — `CREATE INDEX CONCURRENTLY` migrations, batch upserts, `pg_stat_statements` baseline, runbook
+
+</details>
+
+## Phase Details
+
+### Phase 22: Logging Foundation
+**Goal**: Mọi log line từ backend là structured JSON, có thể grep/correlate theo request hoặc pipeline run, không leak secrets — nền tảng debug cho tất cả phase sau.
+**Depends on**: Nothing (foundational; phải có trước Phase 23 vì failures ở metrics layer cần logs để chẩn đoán — research §"A → B → C is non-negotiable")
+**Requirements**: OBS-01, OBS-02, OBS-03, OBS-04, OBS-05, OBS-06
+**Success Criteria** (what must be TRUE):
+  1. Mỗi log line emit từ backend là valid JSON (parse được bằng `jq`), kể cả error/exception traces — verified bằng `tail -f logs/*.log | jq .` không lỗi
+  2. Mỗi HTTP request có `request_id` UUID xuất hiện trong tất cả log line phát sinh từ request đó (request log + service log + repo log)
+  3. Pipeline run hiển thị `run_id` trong toàn bộ log của run (crawl/analyze/score/report) — grep `run_id=<uuid>` trả về toàn bộ chuỗi log của 1 run
+  4. Settings dump hoặc exception chứa token/URL có credentials được redact (`***`) trước khi log — verified bằng test inject fake secret
+  5. CI fail nếu có f-string log line: `grep -rE 'logger\.[a-z]+\(f"' src/` returns 0
+**Plans**: TBD
+
+### Phase 23: Metrics Primitives & /metrics Endpoint
+**Goal**: Prometheus registry và `/metrics` endpoint sẵn sàng; module-level metric primitives định nghĩa với label schema có giới hạn cardinality — chuẩn bị bề mặt instrumentation cho Phase 24.
+**Depends on**: Phase 22 (Logging) — failures trong registry init cần logs để debug; research §"B depends on A"
+**Requirements**: OBS-07, OBS-08, OBS-09, OBS-10
+**Success Criteria** (what must be TRUE):
+  1. `GET /metrics` trả về 200 với content-type `text/plain; version=0.0.4`, expose default `http_request_duration_seconds` histogram của instrumentator
+  2. Module-level primitives `http_*`, `op_*`, `cache_*`, `db_query_*`, `pipeline_step_*`, `dq_*` import được từ `src/observability/metrics.py` mà không raise
+  3. Test suite chạy đủ pytest collection không lỗi `Duplicated timeseries in CollectorRegistry` (idempotent init verified)
+  4. Không có metric nào declare label `symbol` — verified bằng grep + unit test scan `_metrics` dict; cardinality mỗi metric ≤ 50 series ở runtime
+**Plans**: TBD
+
+### Phase 24: Instrumentation & Health
+**Goal**: Service methods, scheduler jobs, DB queries, và HTTP layer đều emit metrics + structured timing log; health endpoints tách thành 4 probe rõ ràng cho ops; scheduler errors không còn bị nuốt.
+**Depends on**: Phase 23 (Metrics) — decorators cần registry; research §"C depends on B"
+**Requirements**: OBS-11, OBS-12, OBS-13, OBS-14, OBS-15, OBS-16, OBS-17
+**Success Criteria** (what must be TRUE):
+  1. `@observe("crawl.ohlcv.fetch")`-decorated call xuất hiện trong `/metrics` dưới `op_duration_seconds{op="crawl.ohlcv.fetch"}` và emit 1 log line `op_complete` với `duration_ms` field
+  2. Query > 250 ms emit log `slow_query` + tăng counter `db_query_slow_total` — verified bằng injected `pg_sleep(0.3)` query
+  3. `/health/live` luôn 200 nếu process up; `/health/ready` 503 nếu DB pool unhealthy; `/health/pipeline` trả `last_pipeline_age_seconds`; `/health/data` trả freshness của `MAX(stock_prices.date)`
+  4. APScheduler job raise exception → counter `scheduler_job_errors_total{job_id=...}` tăng + Telegram alert gửi (verified với fault-injected job)
+  5. `PipelineRun` row sau mỗi run có cột `crawl_duration_ms`, `analyze_duration_ms`, `score_duration_ms`, `report_duration_ms` populated (non-null)
+**Plans**: TBD
+
+### Phase 25: Data Quality
+**Goal**: Pipeline reject corrupt rows ở boundary thay vì silent-corrupt downstream; một symbol fail không kill batch; rejected rows quarantine để inspect; `/health/data` flag stale data — phải xong trước parallelism (research §"D before F").
+**Depends on**: Phase 24 (Instrumentation) — DQ outcomes phải observable qua `dq_*` metrics + logs trước khi enforce
+**Requirements**: DQ-01, DQ-02, DQ-03, DQ-04, DQ-05, DQ-06, DQ-07, DQ-08
+**Success Criteria** (what must be TRUE):
+  1. Pandera Tier 1 reject row OHLCV với negative price / future date / NaN ratio > threshold / duplicate `(symbol,date)` PK — row đi vào `quarantine_rows` table thay vì `stock_prices`
+  2. JSONB write boundary chuyển `±Inf` và `NaN` thành SQL `NULL` — verified bằng injected DataFrame có inf, sau insert `report.content_json` không chứa string `"NaN"` hoặc `"Infinity"`
+  3. Pipeline với 1 mã inject lỗi (raise trong crawler) hoàn thành full run; `PipelineRun.stats` JSONB hiển thị `{succeeded: 399, failed: 1, failed_symbols: ["BAD"]}` thay vì abort
+  4. Tier 2 advisory rules (RSI > 99.5, gap > 30%, missing > 20%) emit log `dq_warn` + counter `dq_violations_total{rule, tier="advisory"}` nhưng KHÔNG block — shadow mode flag default true
+  5. `/health/data` trả status `stale` khi `MAX(stock_prices.date)` lệch trading-calendar > 1 phiên — verified bằng manual rollback date
+**Plans**: TBD
+
+### Phase 26: Caching
+**Goal**: Hot read-paths (`/api/scores/ranking`, `/api/market/summary`, indicator computations) trả về < 50 ms p95 từ cache, invalidate đúng lúc pipeline ghi xong, không stampede khi cache cold — phải có invalidation hooks trước Phase 27 (research §"E before F").
+**Depends on**: Phase 24 (Instrumentation) — cache hit/miss metrics cần registry; coexist với Phase 25 shadow-mode
+**Requirements**: CACHE-01, CACHE-02, CACHE-03, CACHE-04, CACHE-05, CACHE-06, CACHE-07
+**Success Criteria** (what must be TRUE):
+  1. `/api/scores/ranking` lần thứ 2 (cùng `pipeline_run_id`) trả về < 50 ms p95 với header/log `cache=hit`; lần đầu sau pipeline write `cache=miss`
+  2. Cache key cho scoring outputs include `pipeline_run_id` — verified bằng test: ghi pipeline mới → key cũ không bao giờ trả stale data, không cần đợi TTL
+  3. Concurrent 100 requests vào cùng cold key chỉ trigger 1 backend computation (single-flight via `asyncio.Lock`) — verified bằng counter `cache_compute_total` chỉ tăng 1
+  4. Sau `run_daily_pipeline`, cache cho hot keys (ranking + market summary) đã pre-warm — first request từ user log `cache=hit` không phải `miss`
+  5. `/metrics` expose `cache_hits_total`, `cache_misses_total`, `cache_evictions_total` với label `namespace`; `cache_janitor` job chạy mỗi 60s và log số entries swept
+**Plans**: TBD
+
+### Phase 27: Pipeline Performance
+**Goal**: Toàn bộ pipeline (crawl + analyze + score + report cho ~400 mã) hoàn thành nhanh hơn baseline ≥ 3× nhờ concurrent crawl, không trigger vnstock soft-ban, không exhaust DB pool, không block event loop bằng pandas-ta.
+**Depends on**: Phase 24 (measure the win), Phase 25 (DQ catch corruption mà concurrency amplify), Phase 26 (cache invalidation hooks tồn tại trước khi restructure write boundaries) — research §"F depends on C, D, E"
+**Requirements**: PERF-01, PERF-02, PERF-03, PERF-04, PERF-05, PERF-06
+**Success Criteria** (what must be TRUE):
+  1. Daily pipeline end-to-end duration giảm ≥ 3× so với baseline đo ở cuối Phase 24 — verified bằng `pipeline_duration_seconds` histogram trước/sau
+  2. Crawler dùng `asyncio.Semaphore(8) + gather(return_exceptions=True)` + per-source `aiolimiter` token-bucket; vnstock không trả 429 trong 5 lần chạy liên tiếp; circuit breaker mở sau 3 consecutive 429s
+  3. Mọi external HTTP call site được wrap bằng `@retry` (tenacity, exponential backoff + jitter, max 3 attempts) — verified bằng injected transient 503 → request thành công sau retry
+  4. `pandas-ta` chạy qua `asyncio.to_thread` — verified bằng event-loop lag metric không spike khi compute indicators cho 400 mã (loop responsive < 100 ms)
+  5. SQLAlchemy pool tuning áp dụng (`pool_size=10, max_overflow=10, pool_timeout=5, pool_pre_ping=True`, giữ `prepared_statement_cache_size=0`); pipeline 15:30 không log `QueuePool limit ... overflow` lỗi
+  6. Telegram digest send là background task (không await trong pipeline finalize) — pipeline marks complete trước khi Telegram message đi
+**Plans**: TBD
+
+### Phase 28: Database Optimization
+**Goal**: P95 query duration trên hot paths (`stock_prices` time-series read, `pipeline_runs` listing, `stock_scores` ranking) giảm rõ rệt nhờ composite indexes chọn từ slow-query metrics; bulk upsert thay per-row writes; runbook ngăn migration chạy trùng pipeline window.
+**Depends on**: Phase 24 (slow-query log để chọn indexes), Phase 27 (parallel write workload để chọn upsert pattern) — research §"G last because it's lowest-leverage if everything else is right"
+**Requirements**: DB-01, DB-02, DB-03, DB-04
+**Success Criteria** (what must be TRUE):
+  1. Top 3 slow queries từ `db_query_duration_seconds` p95 (đo cuối Phase 27) giảm ≥ 5× sau khi composite btree indexes apply — `stock_prices(symbol, date DESC)`, `pipeline_runs(started_at DESC)`, `stock_scores(date, symbol)` (set cuối cùng dẫn xuất từ data, không guess)
+  2. Index migrations chạy với `CREATE INDEX CONCURRENTLY` trong file Alembic riêng có `op.execute(... )` + `transaction_per_migration=False` — không lock table khi apply trên Supabase
+  3. Repository upsert path dùng `INSERT ... ON CONFLICT (symbol, date) DO UPDATE` cho 1 batch ≥ 100 rows; throughput ≥ 5× per-row loop baseline
+  4. Runbook tài liệu (CONTRIBUTING.md hoặc docs/runbook.md) ghi rõ: index migrations chỉ chạy ngoài 15:30–16:30 UTC+7; có lệnh thực thi cụ thể; baseline + post-milestone snapshot từ `pg_stat_statements` lưu trong `.planning/milestones/v1.5-db-baseline.md`
+**Plans**: TBD
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -88,6 +187,13 @@
 | 19. Prompt & Schema Restructuring | v1.4 | 3/3 | Complete | 2026-04-28 |
 | 20. Service Wiring & Report Content | v1.4 | 2/2 | Complete | 2026-04-28 |
 | 21. Frontend Trade Plan Display | v1.4 | 2/2 | Complete | 2026-04-28 |
+| 22. Logging Foundation | v1.5 | 0/? | Not started | - |
+| 23. Metrics Primitives & /metrics | v1.5 | 0/? | Not started | - |
+| 24. Instrumentation & Health | v1.5 | 0/? | Not started | - |
+| 25. Data Quality | v1.5 | 0/? | Not started | - |
+| 26. Caching | v1.5 | 0/? | Not started | - |
+| 27. Pipeline Performance | v1.5 | 0/? | Not started | - |
+| 28. Database Optimization | v1.5 | 0/? | Not started | - |
 
 ## Backlog
 
