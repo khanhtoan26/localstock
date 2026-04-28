@@ -119,12 +119,12 @@
 
 | REQ-ID | Phase | Plan(s) | Status |
 |--------|-------|---------|--------|
-| OBS-01 | Phase 22 | TBD | Pending |
-| OBS-02 | Phase 22 | TBD | Pending |
-| OBS-03 | Phase 22 | TBD | Pending |
-| OBS-04 | Phase 22 | TBD | Pending |
-| OBS-05 | Phase 22 | TBD | Pending |
-| OBS-06 | Phase 22 | TBD | Pending |
+| OBS-01 | Phase 22 | 22-00, 22-01, 22-02, 22-05 | Complete |
+| OBS-02 | Phase 22 | 22-00, 22-03 | Complete |
+| OBS-03 | Phase 22 | 22-00, 22-01, 22-04 | Complete |
+| OBS-04 | Phase 22 | 22-00, 22-03 | Complete |
+| OBS-05 | Phase 22 | 22-00, 22-01 | Complete |
+| OBS-06 | Phase 22 | 22-00, 22-05, 22-06 | Complete |
 | OBS-07 | Phase 23 | TBD | Pending |
 | OBS-08 | Phase 23 | TBD | Pending |
 | OBS-09 | Phase 23 | TBD | Pending |
