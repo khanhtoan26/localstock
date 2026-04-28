@@ -32,7 +32,7 @@ class MacroRepository:
         )
         await self.session.execute(stmt)
         await self.session.commit()
-        logger.info(f"Upserted {len(rows)} macro indicators")
+        logger.info("macro_repo.bulk_upserted", rows=len(rows))
         return len(rows)
 
     async def get_latest_by_type(self, indicator_type: str) -> MacroIndicator | None:

@@ -32,7 +32,7 @@ class SectorSnapshotRepository:
         )
         await self.session.execute(stmt)
         await self.session.commit()
-        logger.info(f"Upserted {len(rows)} sector snapshots")
+        logger.info("sector_repo.bulk_upserted", rows=len(rows))
         return len(rows)
 
     async def get_latest(self, group_code: str) -> SectorSnapshot | None:

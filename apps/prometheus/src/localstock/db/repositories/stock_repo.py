@@ -71,7 +71,7 @@ class StockRepository:
         await self.session.execute(stmt)
         await self.session.commit()
 
-        logger.info(f"Upserted {len(rows)} stock listings")
+        logger.info("stock_repo.listings_upserted", rows=len(rows))
         return len(rows)
 
     async def get_by_symbol(self, symbol: str) -> Stock | None:
@@ -128,7 +128,7 @@ class StockRepository:
         self.session.add(stock)
         await self.session.commit()
         await self.session.refresh(stock)
-        logger.info(f"Added new stock {symbol} to watchlist")
+        logger.info("stock_repo.watchlist_added", symbol=symbol)
         return stock
 
     async def remove_stock(self, symbol: str) -> bool:
@@ -145,7 +145,7 @@ class StockRepository:
             return False
         stock.is_tracked = False
         await self.session.commit()
-        logger.info(f"Removed stock {symbol} from watchlist")
+        logger.info("stock_repo.watchlist_removed", symbol=symbol)
         return True
 
     async def get_tracked_stocks(self) -> list[Stock]:
@@ -201,5 +201,5 @@ class StockRepository:
             return 0
 
         count = await self.upsert_stocks(hose_df)
-        logger.info(f"Fetched and stored {count} HOSE listings from vnstock (VCI)")
+        logger.info("stock_repo.hose_listings_fetched", source="vci", count=count)
         return count

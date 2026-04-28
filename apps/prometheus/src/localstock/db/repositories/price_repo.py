@@ -64,9 +64,18 @@ class PriceRepository:
 
             # T-01-04: log anomalies
             if close_val < 0:
-                logger.warning(f"Negative close price for {symbol} on {price_date}: {close_val}")
+                logger.warning(
+                    "price_repo.anomaly.negative_close",
+                    symbol=symbol,
+                    date=str(price_date),
+                    close=close_val,
+                )
             if volume_val == 0:
-                logger.warning(f"Zero volume for {symbol} on {price_date}")
+                logger.warning(
+                    "price_repo.anomaly.zero_volume",
+                    symbol=symbol,
+                    date=str(price_date),
+                )
 
             rows.append(
                 {
@@ -96,7 +105,7 @@ class PriceRepository:
         await self.session.execute(stmt)
         await self.session.commit()
 
-        logger.info(f"Upserted {len(rows)} price rows for {symbol}")
+        logger.info("price_repo.bulk_upserted", symbol=symbol, rows=len(rows))
         return len(rows)
 
     async def get_latest_date(self, symbol: str) -> date | None:

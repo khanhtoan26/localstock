@@ -32,7 +32,7 @@ class ScoreRepository:
         )
         await self.session.execute(stmt)
         await self.session.commit()
-        logger.info(f"Upserted {len(rows)} composite scores")
+        logger.info("score_repo.bulk_upserted", rows=len(rows))
         return len(rows)
 
     async def get_latest(self, symbol: str) -> CompositeScore | None:

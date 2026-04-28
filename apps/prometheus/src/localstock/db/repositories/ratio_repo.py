@@ -65,7 +65,7 @@ class RatioRepository:
         await self.session.execute(stmt)
         await self.session.commit()
 
-        logger.info(f"Upserted {len(rows)} financial ratio rows")
+        logger.info("ratio_repo.bulk_upserted", rows=len(rows))
         return len(rows)
 
     async def get_latest(self, symbol: str) -> FinancialRatio | None:

@@ -47,7 +47,7 @@ class IndustryRepository:
         await self.session.execute(stmt)
         await self.session.commit()
 
-        logger.info(f"Upserted {len(groups)} industry groups")
+        logger.info("industry_repo.groups_upserted", rows=len(groups))
         return len(groups)
 
     async def get_all_groups(self) -> list[IndustryGroup]:
@@ -89,7 +89,7 @@ class IndustryRepository:
         await self.session.execute(stmt)
         await self.session.commit()
 
-        logger.info(f"Upserted {len(rows)} stock-industry mappings")
+        logger.info("industry_repo.mappings_upserted", rows=len(rows))
         return len(rows)
 
     async def get_symbols_by_group(self, group_code: str) -> list[str]:
@@ -137,7 +137,7 @@ class IndustryRepository:
         await self.session.execute(stmt)
         await self.session.commit()
 
-        logger.info(f"Upserted {len(averages)} industry average rows")
+        logger.info("industry_repo.averages_upserted", rows=len(averages))
         return len(averages)
 
     async def get_averages(

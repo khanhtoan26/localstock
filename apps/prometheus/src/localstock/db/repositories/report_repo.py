@@ -30,7 +30,11 @@ class ReportRepository:
         )
         await self.session.execute(stmt)
         await self.session.commit()
-        logger.info(f"Upserted report for {row.get('symbol')} on {row.get('date')}")
+        logger.info(
+            "report_repo.upserted",
+            symbol=row.get("symbol"),
+            date=str(row.get("date")),
+        )
 
     async def get_latest(self, symbol: str) -> AnalysisReport | None:
         """Get the most recent report for a symbol."""

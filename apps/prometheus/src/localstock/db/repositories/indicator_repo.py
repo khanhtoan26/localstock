@@ -48,7 +48,7 @@ class IndicatorRepository:
         await self.session.execute(stmt)
         await self.session.commit()
 
-        logger.info(f"Upserted {len(rows)} technical indicator rows")
+        logger.info("indicator_repo.bulk_upserted", rows=len(rows))
         return len(rows)
 
     async def get_latest(self, symbol: str) -> TechnicalIndicator | None:

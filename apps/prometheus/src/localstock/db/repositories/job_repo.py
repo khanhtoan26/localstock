@@ -34,7 +34,7 @@ class JobRepository:
         self.session.add(job)
         await self.session.commit()
         await self.session.refresh(job)
-        logger.info(f"Created admin job {job.id}: type={job_type}")
+        logger.info("job_repo.created", job_id=job.id, job_type=job_type)
         return job
 
     async def update_status(
@@ -65,7 +65,7 @@ class JobRepository:
         stmt = update(AdminJob).where(AdminJob.id == job_id).values(**values)
         await self.session.execute(stmt)
         await self.session.commit()
-        logger.info(f"Updated job {job_id} status={status}")
+        logger.info("job_repo.status_updated", job_id=job_id, status=status)
 
     async def list_recent(self, limit: int = 50) -> list[AdminJob]:
         """List recent jobs ordered by created_at descending.

@@ -39,7 +39,11 @@ class NewsRepository:
         )
         await self.session.execute(stmt)
         await self.session.commit()
-        logger.info(f"Upserted {len(unique_rows)} news articles (from {len(rows)} total)")
+        logger.info(
+            "news_repo.bulk_upserted",
+            unique=len(unique_rows),
+            total=len(rows),
+        )
         return len(unique_rows)
 
     async def get_recent(self, days: int = 7, limit: int = 200) -> list[NewsArticle]:

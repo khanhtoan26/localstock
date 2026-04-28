@@ -118,7 +118,7 @@ class EventRepository:
         await self.session.execute(stmt)
         await self.session.commit()
 
-        logger.info(f"Upserted {len(rows)} corporate events for {symbol}")
+        logger.info("event_repo.bulk_upserted", symbol=symbol, rows=len(rows))
         return len(rows)
 
     async def get_unprocessed_events(
@@ -159,4 +159,4 @@ class EventRepository:
         )
         await self.session.execute(stmt)
         await self.session.commit()
-        logger.info(f"Marked corporate event {event_id} as processed")
+        logger.info("event_repo.processed", event_id=event_id)
