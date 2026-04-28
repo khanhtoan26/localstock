@@ -3,6 +3,7 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from loguru import logger
 
 from localstock.api.routes.admin import router as admin_router
 from localstock.api.routes.analysis import router as analysis_router
@@ -15,6 +16,11 @@ from localstock.api.routes.news import router as news_router
 from localstock.api.routes.prices import router as prices_router
 from localstock.api.routes.reports import router as reports_router
 from localstock.api.routes.scores import router as scores_router
+from localstock.observability.logging import configure_logging
+from localstock.observability.middleware import (
+    CorrelationIdMiddleware,
+    RequestLogMiddleware,
+)
 from localstock.scheduler.scheduler import get_lifespan
 
 
@@ -24,12 +30,17 @@ def create_app() -> FastAPI:
     Returns:
         Configured FastAPI instance with all routes and scheduler lifespan.
     """
+    configure_logging()  # OBS-01 — must run before FastAPI emits any startup logs
     app = FastAPI(
         title="LocalStock API",
         description="AI Stock Agent for Vietnamese Market (HOSE)",
         version="0.1.0",
         lifespan=get_lifespan,
     )
+    # Starlette middleware ordering is LIFO — LAST added is OUTERMOST.
+    # Desired runtime order: CORS (outer) → CorrelationId → RequestLog → routers.
+    app.add_middleware(RequestLogMiddleware)
+    app.add_middleware(CorrelationIdMiddleware)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["http://localhost:3000"],
@@ -41,6 +52,11 @@ def create_app() -> FastAPI:
     @app.exception_handler(Exception)
     async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
         """Ensure unhandled exceptions return JSON with CORS headers."""
+        logger.exception(
+            "api.unhandled_exception",
+            path=request.url.path,
+            method=request.method,
+        )
         return JSONResponse(
             status_code=500,
             content={"detail": "Internal Server Error"},
