@@ -32,13 +32,13 @@ def setup_scheduler() -> AsyncIOScheduler:
 
     async def daily_job():
         """Scheduled daily pipeline execution."""
-        logger.info("Scheduled daily pipeline starting...")
+        logger.info("scheduler.daily.start")
         service = AutomationService()
         try:
             result = await service.run_daily_pipeline()
-            logger.info(f"Scheduled pipeline result: status={result['status']}")
-        except Exception as e:
-            logger.error(f"Scheduled pipeline failed: {e}")
+            logger.info("scheduler.daily.result", status=result["status"])
+        except Exception:
+            logger.exception("scheduler.daily.failed")
 
     scheduler.add_job(
         daily_job,
@@ -65,8 +65,10 @@ def setup_scheduler() -> AsyncIOScheduler:
     )
 
     logger.info(
-        f"Scheduler configured: daily pipeline at "
-        f"{settings.scheduler_run_hour}:{settings.scheduler_run_minute:02d} VN time"
+        "scheduler.configured",
+        hour=settings.scheduler_run_hour,
+        minute=settings.scheduler_run_minute,
+        tz="Asia/Ho_Chi_Minh",
     )
     return scheduler
 
@@ -79,12 +81,15 @@ async def get_lifespan(app: FastAPI):
         app = FastAPI(lifespan=get_lifespan)
     """
     from localstock import configure_ssl, configure_vnstock_api_key
+    from localstock.observability.logging import configure_logging
 
+    configure_logging()  # idempotent; defensive — covers CLI / scheduler-only entry points
     configure_ssl()
     configure_vnstock_api_key()
     setup_scheduler()
     scheduler.start()
-    logger.info("APScheduler started")
+    logger.info("scheduler.started")
     yield
     scheduler.shutdown()
-    logger.info("APScheduler stopped")
+    logger.complete()  # drain enqueued records (RESEARCH Open Question 3)
+    logger.info("scheduler.stopped")
