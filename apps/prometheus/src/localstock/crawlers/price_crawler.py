@@ -59,7 +59,13 @@ class PriceCrawler(BaseCrawler):
         if df is None or df.empty:
             raise ValueError(f"No price data returned for {symbol} ({start} to {end})")
 
-        logger.info(f"Fetched {len(df)} price rows for {symbol} ({start} to {end})")
+        logger.info(
+            "crawl.prices.fetched",
+            symbol=symbol,
+            rows=len(df),
+            start=str(start),
+            end=str(end),
+        )
         return df
 
     def get_backfill_start_date(self) -> str:

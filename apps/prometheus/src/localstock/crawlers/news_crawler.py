@@ -123,7 +123,7 @@ def parse_rss_date(date_str: str) -> datetime:
     try:
         return parsedate_to_datetime(date_str)
     except Exception:
-        logger.warning(f"Failed to parse RSS date: {date_str!r}, using UTC now")
+        logger.warning("crawl.news.rss_date_parse_failed", date_str=repr(date_str))
         return datetime.now(UTC)
 
 
@@ -143,7 +143,7 @@ def parse_rss_feed(xml_text: str, source: str, feed_url: str) -> list[dict]:
     try:
         root = safe_fromstring(xml_text)
     except Exception as e:
-        logger.error(f"Failed to parse RSS XML from {feed_url}: {e}")
+        logger.error("crawl.news.rss_parse_failed", feed_url=feed_url, error=str(e))
         return articles
 
     for item in root.iter("item"):
@@ -256,14 +256,14 @@ class NewsCrawler:
                     source = self._source_from_url(feed_url)
                     articles = parse_rss_feed(resp.text, source=source, feed_url=feed_url)
                     all_articles.extend(articles)
-                    logger.info(f"Fetched {len(articles)} articles from {feed_url}")
+                    logger.info("crawl.news.feed_fetched", feed_url=feed_url, articles=len(articles))
                 except Exception as e:
-                    logger.warning(f"Failed to fetch RSS feed {feed_url}: {e}")
+                    logger.warning("crawl.news.feed_failed", feed_url=feed_url, error=str(e))
                     continue  # Skip failed feeds
 
                 await asyncio.sleep(self.delay_seconds)
 
-        logger.info(f"Total articles crawled: {len(all_articles)}")
+        logger.info("crawl.news.total_fetched", articles=len(all_articles))
         return all_articles
 
     async def enrich_articles(
@@ -287,7 +287,7 @@ class NewsCrawler:
                 content = await self._fetch_article_content(url, client)
                 article["content"] = content
             except Exception as e:
-                logger.warning(f"Failed to fetch article content from {url}: {e}")
+                logger.warning("crawl.news.article_fetch_failed", url=url, error=str(e))
                 article["content"] = None
 
             await asyncio.sleep(self.delay_seconds)
@@ -326,7 +326,7 @@ class NewsCrawler:
             content_div = soup.find("article") or soup.find("main")
 
         if content_div is None:
-            logger.debug(f"Could not find article content element for {url}")
+            logger.debug("crawl.news.article_no_content_element", url=url)
             return None
 
         raw_html = str(content_div)

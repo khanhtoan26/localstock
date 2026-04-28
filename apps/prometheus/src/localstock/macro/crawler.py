@@ -89,7 +89,7 @@ class MacroCrawler:
             }
 
         except Exception as e:
-            logger.warning(f"VCB exchange rate fetch failed: {e}")
+            logger.warning("crawl.macro.vcb_fx_failed", error=str(e))
             return None
 
     async def determine_macro_conditions(

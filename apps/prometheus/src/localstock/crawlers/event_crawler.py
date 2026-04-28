@@ -61,10 +61,10 @@ class EventCrawler(BaseCrawler):
         df = await loop.run_in_executor(None, _sync_fetch)
 
         if df is None or df.empty:
-            logger.info(f"No corporate events for {symbol}")
+            logger.info("crawl.events.empty", symbol=symbol)
             return pd.DataFrame()
 
-        logger.info(f"Fetched {len(df)} corporate events for {symbol}")
+        logger.info("crawl.events.fetched", symbol=symbol, rows=len(df))
         return df
 
     @classmethod

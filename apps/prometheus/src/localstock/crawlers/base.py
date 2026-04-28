@@ -43,17 +43,19 @@ class BaseCrawler(ABC):
                     results[symbol] = df
                 else:
                     failed.append((symbol, "Empty DataFrame returned"))
-                    logger.warning(f"Skipping {symbol}: empty data returned")
+                    logger.warning("crawl.symbol.skipped", symbol=symbol, reason="empty_data")
             except Exception as e:
                 failed.append((symbol, str(e)))
-                logger.warning(f"Skipping {symbol}: {e}")
+                logger.warning("crawl.symbol.skipped", symbol=symbol, error=str(e))
 
             await asyncio.sleep(self.delay_seconds)
 
         if failed:
             logger.error(
-                f"Failed {len(failed)}/{len(symbols)} symbols: "
-                f"{[f[0] for f in failed]}"
+                "crawl.batch.partial_failure",
+                failed_count=len(failed),
+                total=len(symbols),
+                failed_symbols=[f[0] for f in failed],
             )
 
         return results, failed

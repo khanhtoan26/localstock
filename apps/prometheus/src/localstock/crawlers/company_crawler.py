@@ -62,7 +62,7 @@ class CompanyCrawler(BaseCrawler):
         if df is None or df.empty:
             raise ValueError(f"No company data returned for {symbol}")
 
-        logger.info(f"Fetched company profile for {symbol}")
+        logger.info("crawl.company.fetched", symbol=symbol)
         return df
 
     def overview_to_stock_dict(self, overview_df: pd.DataFrame) -> dict:

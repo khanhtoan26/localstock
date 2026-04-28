@@ -74,15 +74,22 @@ class FinanceCrawler(BaseCrawler):
                 if len(results) == len(self.REPORT_TYPES):
                     break  # Got all 3 report types
             except Exception as e:
-                logger.warning(f"{source_name} failed for {symbol} financials: {e}")
+                logger.warning(
+                    "crawl.finance.source_failed",
+                    source=source_name,
+                    symbol=symbol,
+                    error=str(e),
+                )
 
         if results:
             logger.info(
-                f"Fetched {len(results)} financial reports for {symbol} "
-                f"(types: {list(results.keys())})"
+                "crawl.finance.fetched",
+                symbol=symbol,
+                report_count=len(results),
+                report_types=list(results.keys()),
             )
         else:
-            logger.info(f"No financial data available for {symbol} from any source")
+            logger.info("crawl.finance.unavailable", symbol=symbol)
 
         return results
 
@@ -106,14 +113,16 @@ class FinanceCrawler(BaseCrawler):
                     failed.append((symbol, "No financial data available"))
             except Exception as e:
                 failed.append((symbol, str(e)))
-                logger.warning(f"Skipping {symbol}: {e}")
+                logger.warning("crawl.finance.symbol_skipped", symbol=symbol, error=str(e))
 
             await asyncio.sleep(self.delay_seconds)
 
         if failed:
             logger.warning(
-                f"Financial data unavailable for {len(failed)}/{len(symbols)} "
-                f"symbols: {[f[0] for f in failed]}"
+                "crawl.finance.batch_partial_failure",
+                failed_count=len(failed),
+                total=len(symbols),
+                failed_symbols=[f[0] for f in failed],
             )
 
         return results, failed
