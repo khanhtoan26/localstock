@@ -68,4 +68,15 @@ Mô hình nến: {candlestick_patterns}
 Phân kỳ khối lượng (MFI): {volume_divergence}
 Động lực ngành: {sector_momentum}
 
+💰 VÙNG GIÁ KHUYẾN NGHỊ (tính sẵn — KHÔNG tự suy luận giá khác)
+Vùng vào lệnh: {entry_zone_lower} – {entry_zone_upper}
+Cắt lỗ: {stop_loss_level} | Chốt lời: {target_price_level}
+
+⚠️ XUNG ĐỘT TÍN HIỆU
+{signal_conflict_text}
+
+📰 CHẤT XÚC TÁC GẦN ĐÂY
+Tin tức 7 ngày: {catalyst_news}
+Thay đổi điểm: {catalyst_score_delta}
+
 Hãy viết báo cáo phân tích chi tiết dựa trên dữ liệu trên."""

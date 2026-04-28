@@ -258,8 +258,18 @@ def build_report_prompt(data: dict) -> str:
     Returns:
         Formatted prompt string ready for LLM consumption.
     """
+    # Defaults for Phase 20 keys (backward compat for callers without them)
+    defaults = {
+        "entry_zone_lower": "N/A",
+        "entry_zone_upper": "N/A",
+        "stop_loss_level": "N/A",
+        "target_price_level": "N/A",
+        "signal_conflict_text": "Không có xung đột tín hiệu",
+        "catalyst_news": "Không có tin tức gần đây",
+        "catalyst_score_delta": "N/A",
+    }
     # Build safe copy with fallbacks for None values
-    safe_data = {}
+    safe_data = {**defaults}
     for key, value in data.items():
         safe_data[key] = _safe(value) if value is None else value
     return REPORT_USER_TEMPLATE.format(**safe_data)
@@ -284,6 +294,9 @@ class ReportDataBuilder:
         t3_data: dict,
         stock_info: dict,
         signals_data: dict | None = None,
+        price_levels: dict | None = None,
+        conflict_data: dict | None = None,
+        catalyst_data: dict | None = None,
     ) -> dict:
         """Assemble all stock data into prompt-ready dict.
 
@@ -362,5 +375,24 @@ class ReportDataBuilder:
             ),
             "sector_momentum": _format_sector_momentum(
                 (signals_data or {}).get("sector_momentum")
+            ),
+            # Phase 20: Pre-computed price levels
+            "entry_zone_lower": _safe_float((price_levels or {}).get("entry_lower"), ".0f"),
+            "entry_zone_upper": _safe_float((price_levels or {}).get("entry_upper"), ".0f"),
+            "stop_loss_level": _safe_float((price_levels or {}).get("stop_loss"), ".0f"),
+            "target_price_level": _safe_float((price_levels or {}).get("target_price"), ".0f"),
+            # Phase 20: Signal conflict
+            "signal_conflict_text": _safe(
+                (conflict_data or {}).get("conflict_text"),
+                "Không có xung đột tín hiệu",
+            ),
+            # Phase 20: Catalyst
+            "catalyst_news": _safe(
+                (catalyst_data or {}).get("news_summary"),
+                "Không có tin tức gần đây",
+            ),
+            "catalyst_score_delta": _safe(
+                (catalyst_data or {}).get("score_delta_text"),
+                "N/A",
             ),
         }
