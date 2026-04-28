@@ -14,10 +14,12 @@
 
 - [x] **OBS-01
 **: Backend logs emitted as structured JSON (loguru `serialize=True` + `enqueue=True`) thay cho f-string lines
-- [ ] **OBS-02**: Mỗi HTTP request được gắn `request_id` (CorrelationIdMiddleware) và propagate qua contextvar vào mọi log
+- [x] **OBS-02
+**: Mỗi HTTP request được gắn `request_id` (CorrelationIdMiddleware) và propagate qua contextvar vào mọi log
 - [x] **OBS-03
 **: Mỗi pipeline run được gắn `run_id` qua `logger.contextualize(run_id=...)`, hiển thị trong toàn bộ log của run đó
-- [ ] **OBS-04**: Request log middleware ghi method, path, status, duration_ms cho mỗi request
+- [x] **OBS-04
+**: Request log middleware ghi method, path, status, duration_ms cho mỗi request
 - [x] **OBS-05
 **: Secret/PII redaction patcher cho `Settings` — không log token/API key/URL có credentials
 - [ ] **OBS-06**: CI lint rule: zero f-string log lines (`grep 'logger\.[a-z]*(f"'` returns 0)
