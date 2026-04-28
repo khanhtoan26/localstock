@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.4
-milestone_name: AI Analysis Depth
-status: shipped
-stopped_at: Milestone complete
-last_updated: "2026-04-28T15:35:00.000Z"
-last_activity: 2026-04-28 — v1.4 milestone shipped (4 phases, 11 plans)
+milestone: v1.5
+milestone_name: Performance & Data Quality
+status: planning
+stopped_at: Defining requirements
+last_updated: "2026-04-28T15:50:00.000Z"
+last_activity: 2026-04-28 — Milestone v1.5 started
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 11
-  completed_plans: 11
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -21,14 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-28)
 
 **Core value:** Agent tự động phân tích và xếp hạng cổ phiếu HOSE — cho tôi danh sách gợi ý đáng mua kèm lý do rõ ràng, cập nhật hàng ngày, không tốn phí API.
-**Current focus:** Planning next milestone
+**Current focus:** v1.5 Performance & Data Quality — pipeline performance, caching, observability, data quality, DB optimization
 
 ## Current Position
 
-Milestone: v1.4 AI Analysis Depth — SHIPPED ✅
-Next: `/gsd-new-milestone` to start v1.5
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-04-28 — Milestone v1.5 started
 
-Progress: [██████████] 100%
+Progress: [          ] 0%
 
 ## Performance Metrics
 
@@ -46,7 +48,7 @@ Full decision history from v1.0–v1.4 archived in `.planning/milestones/`.
 
 ### Watch Out For (from research)
 
-(Cleared at milestone boundary — new items from next milestone's research phase)
+(Cleared at milestone boundary — new items from v1.5 research phase if enabled)
 
 ### Pending Todos
 
@@ -58,7 +60,7 @@ None.
 
 ## Deferred Items
 
-Items carried over from v1.3:
+Items carried over from earlier milestones:
 
 | Category | Item | Status |
 |----------|------|--------|
@@ -69,5 +71,5 @@ Items carried over from v1.3:
 ## Session Continuity
 
 Last session: 2026-04-28
-Stopped at: v1.4 milestone shipped
-Resume: `/gsd-new-milestone`
+Stopped at: Defining v1.5 requirements
+Resume: continue new-milestone workflow → REQUIREMENTS → ROADMAP

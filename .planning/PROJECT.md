@@ -8,7 +8,16 @@ LocalStock là một AI Stock Agent cá nhân cho thị trường chứng khoán
 
 Agent tự động phân tích và xếp hạng cổ phiếu HOSE — cho tôi danh sách gợi ý đáng mua kèm lý do rõ ràng, cập nhật hàng ngày, không tốn phí API.
 
-## Current Milestone: Planning next milestone
+## Current Milestone: v1.5 Performance & Data Quality
+
+**Goal:** Tối ưu toàn diện pipeline (tốc độ, độ tin cậy, observability) để hệ thống chạy nhanh hơn, ít lỗi hơn, và dễ chẩn đoán khi có sự cố.
+
+**Target features:**
+- Pipeline performance — giảm thời gian crawl/analyze/score cho ~400 mã (parallelism, batching, async tuning)
+- Caching layer — Redis hoặc in-memory cho API responses + computed indicators
+- Observability — structured logging, metrics, health dashboard cho pipeline & jobs
+- Data quality — validation, anomaly detection, missing OHLCV/NaN ratios handling
+- Database optimization — indexes, query tuning, partitioning cho time-series tables
 
 **Previous milestone:** v1.4 AI Analysis Depth shipped 2026-04-28 (Phases 18–21, 11 plans)
 
@@ -54,7 +63,7 @@ Agent tự động phân tích và xếp hạng cổ phiếu HOSE — cho tôi d
 
 ### Active
 
-(None — start next milestone with `/gsd-new-milestone`)
+(To be defined in REQUIREMENTS.md for v1.5 — Performance & Data Quality)
 
 ### Out of Scope
 
@@ -128,4 +137,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-28 after v1.4 milestone shipped*
+*Last updated: 2026-04-28 — v1.5 Performance & Data Quality milestone started*
