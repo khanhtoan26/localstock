@@ -1,0 +1,17 @@
+# .github/workflows/lint.yml
+# Phase 22 (OBS-06): PR / push gate for f-string log calls.
+name: lint
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  no-fstring-log:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: "loguru: no f-string log calls"
+        run: bash apps/prometheus/scripts/lint-no-fstring-logs.sh
