@@ -86,6 +86,7 @@ async def get_lifespan(app: FastAPI):
     configure_logging()  # idempotent; defensive — covers CLI / scheduler-only entry points
     configure_ssl()
     configure_vnstock_api_key()
+    await _recover_stale_pipeline_runs()
     setup_scheduler()
     scheduler.start()
     logger.info("scheduler.started")
@@ -93,3 +94,59 @@ async def get_lifespan(app: FastAPI):
     scheduler.shutdown()
     logger.complete()  # drain enqueued records (RESEARCH Open Question 3)
     logger.info("scheduler.stopped")
+
+
+async def _recover_stale_pipeline_runs(stale_after_minutes: int = 120) -> int:
+    """Mark abandoned `status='running'` PipelineRun rows as failed on startup.
+
+    Any pipeline_runs row stuck in 'running' for longer than `stale_after_minutes`
+    is assumed to be from a previous process that died (SIGTERM/OOM/crash) before
+    it could update its terminal status. We mark these as 'failed' with a clear
+    error reason so the UI / status endpoints don't keep reporting "running" forever.
+
+    Args:
+        stale_after_minutes: How old a 'running' row must be (relative to started_at)
+            to be considered abandoned. Default 2 hours — well past the longest
+            expected pipeline runtime.
+
+    Returns:
+        Number of rows recovered.
+    """
+    from datetime import UTC, datetime, timedelta
+
+    from sqlalchemy import update
+
+    from localstock.db.database import get_session_factory
+    from localstock.db.models import PipelineRun
+
+    cutoff = datetime.now(UTC) - timedelta(minutes=stale_after_minutes)
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        stmt = (
+            update(PipelineRun)
+            .where(PipelineRun.status == "running")
+            .where(PipelineRun.started_at < cutoff)
+            .values(
+                status="failed",
+                completed_at=datetime.now(UTC),
+                errors={
+                    "error": "abandoned",
+                    "reason": (
+                        "process exited before pipeline finished "
+                        f"(no progress for {stale_after_minutes}+ minutes)"
+                    ),
+                },
+            )
+        )
+        result = await session.execute(stmt)
+        await session.commit()
+        recovered = result.rowcount or 0
+        if recovered:
+            logger.warning(
+                "pipeline.recovery.abandoned_rows",
+                count=recovered,
+                stale_after_minutes=stale_after_minutes,
+            )
+        else:
+            logger.debug("pipeline.recovery.no_stale_rows")
+        return recovered

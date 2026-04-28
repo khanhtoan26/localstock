@@ -164,7 +164,36 @@ class Pipeline:
                 finally:
                     logger.info("pipeline.run.completed", status=run.status)
 
-            await self.session.commit()
+            # Defensive terminal commit — ensures status leaves "running" even if
+            # the inner block raised something the inner try/except didn't catch.
+            # Wrapped in try/except so a commit failure can't leave the row stuck:
+            # we rollback and retry once with status='failed' on a fresh transaction.
+            if run.status == "running":
+                run.status = "failed"
+                run.completed_at = datetime.now(UTC)
+                run.errors = {"error": "pipeline exited without setting terminal status"}
+            try:
+                await self.session.commit()
+            except Exception:
+                logger.exception("pipeline.run.commit_failed")
+                await self.session.rollback()
+                # Best-effort rescue: open a fresh transaction just to mark the row failed
+                try:
+                    from sqlalchemy import update
+
+                    await self.session.execute(
+                        update(PipelineRun)
+                        .where(PipelineRun.id == run.id)
+                        .values(
+                            status="failed",
+                            completed_at=datetime.now(UTC),
+                            errors={"error": "commit failed; status forcibly reset"},
+                        )
+                    )
+                    await self.session.commit()
+                except Exception:
+                    logger.exception("pipeline.run.rescue_commit_failed")
+                    await self.session.rollback()
             return run
         finally:
             run_id_var.reset(token)
