@@ -77,7 +77,7 @@ class StockReport(BaseModel):
     entry_price: Optional[float] = Field(default=None, description="Giá vào lệnh (VND, số)")
     stop_loss: Optional[float] = Field(default=None, description="Giá cắt lỗ (VND, số)")
     target_price: Optional[float] = Field(default=None, description="Giá mục tiêu (VND, số)")
-    risk_rating: Optional[str] = Field(default=None, description="high / medium / low")
+    risk_rating: Optional[str] = Field(default=None, description="REQUIRED: high / medium / low")
     catalyst: Optional[str] = Field(default=None, description="Chất xúc tác gần đây")
     signal_conflicts: Optional[str] = Field(default=None, description="Xung đột tín hiệu kỹ thuật-cơ bản")
 

@@ -36,7 +36,9 @@ Quy tắc:
 7. Viết ngắn gọn, mỗi phần 2-4 câu. Tổng báo cáo 500-800 từ.
 8. Đây là công cụ tham khảo cá nhân, không phải tư vấn đầu tư chính thức.
 9. Trả về entry_price, stop_loss, target_price dưới dạng số VND (không có dấu chấm phân cách hàng nghìn, ví dụ: 45200 thay vì "45.200đ").
-10. risk_rating PHẢI là một trong: "high", "medium", "low" (tiếng Anh, chữ thường)."""
+10. risk_rating PHẢI là một trong: "high", "medium", "low" (tiếng Anh, chữ thường). LUÔN LUÔN trả về risk_rating — KHÔNG được để null.
+11. signal_conflicts: Mô tả xung đột giữa tín hiệu kỹ thuật và cơ bản (nếu có). Nếu không có xung đột, để null.
+12. catalyst: Chất xúc tác gần đây (nếu có). Nếu không có, để null."""
 
 REPORT_USER_TEMPLATE = """📊 THÔNG TIN CỔ PHIẾU: {symbol} - {company_name}
 Ngành: {industry} | Giá đóng cửa: {close_price}
