@@ -64,10 +64,11 @@ class NewsService:
 
         except Exception as e:
             summary["errors"].append(str(e))
-            logger.error(f"News crawl failed: {e}")
+            logger.exception("news.crawl.failed")
 
         logger.info(
-            f"News crawl: found={summary['articles_found']}, "
-            f"stored={summary['articles_stored']}"
+            "news.crawl.completed",
+            found=summary["articles_found"],
+            stored=summary["articles_stored"],
         )
         return summary

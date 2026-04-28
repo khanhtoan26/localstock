@@ -141,7 +141,7 @@ class ScoringService:
             except Exception as e:
                 summary["stocks_failed"] += 1
                 summary["errors"].append(f"score:{symbol}:{e}")
-                logger.warning(f"Scoring failed for {symbol}: {e}")
+                logger.warning("scoring.symbol_failed", symbol=symbol, error=str(e))
 
         # Bulk upsert all scores
         if score_rows:

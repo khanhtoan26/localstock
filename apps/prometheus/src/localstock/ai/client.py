@@ -158,7 +158,7 @@ class OllamaClient:
         # Truncate to prevent context overflow (Pitfall 1)
         truncated = article_text[:2000]
 
-        logger.debug(f"Classifying sentiment for {symbol} ({len(truncated)} chars)")
+        logger.debug("ai.client.sentiment.classifying", symbol=symbol, chars=len(truncated))
 
         response = await self.client.chat(
             model=self.model,
@@ -176,8 +176,11 @@ class OllamaClient:
 
         result = SentimentResult.model_validate_json(response.message.content)
         logger.info(
-            f"Sentiment for {symbol}: {result.sentiment} "
-            f"(score={result.score:.2f}) — {result.reason}"
+            "ai.client.sentiment.classified",
+            symbol=symbol,
+            sentiment=result.sentiment,
+            score=round(result.score, 4),
+            reason=result.reason,
         )
         return result
 
@@ -209,7 +212,7 @@ class OllamaClient:
             TimeoutError: If request exceeds timeout (retried 2 times).
             ValidationError: If LLM output doesn't match StockReport schema.
         """
-        logger.debug(f"Generating report for {symbol} ({len(data_prompt)} chars prompt)")
+        logger.debug("ai.client.report.generating", symbol=symbol, prompt_chars=len(data_prompt))
 
         response = await self.client.chat(
             model=self.model,
@@ -223,5 +226,5 @@ class OllamaClient:
         )
 
         result = StockReport.model_validate_json(response.message.content)
-        logger.info(f"Generated report for {symbol}: {result.recommendation}")
+        logger.info("ai.client.report.generated", symbol=symbol, recommendation=result.recommendation)
         return result

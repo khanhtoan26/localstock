@@ -40,14 +40,14 @@ async def process_pending_jobs() -> None:
             if not job:
                 return
     except Exception as e:
-        logger.debug(f"Admin worker: DB unavailable, skipping poll ({e.__class__.__name__})")
+        logger.debug("admin.worker.db_unavailable", error_type=e.__class__.__name__)
         return
 
     job_id = job.id
     job_type = job.job_type
     params = job.params or {}
 
-    logger.info(f"Worker picked up job {job_id}: type={job_type}")
+    logger.info("admin.job.picked_up", job_id=job_id, job_type=job_type)
 
     # Mark as running immediately to prevent re-pickup on next poll
     async with session_factory() as session:
@@ -77,20 +77,20 @@ async def _execute_job(job_id: int, job_type: str, params: dict) -> None:
             case "pipeline":
                 await service.run_pipeline(job_id, params.get("symbols"))
             case _:
-                logger.warning(f"Unknown job type: {job_type}")
+                logger.warning("admin.job.unknown_type", job_type=job_type)
                 session_factory = get_session_factory()
                 async with session_factory() as session:
                     repo = JobRepository(session)
                     await repo.update_status(job_id, "failed", error=f"Unknown job type: {job_type}")
     except Exception as e:
-        logger.error(f"Job {job_id} ({job_type}) unhandled error: {e}")
+        logger.exception("admin.job.unhandled_error", job_id=job_id, job_type=job_type)
         try:
             session_factory = get_session_factory()
             async with session_factory() as session:
                 repo = JobRepository(session)
                 await repo.update_status(job_id, "failed", error=str(e))
         except Exception:
-            logger.error(f"Failed to mark job {job_id} as failed")
+            logger.exception("admin.job.mark_failed_error", job_id=job_id)
 
 
 class AdminService:
@@ -118,10 +118,10 @@ class AdminService:
                             results[symbol] = result
                         except Exception as e:
                             results[symbol] = {"error": str(e)}
-                            logger.warning(f"Crawl failed for {symbol}: {e}")
+                            logger.warning("admin.crawl.symbol_failed", symbol=symbol, error=str(e))
                 await self._update_job(job_id, "completed", result=results)
             except Exception as e:
-                logger.error(f"Crawl job {job_id} failed: {e}")
+                logger.exception("admin.crawl.job_failed", job_id=job_id)
                 await self._update_job(job_id, "failed", error=str(e))
 
     async def run_analyze(self, job_id: int, symbols: list[str] | None = None) -> None:
@@ -138,7 +138,7 @@ class AdminService:
                         result = await service.run_full()
                 await self._update_job(job_id, "completed", result=result)
             except Exception as e:
-                logger.error(f"Analyze job {job_id} failed: {e}")
+                logger.exception("admin.analyze.job_failed", job_id=job_id)
                 await self._update_job(job_id, "failed", error=str(e))
 
     async def run_score(self, job_id: int, symbols: list[str] | None = None) -> None:
@@ -152,7 +152,7 @@ class AdminService:
                     result = await service.run_full(symbols=symbols)
                 await self._update_job(job_id, "completed", result=result)
             except Exception as e:
-                logger.error(f"Score job {job_id} failed: {e}")
+                logger.exception("admin.score.job_failed", job_id=job_id)
                 await self._update_job(job_id, "failed", error=str(e))
 
     async def run_report(self, job_id: int, symbols: list[str] | None = None) -> None:
@@ -170,10 +170,10 @@ class AdminService:
                             results[symbol] = r
                     except Exception as e:
                         results[symbol] = {"error": str(e)}
-                        logger.warning(f"Report failed for {symbol}: {e}")
+                        logger.warning("admin.report.symbol_failed", symbol=symbol, error=str(e))
                 await self._update_job(job_id, "completed", result=results)
             except Exception as e:
-                logger.error(f"Report job {job_id} failed: {e}")
+                logger.exception("admin.report.job_failed", job_id=job_id)
                 await self._update_job(job_id, "failed", error=str(e))
 
     async def run_pipeline(self, job_id: int, symbols: list[str] | None = None) -> None:
@@ -194,8 +194,8 @@ class AdminService:
                             results["crawl"][symbol] = result
                         except Exception as e:
                             results["crawl"][symbol] = {"error": str(e)}
-                            logger.warning(f"Pipeline crawl failed for {symbol}: {e}")
-                logger.info(f"Pipeline crawl done: {len(target)} symbols")
+                            logger.warning("admin.pipeline.crawl_failed", symbol=symbol, error=str(e))
+                logger.info("admin.pipeline.crawl_done", symbols=len(target))
 
                 # Step 2: Analyze
                 async with self.session_factory() as session:
@@ -210,7 +210,7 @@ class AdminService:
                                 results["analyze"][symbol] = r
                             except Exception as e:
                                 results["analyze"][symbol] = {"error": str(e)}
-                                logger.warning(f"Pipeline analyze failed for {symbol}: {e}")
+                                logger.warning("admin.pipeline.analyze_failed", symbol=symbol, error=str(e))
                     else:
                         results["analyze"] = await service.run_full()
                 logger.info("Pipeline analyze done")
@@ -234,12 +234,12 @@ class AdminService:
                             results["report"][symbol] = r
                     except Exception as e:
                         results["report"][symbol] = {"error": str(e)}
-                        logger.warning(f"Pipeline report failed for {symbol}: {e}")
-                logger.info(f"Pipeline report done: {len(target_symbols)} symbols")
+                        logger.warning("admin.pipeline.report_failed", symbol=symbol, error=str(e))
+                logger.info("admin.pipeline.report_done", symbols=len(target_symbols))
 
                 await self._update_job(job_id, "completed", result=results)
             except Exception as e:
-                logger.error(f"Pipeline job {job_id} failed: {e}")
+                logger.exception("admin.pipeline.job_failed", job_id=job_id)
                 await self._update_job(job_id, "failed", error=str(e))
 
     async def _update_job(

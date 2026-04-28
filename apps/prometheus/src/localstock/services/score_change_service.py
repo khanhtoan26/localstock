@@ -82,5 +82,5 @@ async def detect_score_changes(
 
     # Sort by absolute delta descending
     changes.sort(key=lambda c: abs(c["delta"]), reverse=True)
-    logger.info(f"Detected {len(changes)} significant score changes (threshold={threshold})")
+    logger.info("score_change.detected", count=len(changes), threshold=threshold)
     return changes

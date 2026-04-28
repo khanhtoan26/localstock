@@ -60,8 +60,8 @@ class TelegramNotifier:
                     parse_mode=ParseMode.HTML,
                 )
             return True
-        except Exception as e:
-            logger.error(f"Telegram send failed: {e}")
+        except Exception:
+            logger.exception("telegram.send.failed")
             return False
 
     @staticmethod

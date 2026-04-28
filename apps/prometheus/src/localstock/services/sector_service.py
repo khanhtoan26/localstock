@@ -82,7 +82,11 @@ class SectorService:
 
         if snapshots:
             await self.sector_repo.bulk_upsert(snapshots)
-            logger.info(f"Stored {len(snapshots)} sector snapshots for {target_date}")
+            logger.info(
+                "sector.snapshots_stored",
+                count=len(snapshots),
+                date=str(target_date),
+            )
 
         return snapshots
 

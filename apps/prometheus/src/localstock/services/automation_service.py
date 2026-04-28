@@ -86,10 +86,16 @@ class AutomationService:
                         "success": crawl_result.symbols_success,
                         "total": crawl_result.symbols_total,
                     }
-                    logger.info(f"Step 1/6: Crawl {crawl_result.symbols_success}/{crawl_result.symbols_total}")
+                    logger.info(
+                        "automation.step.completed",
+                        step=1,
+                        step_name="crawl",
+                        success=crawl_result.symbols_success,
+                        total=crawl_result.symbols_total,
+                    )
             except Exception as e:
                 summary["steps"]["crawl"] = {"error": str(e)}
-                logger.error(f"Crawl failed: {e}")
+                logger.exception("automation.step.failed", step=1, step_name="crawl")
 
             # Step 2: Analysis
             try:
@@ -100,7 +106,7 @@ class AutomationService:
                     logger.info("Step 2/6: Analysis complete")
             except Exception as e:
                 summary["steps"]["analysis"] = {"error": str(e)}
-                logger.error(f"Analysis failed: {e}")
+                logger.exception("automation.step.failed", step=2, step_name="analysis")
 
             # Step 3: News crawl
             try:
@@ -111,7 +117,7 @@ class AutomationService:
                     logger.info("Step 3/6: News crawl complete")
             except Exception as e:
                 summary["steps"]["news"] = {"error": str(e)}
-                logger.error(f"News crawl failed: {e}")
+                logger.exception("automation.step.failed", step=3, step_name="news")
 
             # Step 4: Sentiment analysis
             try:
@@ -122,7 +128,7 @@ class AutomationService:
                     logger.info("Step 4/6: Sentiment analysis complete")
             except Exception as e:
                 summary["steps"]["sentiment"] = {"error": str(e)}
-                logger.error(f"Sentiment failed: {e}")
+                logger.exception("automation.step.failed", step=4, step_name="sentiment")
 
             # Step 5: Scoring
             try:
@@ -133,7 +139,7 @@ class AutomationService:
                     logger.info("Step 5/6: Scoring complete")
             except Exception as e:
                 summary["steps"]["scoring"] = {"error": str(e)}
-                logger.error(f"Scoring failed: {e}")
+                logger.exception("automation.step.failed", step=5, step_name="scoring")
 
             # Step 6: Report generation
             settings = get_settings()
@@ -145,16 +151,16 @@ class AutomationService:
                     logger.info("Step 6/6: Reports complete")
             except Exception as e:
                 summary["steps"]["reports"] = {"error": str(e)}
-                logger.error(f"Reports failed: {e}")
+                logger.exception("automation.step.failed", step=6, step_name="reports")
 
             # Post-pipeline: Score change detection (SCOR-04)
             try:
                 async with self.session_factory() as session:
                     changes = await detect_score_changes(session)
                     summary["score_changes"] = changes
-                    logger.info(f"Score changes: {len(changes)} detected")
-            except Exception as e:
-                logger.error(f"Score change detection failed: {e}")
+                    logger.info("automation.score_changes.detected", count=len(changes))
+            except Exception:
+                logger.exception("automation.score_changes.failed")
 
             # Post-pipeline: Sector rotation (SCOR-05)
             try:
@@ -164,8 +170,8 @@ class AutomationService:
                     rotation = await sector.get_rotation_summary()
                     summary["sector_rotation"] = rotation
                     logger.info("Sector rotation computed")
-            except Exception as e:
-                logger.error(f"Sector rotation failed: {e}")
+            except Exception:
+                logger.exception("automation.sector_rotation.failed")
 
             # Send notifications
             await self._send_notifications(summary)
@@ -209,9 +215,9 @@ class AutomationService:
                         {"top_count": len(top_stocks)},
                     )
                     summary["notifications"]["digest"] = sent
-                    logger.info(f"Daily digest {'sent' if sent else 'failed'}")
+                    logger.info("notification.daily_digest.sent" if sent else "notification.daily_digest.failed", sent=sent)
                 except Exception as e:
-                    logger.error(f"Daily digest notification failed: {e}")
+                    logger.exception("notification.daily_digest.error")
                     await notif_repo.log_notification(today, "daily_digest", "failed", {"error": str(e)})
 
             # Score change alerts (NOTI-02)
@@ -226,9 +232,9 @@ class AutomationService:
                         {"changes_count": len(changes)},
                     )
                     summary["notifications"]["alerts"] = sent
-                    logger.info(f"Score alerts {'sent' if sent else 'failed'}")
+                    logger.info("notification.score_alert.sent" if sent else "notification.score_alert.failed", sent=sent)
                 except Exception as e:
-                    logger.error(f"Score alert notification failed: {e}")
+                    logger.exception("notification.score_alert.error")
                     await notif_repo.log_notification(today, "score_alert", "failed", {"error": str(e)})
 
     async def run_on_demand(self, symbol: str | None = None) -> dict:

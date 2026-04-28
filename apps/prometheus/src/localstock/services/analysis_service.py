@@ -110,7 +110,7 @@ class AnalysisService:
 
         # Step 2: Get all HOSE symbols
         symbols = await self.stock_repo.get_all_hose_symbols()
-        logger.info(f"Starting analysis for {len(symbols)} symbols")
+        logger.info("analysis.run.started", symbol_count=len(symbols))
 
         # Step 3: Map stocks to industries
         await self.map_stock_industries(symbols)
@@ -123,7 +123,7 @@ class AnalysisService:
             except Exception as e:
                 summary["technical_failed"] += 1
                 summary["errors"].append(f"tech:{symbol}:{e}")
-                logger.warning(f"Technical analysis failed for {symbol}: {e}")
+                logger.warning("analysis.technical.failed", symbol=symbol, error=str(e))
 
         # Step 5: Fundamental analysis
         for symbol in symbols:
@@ -133,19 +133,21 @@ class AnalysisService:
             except Exception as e:
                 summary["fundamental_failed"] += 1
                 summary["errors"].append(f"fund:{symbol}:{e}")
-                logger.warning(f"Fundamental analysis failed for {symbol}: {e}")
+                logger.warning("analysis.fundamental.failed", symbol=symbol, error=str(e))
 
         # Step 6: Compute industry averages
         try:
             await self._compute_all_industry_averages()
         except Exception as e:
             summary["errors"].append(f"industry_avg:{e}")
-            logger.error(f"Industry averages failed: {e}")
+            logger.exception("analysis.industry_averages.failed")
 
         summary["completed_at"] = datetime.now(UTC).isoformat()
         logger.info(
-            f"Analysis complete: tech={summary['technical_success']}/{len(symbols)}, "
-            f"fund={summary['fundamental_success']}/{len(symbols)}"
+            "analysis.run.completed",
+            technical_success=summary["technical_success"],
+            fundamental_success=summary["fundamental_success"],
+            total=len(symbols),
         )
         return summary
 
@@ -184,7 +186,7 @@ class AnalysisService:
         """
         groups = self.industry_analyzer.get_group_definitions()
         count = await self.industry_repo.upsert_groups(groups)
-        logger.info(f"Seeded {count} industry groups")
+        logger.info("analysis.industry_groups.seeded", count=count)
         return count
 
     async def map_stock_industries(self, symbols: list[str] | None = None) -> int:
@@ -212,7 +214,7 @@ class AnalysisService:
             mappings.append({"symbol": symbol, "group_code": group_code})
 
         count = await self.industry_repo.upsert_mappings(mappings)
-        logger.info(f"Mapped {count} stocks to industry groups")
+        logger.info("analysis.stock_industry_mapped", count=count)
         return count
 
     def analyze_technical_single(
@@ -338,7 +340,7 @@ class AnalysisService:
         """Run technical analysis for one symbol and store results."""
         prices = await self.price_repo.get_prices(symbol)
         if not prices:
-            logger.debug(f"No price data for {symbol}, skipping technical analysis")
+            logger.debug("analysis.technical.no_price_data", symbol=symbol)
             return
 
         ohlcv_df = pd.DataFrame([
@@ -372,13 +374,13 @@ class AnalysisService:
         result = await self.session.execute(stmt)
         row_stock = result.one_or_none()
         if not row_stock:
-            logger.debug(f"Stock {symbol} not found, skipping fundamental")
+            logger.debug("analysis.fundamental.stock_missing", symbol=symbol)
             return
         shares = row_stock[0] or (
             row_stock[1] / 10_000 if row_stock[1] else None
         )
         if not shares:
-            logger.debug(f"No issue_shares for {symbol}, skipping fundamental")
+            logger.debug("analysis.fundamental.no_issue_shares", symbol=symbol)
             return
 
         # Get latest financial statements
@@ -407,7 +409,7 @@ class AnalysisService:
         balance_stmt = result.scalar_one_or_none()
 
         if not income_stmts or not balance_stmt:
-            logger.debug(f"No financial data for {symbol}, skipping fundamental")
+            logger.debug("analysis.fundamental.no_financial_data", symbol=symbol)
             return
 
         latest_income = income_stmts[0]

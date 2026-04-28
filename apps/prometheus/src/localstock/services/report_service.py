@@ -331,12 +331,12 @@ class ReportService:
                 })
 
                 summary["reports_generated"] += 1
-                logger.info(f"Generated report for {symbol}: {mapped_rec}")
+                logger.info("report.generated", symbol=symbol, recommendation=mapped_rec)
 
             except Exception as e:
                 summary["reports_failed"] += 1
                 summary["errors"].append(f"report:{symbol}:{e}")
-                logger.warning(f"Report generation failed for {symbol}: {e}")
+                logger.warning("report.generation_failed", symbol=symbol, error=str(e))
 
         summary["completed_at"] = datetime.now(UTC).isoformat()
         logger.info(
@@ -562,11 +562,11 @@ class ReportService:
                 "generated_at": datetime.now(UTC),
             })
 
-            logger.info(f"Generated report for {symbol}: {mapped_rec}")
+            logger.info("report.generated", symbol=symbol, recommendation=mapped_rec)
             return {"status": "completed", "symbol": symbol, "recommendation": mapped_rec}
 
         except Exception as e:
-            logger.warning(f"Report generation failed for {symbol}: {e}")
+            logger.warning("report.generation_failed", symbol=symbol, error=str(e))
             return {"status": "failed", "symbol": symbol, "error": str(e)}
 
     async def get_reports(self, limit: int = 20) -> list[dict]:

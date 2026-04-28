@@ -66,7 +66,12 @@ class TechnicalAnalyzer:
                 method = getattr(result.ta, name)
                 method(append=True, **params)
             except Exception as e:
-                logger.warning(f"Failed to compute {name}({params}): {e}")
+                logger.warning(
+                    "analysis.technical.indicator_failed",
+                    indicator=name,
+                    params=params,
+                    error=str(e),
+                )
 
         return result
 
@@ -141,7 +146,7 @@ class TechnicalAnalyzer:
             doji_series = ta.cdl_doji(df["open"], df["high"], df["low"], df["close"])
             result["doji"] = bool(doji_series.iloc[-1] == 100.0) if doji_series is not None else False
         except Exception as e:
-            logger.warning(f"cdl_doji failed: {e}")
+            logger.warning("analysis.technical.cdl_doji_failed", error=str(e))
             result["doji"] = False
 
         # 2. Inside bar — pandas-ta native (no TA-Lib required)
@@ -149,7 +154,7 @@ class TechnicalAnalyzer:
             inside_series = ta.cdl_inside(df["open"], df["high"], df["low"], df["close"])
             result["inside_bar"] = bool(inside_series.iloc[-1] == 100.0) if inside_series is not None else False
         except Exception as e:
-            logger.warning(f"cdl_inside failed: {e}")
+            logger.warning("analysis.technical.cdl_inside_failed", error=str(e))
             result["inside_bar"] = False
 
         # 3–5. Pure OHLC math (TA-Lib NOT available in this environment)
@@ -208,7 +213,7 @@ class TechnicalAnalyzer:
             return {"signal": signal, "value": mfi_value, "indicator": "MFI"}
 
         except Exception as e:
-            logger.warning(f"MFI computation failed: {e}")
+            logger.warning("analysis.technical.mfi_failed", error=str(e))
             return None
 
     def to_indicator_row(
