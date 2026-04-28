@@ -88,7 +88,14 @@
   3. Pipeline run hiển thị `run_id` trong toàn bộ log của run (crawl/analyze/score/report) — grep `run_id=<uuid>` trả về toàn bộ chuỗi log của 1 run
   4. Settings dump hoặc exception chứa token/URL có credentials được redact (`***`) trước khi log — verified bằng test inject fake secret
   5. CI fail nếu có f-string log line: `grep -rE 'logger\.[a-z]+\(f"' src/` returns 0
-**Plans**: TBD
+**Plans**: 7 plans
+- [ ] 22-00-PLAN.md — Wave 0 test scaffolds + lint script skeleton (Nyquist setup; RED tests for OBS-01..06)
+- [ ] 22-01-PLAN.md — Core observability package (configure_logging, redaction patcher, InterceptHandler, contextvars) — OBS-01, OBS-05
+- [ ] 22-02-PLAN.md — Pydantic Settings log_level field_validator (fail-fast on bad value) — OBS-01
+- [ ] 22-03-PLAN.md — CorrelationId + RequestLog middleware + api/app.py wiring + global handler logging — OBS-02, OBS-04
+- [ ] 22-04-PLAN.md — Pipeline run_id contextualize + scheduler lifespan configure_logging — OBS-03
+- [ ] 22-05-PLAN.md — F-string log call sweep across ~30 remaining files — OBS-01, OBS-06
+- [ ] 22-06-PLAN.md — Pre-commit hook + GitHub Actions lint workflow (OBS-06 gate enforcement)
 
 ### Phase 23: Metrics Primitives & /metrics Endpoint
 **Goal**: Prometheus registry và `/metrics` endpoint sẵn sàng; module-level metric primitives định nghĩa với label schema có giới hạn cardinality — chuẩn bị bề mặt instrumentation cho Phase 24.
