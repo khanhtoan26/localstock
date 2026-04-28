@@ -489,22 +489,19 @@ function SignalConflictAlert({ text }: { text: string }) {
 | A2 | `⚠️` emoji renders correctly in all target browsers | Code Examples | May need `AlertTriangle` lucide icon instead of emoji |
 | A3 | TooltipPositioner accepts `sideOffset` prop | Code Examples | May need different positioning prop name — check @base-ui docs |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Layout placement of TradePlanSection in the grid**
+1. **Layout placement of TradePlanSection in the grid** — RESOLVED
    - What we know: D-01 says "between Score Breakdown and AI Report Panel." Current layout has them side-by-side in a 2-column grid.
-   - What's unclear: Does "between" mean a full-width row above the 2-column grid, or restructuring the grid to 3 sections?
-   - Recommendation: Full-width row above the 2-column grid (simplest, doesn't break existing layout). This places Trade Plan visually between the chart section and the score+report row — user scrolls: Chart → Trade Plan → Score + AI Report.
+   - Resolution: Full-width row above the 2-column grid (simplest, doesn't break existing layout). This places Trade Plan visually between the chart section and the score+report row — user scrolls: Chart → Trade Plan → Score + AI Report. D-02 gives agent discretion on layout.
 
-2. **Risk badge tooltip content source**
+2. **Risk badge tooltip content source** — RESOLVED
    - What we know: D-04 says "reasoning text from the LLM report" but there's no dedicated `risk_reasoning` field.
-   - What's unclear: Which content_json field to use as reasoning.
-   - Recommendation: Use `content_json.summary` (2-3 sentence overview) as tooltip text. Alternatively, combine the first sentence of `summary` with `risk_rating`.
+   - Resolution: Use `report.summary` (2-3 sentence overview) as tooltip text. This is the most information-dense field summarizing the LLM's analysis.
 
-3. **Entry zone as range vs single price**
+3. **Entry zone as range vs single price** — RESOLVED
    - What we know: FRONTEND-01 says "entry zone" (range), but content_json only has a single `entry_price` (float). Backend computes entry as `(entry_lower + entry_upper) / 2`.
-   - What's unclear: Whether to display as single price or derive a range.
-   - Recommendation: Display as single price with `formatVND(entry_price)`. The backend averaged it to a single value. Could show as "~45.200" to indicate approximate zone.
+   - Resolution: Display as single price with `formatVND(entry_price)`. Label as "Điểm vào" (entry point) since backend has already averaged the range.
 
 ## Validation Architecture
 
