@@ -451,3 +451,272 @@ class TestReportServiceGetReports:
         result = await service.get_report("XYZ")
 
         assert result is None
+
+
+def _setup_phase20_service(
+    mock_session,
+    mock_score,
+    mock_stock_report,
+    mock_macro_indicator,
+    mock_builder_cls,
+    mock_build_prompt,
+    mock_predict,
+    mock_crawler_cls,
+    *,
+    tech_score=80.0,
+    fund_score=90.0,
+    price_count=60,
+    nearest_support=90000.0,
+    bb_upper=100000.0,
+    support_2=85000.0,
+    nearest_resistance=105000.0,
+):
+    """Create a fully-mocked ReportService for Phase 20 tests."""
+    service = ReportService(mock_session)
+
+    mock_score.technical_score = tech_score
+    mock_score.fundamental_score = fund_score
+    service.score_repo.get_top_ranked = AsyncMock(return_value=[mock_score])
+    service.score_repo.get_previous_date_scores = AsyncMock(return_value=(None, []))
+    service.macro_repo.get_all_latest = AsyncMock(return_value=[mock_macro_indicator])
+
+    mock_crawler_inst = AsyncMock()
+    mock_crawler_inst.determine_macro_conditions = AsyncMock(
+        return_value={"interest_rate": "stable"}
+    )
+    mock_crawler_cls.return_value = mock_crawler_inst
+
+    # Indicator with S/R levels
+    ind = MagicMock()
+    col_names = [
+        "id", "symbol", "rsi_14", "macd_histogram",
+        "trend_direction", "trend_strength", "nearest_support",
+        "nearest_resistance", "bb_upper", "bb_lower", "support_2",
+        "pivot_point", "support_1", "resistance_1", "resistance_2",
+        "computed_at",
+    ]
+    cols = [MagicMock(name=n) for n in col_names]
+    # MagicMock(name=...) sets the mock name, not .name attribute
+    for col, n in zip(cols, col_names):
+        col.name = n
+    ind.__table__ = MagicMock()
+    ind.__table__.columns = cols
+    ind.symbol = "VNM"
+    ind.rsi_14 = 45.0
+    ind.macd_histogram = 0.5
+    ind.trend_direction = "up"
+    ind.trend_strength = 0.7
+    ind.nearest_support = nearest_support
+    ind.nearest_resistance = nearest_resistance
+    ind.bb_upper = bb_upper
+    ind.bb_lower = 88000.0
+    ind.support_2 = support_2
+    ind.pivot_point = 95000.0
+    ind.support_1 = 88000.0
+    ind.resistance_1 = 102000.0
+    ind.resistance_2 = 108000.0
+
+    service.indicator_repo.get_latest = AsyncMock(return_value=ind)
+
+    # Ratio
+    ratio = MagicMock()
+    ratio_cols = [
+        "id", "symbol", "pe_ratio", "pb_ratio", "roe",
+        "debt_to_equity", "revenue_growth", "computed_at",
+    ]
+    ratio_col_mocks = [MagicMock() for _ in ratio_cols]
+    for col, n in zip(ratio_col_mocks, ratio_cols):
+        col.name = n
+    ratio.__table__ = MagicMock()
+    ratio.__table__.columns = ratio_col_mocks
+    ratio.pe_ratio = 15.0
+    ratio.pb_ratio = 2.5
+    ratio.roe = 0.2
+    ratio.debt_to_equity = 0.5
+    ratio.revenue_growth = 0.15
+    service.ratio_repo.get_latest = AsyncMock(return_value=ratio)
+
+    service.sentiment_service.get_aggregated_sentiment = AsyncMock(return_value=0.7)
+    service.sentiment_repo.get_by_symbol = AsyncMock(return_value=[])
+
+    mock_stock_obj = MagicMock()
+    mock_stock_obj.symbol = "VNM"
+    mock_stock_obj.name = "Vinamilk"
+    mock_stock_obj.industry_icb3 = "Thực phẩm"
+    service.stock_repo.get_by_symbol = AsyncMock(return_value=mock_stock_obj)
+
+    mock_price = MagicMock()
+    mock_price.close = 97000.0
+    mock_price.open = 96000.0
+    mock_price.high = 98000.0
+    mock_price.low = 95000.0
+    mock_price.volume = 500000
+    service.price_repo.get_latest = AsyncMock(return_value=mock_price)
+
+    # Build price history of N items
+    prices = [MagicMock(
+        open=96000.0, high=98000.0, low=95000.0, close=97000.0, volume=500000
+    ) for _ in range(price_count)]
+    service.price_repo.get_prices = AsyncMock(return_value=prices)
+
+    service.sector_repo.get_latest = AsyncMock(return_value=None)
+
+    mock_predict.return_value = {
+        "direction": "bullish",
+        "confidence": "medium",
+        "reasons": ["RSI phục hồi"],
+        "t3_warning": "Cảnh báo T+3",
+    }
+
+    mock_builder_inst = MagicMock()
+    captured_data = {}
+
+    def capture_build(**kwargs):
+        captured_data.update(kwargs)
+        return {"symbol": "VNM"}
+
+    mock_builder_inst.build.side_effect = capture_build
+    mock_builder_cls.return_value = mock_builder_inst
+
+    mock_build_prompt.return_value = "prompt text"
+
+    service.ollama.health_check = AsyncMock(return_value=True)
+    service.ollama.generate_report = AsyncMock(return_value=mock_stock_report)
+    service.ollama.model = "qwen2.5:14b"
+    service.report_repo.upsert = AsyncMock()
+
+    return service, captured_data
+
+
+class TestReportServicePhase20:
+    """Phase 20 integration tests: price levels, conflict detection, catalyst wiring."""
+
+    @pytest.mark.asyncio
+    @patch("localstock.services.report_service.OllamaClient")
+    @patch("localstock.services.report_service.SentimentService")
+    @patch("localstock.services.report_service.predict_3day_trend")
+    @patch("localstock.services.report_service.ReportDataBuilder")
+    @patch("localstock.services.report_service.build_report_prompt")
+    @patch("localstock.services.report_service.MacroCrawler")
+    async def test_run_full_computes_entry_zone(
+        self, mock_crawler_cls, mock_build_prompt, mock_builder_cls,
+        mock_predict, mock_sent_cls, mock_ollama_cls,
+        mock_session, mock_score, mock_stock_report, mock_macro_indicator,
+    ):
+        """run_full() computes entry zone from support/bb_upper with >= 40 prices."""
+        service, data = _setup_phase20_service(
+            mock_session, mock_score, mock_stock_report, mock_macro_indicator,
+            mock_builder_cls, mock_build_prompt, mock_predict, mock_crawler_cls,
+            price_count=60,
+        )
+
+        await service.run_full(top_n=1)
+
+        assert "price_levels" in data
+        pl = data["price_levels"]
+        assert pl["entry_lower"] == 90000.0  # nearest_support
+        assert pl["entry_upper"] == 100000.0  # bb_upper
+        # Report should have midpoint injected
+        report = mock_stock_report
+        assert report.entry_price == round((90000.0 + 100000.0) / 2, 1)
+
+    @pytest.mark.asyncio
+    @patch("localstock.services.report_service.OllamaClient")
+    @patch("localstock.services.report_service.SentimentService")
+    @patch("localstock.services.report_service.predict_3day_trend")
+    @patch("localstock.services.report_service.ReportDataBuilder")
+    @patch("localstock.services.report_service.build_report_prompt")
+    @patch("localstock.services.report_service.MacroCrawler")
+    async def test_run_full_entry_zone_fallback(
+        self, mock_crawler_cls, mock_build_prompt, mock_builder_cls,
+        mock_predict, mock_sent_cls, mock_ollama_cls,
+        mock_session, mock_score, mock_stock_report, mock_macro_indicator,
+    ):
+        """run_full() uses close ± 2% fallback when price_history_count < 40."""
+        service, data = _setup_phase20_service(
+            mock_session, mock_score, mock_stock_report, mock_macro_indicator,
+            mock_builder_cls, mock_build_prompt, mock_predict, mock_crawler_cls,
+            price_count=10,
+        )
+
+        await service.run_full(top_n=1)
+
+        pl = data["price_levels"]
+        # Fallback: close * 0.98 and close * 1.02
+        assert pl["entry_lower"] == pytest.approx(97000.0 * 0.98)
+        assert pl["entry_upper"] == pytest.approx(97000.0 * 1.02)
+
+    @pytest.mark.asyncio
+    @patch("localstock.services.report_service.OllamaClient")
+    @patch("localstock.services.report_service.SentimentService")
+    @patch("localstock.services.report_service.predict_3day_trend")
+    @patch("localstock.services.report_service.ReportDataBuilder")
+    @patch("localstock.services.report_service.build_report_prompt")
+    @patch("localstock.services.report_service.MacroCrawler")
+    async def test_run_full_signal_conflict_injected(
+        self, mock_crawler_cls, mock_build_prompt, mock_builder_cls,
+        mock_predict, mock_sent_cls, mock_ollama_cls,
+        mock_session, mock_score, mock_stock_report, mock_macro_indicator,
+    ):
+        """run_full() detects conflict when tech/fund gap > 25."""
+        service, data = _setup_phase20_service(
+            mock_session, mock_score, mock_stock_report, mock_macro_indicator,
+            mock_builder_cls, mock_build_prompt, mock_predict, mock_crawler_cls,
+            tech_score=80.0, fund_score=40.0,
+        )
+
+        await service.run_full(top_n=1)
+
+        assert "conflict_data" in data
+        assert "Xung đột" in data["conflict_data"].get("conflict_text", "")
+
+    @pytest.mark.asyncio
+    @patch("localstock.services.report_service.OllamaClient")
+    @patch("localstock.services.report_service.SentimentService")
+    @patch("localstock.services.report_service.predict_3day_trend")
+    @patch("localstock.services.report_service.ReportDataBuilder")
+    @patch("localstock.services.report_service.build_report_prompt")
+    @patch("localstock.services.report_service.MacroCrawler")
+    async def test_run_full_no_conflict_when_gap_small(
+        self, mock_crawler_cls, mock_build_prompt, mock_builder_cls,
+        mock_predict, mock_sent_cls, mock_ollama_cls,
+        mock_session, mock_score, mock_stock_report, mock_macro_indicator,
+    ):
+        """run_full() has empty conflict_data when gap <= 25."""
+        service, data = _setup_phase20_service(
+            mock_session, mock_score, mock_stock_report, mock_macro_indicator,
+            mock_builder_cls, mock_build_prompt, mock_predict, mock_crawler_cls,
+            tech_score=60.0, fund_score=50.0,
+        )
+
+        await service.run_full(top_n=1)
+
+        assert data.get("conflict_data") == {}
+
+    @pytest.mark.asyncio
+    @patch("localstock.services.report_service.OllamaClient")
+    @patch("localstock.services.report_service.SentimentService")
+    @patch("localstock.services.report_service.predict_3day_trend")
+    @patch("localstock.services.report_service.ReportDataBuilder")
+    @patch("localstock.services.report_service.build_report_prompt")
+    @patch("localstock.services.report_service.MacroCrawler")
+    async def test_generate_for_symbol_has_price_levels(
+        self, mock_crawler_cls, mock_build_prompt, mock_builder_cls,
+        mock_predict, mock_sent_cls, mock_ollama_cls,
+        mock_session, mock_score, mock_stock_report, mock_macro_indicator,
+    ):
+        """generate_for_symbol() wires price levels and injects into report."""
+        service, data = _setup_phase20_service(
+            mock_session, mock_score, mock_stock_report, mock_macro_indicator,
+            mock_builder_cls, mock_build_prompt, mock_predict, mock_crawler_cls,
+        )
+        service.score_repo.get_latest = AsyncMock(return_value=mock_score)
+
+        result = await service.generate_for_symbol("VNM")
+
+        assert result["status"] == "completed"
+        assert "price_levels" in data
+        report = mock_stock_report
+        # compute_stop_loss: max(support_2=85000, close*0.93=90210) = 90210
+        assert report.stop_loss == pytest.approx(90210.0)
+        assert report.target_price == 105000.0  # nearest_resistance
