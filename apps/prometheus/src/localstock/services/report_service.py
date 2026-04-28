@@ -26,11 +26,16 @@ from localstock.db.repositories.stock_repo import StockRepository
 from localstock.macro.crawler import MacroCrawler
 from localstock.analysis.signals import compute_sector_momentum
 from localstock.analysis.technical import TechnicalAnalyzer
+from localstock.db.repositories.sentiment_repo import SentimentRepository
 from localstock.reports.generator import (
     ReportDataBuilder,
     build_report_prompt,
     _normalize_risk_rating,
     _validate_price_levels,
+    compute_entry_zone,
+    compute_stop_loss,
+    compute_target_price,
+    detect_signal_conflict,
 )
 from localstock.reports.t3 import predict_3day_trend
 from localstock.services.sentiment_service import SentimentService
@@ -65,6 +70,7 @@ class ReportService:
         self.price_repo = PriceRepository(session)
         self.sector_repo = SectorSnapshotRepository(session)
         self.sentiment_service = SentimentService(session)
+        self.sentiment_repo = SentimentRepository(session)
         self.ollama = OllamaClient()
 
     async def run_full(self, top_n: int = 20) -> dict:
@@ -121,6 +127,10 @@ class ReportService:
         }
 
         today = date.today()
+
+        # Pre-compute previous date scores for catalyst delta (shared across stocks)
+        prev_date, prev_scores = await self.score_repo.get_previous_date_scores(today)
+        prev_score_map = {s.symbol: s.total_score for s in prev_scores} if prev_scores else {}
 
         # Step 4: For each scored stock, generate report
         for score in scores:
@@ -201,6 +211,31 @@ class ReportService:
                         }
                 signals_data["sector_momentum"] = compute_sector_momentum(sector_data_for_signal)
 
+                # Phase 20: Pre-compute price levels (per D-01, D-07)
+                current_close = latest_price.close if latest_price else None
+                price_history_count = len(prices) if prices else 0
+
+                entry_lower, entry_upper = compute_entry_zone(
+                    nearest_support=indicator_data.get("nearest_support"),
+                    bb_upper=indicator_data.get("bb_upper"),
+                    close=current_close,
+                    price_history_count=price_history_count,
+                )
+                sl = compute_stop_loss(
+                    support_2=indicator_data.get("support_2"),
+                    close=current_close,
+                )
+                tp = compute_target_price(
+                    nearest_resistance=indicator_data.get("nearest_resistance"),
+                    close=current_close,
+                )
+                price_levels = {
+                    "entry_lower": entry_lower,
+                    "entry_upper": entry_upper,
+                    "stop_loss": sl,
+                    "target_price": tp,
+                }
+
                 # Score data for prompt
                 score_data = {
                     "total": score.total_score,
@@ -214,6 +249,34 @@ class ReportService:
                 # Compute T+3 prediction
                 t3_data = predict_3day_trend(indicator_data)
 
+                # Phase 20: Signal conflict detection (per D-10, D-11)
+                conflict_text = detect_signal_conflict(
+                    tech_score=score.technical_score,
+                    fund_score=score.fundamental_score,
+                )
+                conflict_data = {"conflict_text": conflict_text} if conflict_text else {}
+
+                # Phase 20: Catalyst data (per D-13, D-14)
+                catalyst_data: dict = {}
+                prev_total = prev_score_map.get(symbol)
+                if prev_total is not None:
+                    delta = score.total_score - prev_total
+                    sign = "+" if delta >= 0 else ""
+                    catalyst_data["score_delta_text"] = f"{sign}{delta:.1f} điểm so với phiên trước"
+                else:
+                    catalyst_data["score_delta_text"] = "Chưa có dữ liệu so sánh"
+
+                sentiment_scores = await self.sentiment_repo.get_by_symbol(symbol, days=7, limit=5)
+                if sentiment_scores:
+                    article_ids = [s.article_id for s in sentiment_scores]
+                    from sqlalchemy import select as sa_select
+                    from localstock.db.models import NewsArticle
+                    stmt = sa_select(NewsArticle.title).where(NewsArticle.id.in_(article_ids)).limit(5)
+                    result = await self.session.execute(stmt)
+                    titles = [row[0] for row in result.all()]
+                    if titles:
+                        catalyst_data["news_summary"] = " | ".join(titles[:3])
+
                 # Build prompt
                 data = ReportDataBuilder().build(
                     symbol=symbol,
@@ -225,14 +288,24 @@ class ReportService:
                     t3_data=t3_data,
                     stock_info=stock_info,
                     signals_data=signals_data,
+                    price_levels=price_levels,
+                    conflict_data=conflict_data,
+                    catalyst_data=catalyst_data,
                 )
                 prompt = build_report_prompt(data)
 
                 # Generate report via LLM
                 report = await self.ollama.generate_report(prompt, symbol)
 
+                # Inject pre-computed prices into report (per D-01, D-07)
+                if entry_lower is not None and entry_upper is not None:
+                    report.entry_price = round((entry_lower + entry_upper) / 2, 1)
+                if sl is not None:
+                    report.stop_loss = sl
+                if tp is not None:
+                    report.target_price = tp
+
                 # Post-generation validation (PROMPT-04)
-                current_close = latest_price.close if latest_price else None
                 if current_close:
                     report = _validate_price_levels(report, current_close)
                 report = _normalize_risk_rating(report)
@@ -383,7 +456,64 @@ class ReportService:
                     }
             signals_data["sector_momentum"] = compute_sector_momentum(sector_data_for_signal)
 
+            # Phase 20: Pre-compute price levels (per D-01, D-07)
+            current_close = latest_price.close if latest_price else None
+            price_history_count = len(prices) if prices else 0
+
+            entry_lower, entry_upper = compute_entry_zone(
+                nearest_support=indicator_data.get("nearest_support"),
+                bb_upper=indicator_data.get("bb_upper"),
+                close=current_close,
+                price_history_count=price_history_count,
+            )
+            sl = compute_stop_loss(
+                support_2=indicator_data.get("support_2"),
+                close=current_close,
+            )
+            tp = compute_target_price(
+                nearest_resistance=indicator_data.get("nearest_resistance"),
+                close=current_close,
+            )
+            price_levels = {
+                "entry_lower": entry_lower,
+                "entry_upper": entry_upper,
+                "stop_loss": sl,
+                "target_price": tp,
+            }
+
             t3_data = predict_3day_trend(indicator_data)
+
+            # Phase 20: Signal conflict detection (per D-10, D-11)
+            conflict_data: dict = {}
+            if score:
+                conflict_text = detect_signal_conflict(
+                    tech_score=score.technical_score,
+                    fund_score=score.fundamental_score,
+                )
+                conflict_data = {"conflict_text": conflict_text} if conflict_text else {}
+
+            # Phase 20: Catalyst data (per D-13, D-14)
+            catalyst_data: dict = {}
+            prev_date, prev_scores = await self.score_repo.get_previous_date_scores(date.today())
+            prev_score_map = {s.symbol: s.total_score for s in prev_scores} if prev_scores else {}
+            prev_total = prev_score_map.get(symbol)
+            if prev_total is not None and score:
+                delta = score.total_score - prev_total
+                sign = "+" if delta >= 0 else ""
+                catalyst_data["score_delta_text"] = f"{sign}{delta:.1f} điểm so với phiên trước"
+            else:
+                catalyst_data["score_delta_text"] = "Chưa có dữ liệu so sánh"
+
+            sentiment_scores = await self.sentiment_repo.get_by_symbol(symbol, days=7, limit=5)
+            if sentiment_scores:
+                article_ids = [s.article_id for s in sentiment_scores]
+                from sqlalchemy import select as sa_select
+                from localstock.db.models import NewsArticle
+                stmt = sa_select(NewsArticle.title).where(NewsArticle.id.in_(article_ids)).limit(5)
+                result = await self.session.execute(stmt)
+                titles = [row[0] for row in result.all()]
+                if titles:
+                    catalyst_data["news_summary"] = " | ".join(titles[:3])
 
             data = ReportDataBuilder().build(
                 symbol=symbol,
@@ -395,12 +525,22 @@ class ReportService:
                 t3_data=t3_data,
                 stock_info=stock_info,
                 signals_data=signals_data,
+                price_levels=price_levels,
+                conflict_data=conflict_data,
+                catalyst_data=catalyst_data,
             )
             prompt = build_report_prompt(data)
             report = await self.ollama.generate_report(prompt, symbol)
 
+            # Inject pre-computed prices into report (per D-01, D-07)
+            if entry_lower is not None and entry_upper is not None:
+                report.entry_price = round((entry_lower + entry_upper) / 2, 1)
+            if sl is not None:
+                report.stop_loss = sl
+            if tp is not None:
+                report.target_price = tp
+
             # Post-generation validation (PROMPT-04)
-            current_close = latest_price.close if latest_price else None
             if current_close:
                 report = _validate_price_levels(report, current_close)
             report = _normalize_risk_rating(report)

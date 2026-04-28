@@ -255,6 +255,10 @@ class TestReportServiceRunFull:
         # Mock sector repo for sector momentum
         service.sector_repo.get_latest = AsyncMock(return_value=None)
 
+        # Mock Phase 20 repos
+        service.score_repo.get_previous_date_scores = AsyncMock(return_value=(None, []))
+        service.sentiment_repo.get_by_symbol = AsyncMock(return_value=[])
+
         # Mock T+3 prediction
         mock_predict.return_value = {
             "direction": "bullish",
@@ -350,6 +354,10 @@ class TestReportServiceRunFull:
 
         # Mock sector repo for sector momentum
         service.sector_repo.get_latest = AsyncMock(return_value=None)
+
+        # Mock Phase 20 repos
+        service.score_repo.get_previous_date_scores = AsyncMock(return_value=(None, []))
+        service.sentiment_repo.get_by_symbol = AsyncMock(return_value=[])
 
         mock_predict.return_value = {
             "direction": "bullish",
