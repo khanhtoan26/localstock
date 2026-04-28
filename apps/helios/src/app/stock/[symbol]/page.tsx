@@ -13,6 +13,7 @@ import { GradeBadge } from "@/components/rankings/grade-badge";
 import { TimeframeSelector } from "@/components/charts/timeframe-selector";
 import { ScoreBreakdown } from "@/components/stock/score-breakdown";
 import { AIReportPanel } from "@/components/stock/ai-report-panel";
+import { TradePlanSection } from "@/components/stock/trade-plan-section";
 import { formatScore, formatVND, formatVolume } from "@/lib/utils";
 import {
   useStockScore,
@@ -189,6 +190,13 @@ export default function StockDetailPage() {
           </Card>
         </div>
       )}
+
+      {/* ─── Trade Plan (full width, per D-01) ─── */}
+      <TradePlanSection
+        report={reportQuery.data}
+        isLoading={reportQuery.isLoading}
+        currentClose={latest?.close ?? null}
+      />
 
       {/* ─── Score + AI Report (two columns on desktop) ─── */}
       <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-6">
