@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-04-25)
 
 ## Current Position
 
-Phase: 19 of 21 (Prompt & Schema Restructuring) — COMPLETE
-Plan: 3 of 3
-Status: Phase complete — ready for Phase 20
-Last activity: 2026-04-28 — Phase 19 executed (3 plans, 3 waves), StockReport 15 fields, signal formatters, prompt restructuring, price validation
+Phase: 20 of 21 (Service Wiring & Report Content) — PLANNED
+Plan: 0 of 2
+Status: Ready to execute — 2 plans in 2 waves
+Last activity: 2026-04-28 — Phase 20 planned (research, patterns, 2 plans, verification passed)
 
 Progress: [██░░░░░░░░] 25%
 
