@@ -1,246 +1,124 @@
-# Stack Research
+# Stack Research — v1.5 Performance & Data Quality
 
-**Domain:** AI analysis depth additions — candlestick patterns, volume divergence, sector momentum, structured LLM output
-**Researched:** 2026-04-25
-**Confidence:** HIGH
+**Domain:** Local-first single-user data pipeline (FastAPI + APScheduler + Postgres)
+**Researched:** 2026-04-29
+**Confidence:** HIGH (versions verified on PyPI 2026-04-29; integration patterns verified against existing codebase)
+**Scope:** Stack ADDITIONS/CHANGES for v1.5 only. The v1.0–v1.4 core stack (FastAPI, SQLAlchemy 2.0 async, Alembic, Pydantic v2, APScheduler, httpx, pandas, pandas-ta, vnstock 4.x, loguru, tenacity) is already validated and stays.
 
-## Context: What Already Exists (DO NOT RE-RESEARCH)
-
-This is a subsequent milestone. The following are validated and must NOT be changed:
-
-| Existing | Version | Status |
-|----------|---------|--------|
-| pandas-ta | 0.4.71b0 | Installed; OBV/MFI/CMF/VWAP all confirmed in volume category |
-| ollama (Python SDK) | >=0.6 | Structured output via `format=schema` works in production |
-| pydantic | >=2.13 | `model_json_schema()` + `model_validate_json()` proven in `ai/client.py` |
-| numpy | >=2.0 | Installed; scipy is NOT installed (and not needed) |
-| SectorSnapshot DB table | — | Exists with `avg_score_change` column populated by `SectorService` |
-| AnalysisReport DB table | — | `content_json` (JSONB) stores full structured report; add nullable columns for SQL access |
-| TechnicalIndicator DB table | — | 26 existing columns; add candlestick JSONB + volume divergence fields via Alembic |
+> **Note on prompt drift**: Orchestrator brief listed `vnstock 3.5.1` and "structlog vs loguru". Actual `pyproject.toml` already pins `vnstock>=4.0.1,<5.0` and `loguru>=0.7,<1.0`. Recommendations below reflect what's in the file, not the brief.
 
 ---
 
-## Recommended Stack for v1.4
+## Guiding Constraints (drive every choice below)
 
-### No New Libraries Required for Core Features
+1. **Single user, single host.** No multi-worker uvicorn, no horizontal scale. Anything in-process beats anything that needs a sidecar.
+2. **Free tier / local only.** Supabase free Postgres, RTX 3060, no managed Redis, no Datadog. Cost of new infra ≈ ∞.
+3. **Existing scheduler is APScheduler in-process.** All caches and metrics share that process — no IPC needed.
+4. **~400 stocks × 5 dimensions, runs 1×/day + on-demand.** This is a *throughput-modest, latency-tolerant* workload. Don't reach for distributed-system tooling.
+5. **Already have loguru + tenacity.** Don't add a second logging library unless the upgrade is decisive.
 
-All four v1.4 capabilities use already-installed packages. The research confirmed this after inspecting the installed pandas-ta 0.4.71b0, the existing Ollama client, and the DB schema.
+The TL;DR: **add 4 small libraries, no new runtime services.** Redis, Celery, RabbitMQ, statsd, Great Expectations, OpenTelemetry collectors are all rejected for this milestone — they solve problems we don't have.
 
 ---
 
-### Core Technologies
+## Recommended Stack — Additions
+
+### Core Additions
 
 | Technology | Version | Purpose | Why Recommended |
 |------------|---------|---------|-----------------|
-| pandas-ta (existing) | 0.4.71b0 | Candlestick patterns (`cdl_doji`, `cdl_inside`), volume signals (`mfi`, `cmf`, `vwap`) | Verified: MFI/CMF/VWAP confirmed in `ta.Category['volume']`; doji/inside confirmed native without TA-Lib |
-| pandas + numpy (existing) | >=2.2, >=2.0 | Hammer, Engulfing, Shooting Star via OHLC math; OBV divergence via rolling correlation | 5 key patterns in <50 lines each; OBV already computed, divergence is pure rolling math |
-| pydantic (existing) | >=2.13 | Expand `StockReport` model with `price_levels`, `risk_rating`, `catalysts`, `signal_conflicts` | `Literal` types, nested models, `Optional[float]` all render correctly in JSON schema for Ollama `format=` |
-| ollama Python SDK (existing) | >=0.6 | Pass expanded `StockReport.model_json_schema()` as `format=` parameter | Proven with 9-field nested schemas; adding 4 fields changes nothing about the mechanism |
-| SQLAlchemy + Alembic (existing) | >=2.0 | Add `candlestick_patterns` JSONB and volume divergence fields to `TechnicalIndicator`; add price/risk columns to `AnalysisReport` | One Alembic migration covers all DB additions; no model redesign needed |
+| **cachetools** | `>=7.0,<8.0` (latest 7.0.6) | In-process TTL/LRU cache for hot data (computed indicators, vnstock symbol lists, market summary) | Pure-Python, zero deps, ~1KB API. `TTLCache`/`LRUCache` are exactly what a single-process app needs. Drop-in `@cached` decorator. No serialization, no sidecar. |
+| **hishel** | `>=1.2,<2.0` (latest 1.2.1) | RFC 9111 HTTP cache transport for httpx (vnstock + news fetches) | Native httpx integration via `hishel.AsyncCacheTransport` — drops into existing `httpx.AsyncClient`. SQLite or filesystem storage. Respects `Cache-Control`/`ETag`. Zero behavioural change for non-cacheable responses. |
+| **diskcache** | `>=5.6,<6.0` (latest 5.6.3) | Persistent SQLite-backed cache for expensive computations that should survive restarts (e.g. financial-statement parses, daily indicator snapshots) | Pure-Python, single-file SQLite, no server. Survives process restart unlike `cachetools`. Used by Pip and Streamlit. Thread- and process-safe. |
+| **pandera** | `>=0.31,<1.0` (latest 0.31.1) with `[pandas]` extra | DataFrame schema validation for OHLCV, indicators, fundamentals (data quality gate) | Built specifically for pandas validation. Pydantic v2 native. Schemas as code. Coercion + missing-data checks + custom checks. Lightweight (~3 deps) vs Great Expectations' full framework. Output integrates cleanly with anomaly-detection logic. |
+| **prometheus-client** | `>=0.25,<1.0` (latest 0.25.0) | Metrics primitives (Counter / Gauge / Histogram) for pipeline timing, error rates, cache hit ratios | Reference Python client. Pull-model — exposes `/metrics`, no daemon required. Works fine with no scraper attached (just emits to memory). Minimal overhead. |
+| **prometheus-fastapi-instrumentator** | `>=7.1,<8.0` (latest 7.1.0) | One-line FastAPI middleware emitting standard HTTP metrics | Wraps `prometheus-client`. Auto-instruments request latency / status / in-flight. Adds `/metrics` route. ~50 lines of integration glue we'd otherwise hand-roll. |
 
----
-
-### Supporting Libraries
+### Supporting Libraries (use only if needed)
 
 | Library | Version | Purpose | When to Use |
 |---------|---------|---------|-------------|
-| pandas-ta `cdl_doji` | 0.4.71b0 | Native doji detection (body < 10% of H-L range) | Use directly via `df.ta.cdl_doji(append=True)` — no TA-Lib needed |
-| pandas-ta `cdl_inside` | 0.4.71b0 | Native inside bar detection | Use directly via `df.ta.cdl_inside(append=True)` |
-| pandas-ta `mfi` | 0.4.71b0 | Money Flow Index (14-period) overbought/oversold | Add to `compute_volume_analysis()` — `df.ta.mfi(append=True)` |
-| pandas-ta `cmf` | 0.4.71b0 | Chaikin Money Flow — buying vs selling pressure | Add to `compute_volume_analysis()` alongside MFI |
-| pydantic `Literal` | stdlib with pydantic >=2.13 | Constrain `risk_rating` to `"high" | "medium" | "low"` | Already imported in pydantic; Literal renders as `enum` in JSON schema which Ollama respects |
+| **fakeredis** | `>=2.30,<3.0` | Redis-API stub for tests | Only if (later) we adopt a Redis-shaped abstraction. **Skip for v1.5** — not needed since we're not using Redis. |
+| **anyio** | already transitive via FastAPI | `anyio.Semaphore` / task groups for bounded concurrency in pipeline batching | Use `anyio.create_task_group()` + `anyio.Semaphore(N)` for the ~400-stock fan-out instead of `asyncio.gather`. No new dep. |
+| **pytest-benchmark** | `>=5.0,<6.0` | Regression-test pipeline phase timings | Add only if/when we want CI guards on pipeline speed. Optional. |
+| **psutil** | `>=6.0,<7.0` | Process/host metrics (RSS, CPU, GPU-adjacent) for health dashboard | Add when health dashboard wants memory/CPU panels. Tiny dep. |
 
----
+### Database Optimization — No Library, Just Patterns
 
-### Development Tools
+| Approach | Tooling | Why |
+|----------|---------|-----|
+| **Indexes** | Alembic migrations (existing) | Already in stack. Add `op.create_index(..., postgresql_using='btree')` migrations for `(symbol, date)`, `(date)` on prices, `(symbol, indicator_name, date)` on indicators. No new dep. |
+| **Slow query log** | SQLAlchemy `before_cursor_execute` / `after_cursor_execute` events | Hand-rolled middleware logs queries > N ms via loguru. ~30 LOC. No `sqlalchemy-utils` needed. |
+| **Query plan inspection** | `EXPLAIN (ANALYZE, BUFFERS)` via psql / Supabase SQL editor | Manual, ad-hoc. No tool needed. |
+| **pg_stat_statements** | Supabase enables by default; query via SQL | Free, native, zero install. Surfaces slowest queries in production. |
+| **Time-series partitioning** | Postgres declarative partitioning via raw SQL in Alembic | Native PG14+ feature. Partition `prices` and `indicators` by `RANGE(date)` (yearly). Raw SQL in `op.execute(...)`. No partitioning library needed. **Only do this if a table exceeds ~10M rows** — at 400 symbols × 5y × 250 trading days ≈ 500K rows for prices, partitioning is premature. Defer unless evidence shows pain. |
+| **Connection pool tuning** | SQLAlchemy `create_async_engine(pool_size, max_overflow, pool_pre_ping)` | Already configurable. Just tune values; no new dep. |
+
+### Logging — Keep Loguru, Don't Add structlog
+
+**Decision: stay on loguru, enable JSON serialization + `logger.contextualize()` for structured fields.**
+
+Loguru already installed. It supports:
+- `logger.add(sink, serialize=True)` → newline-delimited JSON output, schema-stable.
+- `logger.bind(job_id=...)` and `with logger.contextualize(request_id=...)` → contextual key/value fields propagate through async tasks.
+- `logger.opt(record=True)` for record introspection.
+
+**Why not structlog**: structlog is excellent and arguably more idiomatic for pure structured logging, but adopting it means rewriting every existing `logger.info(...)` call (326 backend tests reference loggers indirectly). The marginal gain over `loguru + serialize=True + contextualize` doesn't justify the churn for a single-user app. Revisit only if we ever ship to a real log aggregator that demands structlog conventions (we won't in v1.5).
+
+**What to add (config, not dep):**
+```python
+# logging_config.py
+logger.remove()
+logger.add(sys.stderr, level=settings.log_level, serialize=False)  # human-readable in dev
+logger.add("logs/app.jsonl", level="INFO", serialize=True, rotation="50 MB", retention=10)  # JSON for tooling
+```
+
+### Development Tools — No Changes
 
 | Tool | Purpose | Notes |
 |------|---------|-------|
-| Alembic | Generate and apply DB migration for new columns | `uv run alembic revision --autogenerate -m "v1.4_ai_depth_fields"` then `upgrade head` |
-| ruff | Lint new analysis code | `uv run ruff check src/` — no config change needed |
-| pytest-asyncio | Test new candlestick and volume methods | Existing `asyncio_mode = "auto"` covers new sync methods called from async context |
-
----
-
-## Feature-by-Feature Integration Plan
-
-### Feature 1: Candlestick Pattern Detection
-
-**Pattern**: Extend `TechnicalAnalyzer` in `analysis/technical.py` with new method `compute_candlestick_patterns(df)`.
-
-**Approach**: Pure pandas math for 3 patterns + pandas-ta native for 2 patterns. No TA-Lib.
-
-```python
-# In TechnicalAnalyzer.compute_candlestick_patterns(df) -> dict[str, int]:
-
-# 1. Doji — use pandas-ta native (more precise than manual)
-doji = df.ta.cdl_doji()
-CDL_DOJI = int(doji.iloc[-1] != 0) if doji is not None else 0
-
-# 2. Inside Bar — use pandas-ta native
-inside = df.ta.cdl_inside()
-CDL_INSIDE = int(inside.iloc[-1] != 0) if inside is not None else 0
-
-# 3. Hammer — pure pandas (TA-Lib NOT installed)
-body = abs(df['close'] - df['open'])
-lower_shadow = df[['open', 'close']].min(axis=1) - df['low']
-upper_shadow = df['high'] - df[['open', 'close']].max(axis=1)
-CDL_HAMMER = int((lower_shadow >= 2 * body) & (upper_shadow <= 0.5 * body) & (body > 0)).iloc[-1]
-
-# 4. Bullish/Bearish Engulfing — pure pandas
-bull_eng = (df['close'] > df['open'].shift(1)) & (df['open'] < df['close'].shift(1)) & (df['close'].shift(1) < df['open'].shift(1))
-bear_eng = (df['close'] < df['open'].shift(1)) & (df['open'] > df['close'].shift(1)) & (df['close'].shift(1) > df['open'].shift(1))
-CDL_ENGULFING = 1 if bull_eng.iloc[-1] else (-1 if bear_eng.iloc[-1] else 0)
-
-# 5. Shooting Star — pure pandas (inverse hammer)
-CDL_SHOOTING_STAR = int((upper_shadow >= 2 * body) & (lower_shadow <= 0.5 * body) & (body > 0)).iloc[-1]
-
-return {"CDL_DOJI": CDL_DOJI, "CDL_INSIDE": CDL_INSIDE, "CDL_HAMMER": CDL_HAMMER,
-        "CDL_ENGULFING": CDL_ENGULFING, "CDL_SHOOTING_STAR": CDL_SHOOTING_STAR}
-```
-
-**Storage**: Add `candlestick_patterns` JSON column to `TechnicalIndicator` via Alembic. JSONB avoids adding 5+ boolean columns; allows future pattern additions without migrations. Example stored value: `{"CDL_HAMMER": 1, "CDL_DOJI": 0, "CDL_ENGULFING": -1, "CDL_INSIDE": 0, "CDL_SHOOTING_STAR": 0}`.
-
-**LLM Integration**: In `reports/generator.py`, format active patterns as human-readable text: `"Phát hiện mô hình nến: Hammer (đảo chiều tăng tiềm năng)"` and inject into prompt.
-
----
-
-### Feature 2: Volume Divergence Analysis
-
-**Pattern**: Extend `TechnicalAnalyzer.compute_volume_analysis()` to add MFI, CMF, and OBV divergence.
-
-```python
-# In compute_volume_analysis(), after existing avg_volume_20 / relative_volume:
-
-# MFI (Money Flow Index) — overbought/oversold
-mfi_series = df.ta.mfi(length=14)
-mfi = float(mfi_series.iloc[-1]) if mfi_series is not None and not pd.isna(mfi_series.iloc[-1]) else None
-
-# CMF (Chaikin Money Flow) — buying vs selling pressure (-1 to +1)
-cmf_series = df.ta.cmf(length=20)
-cmf = float(cmf_series.iloc[-1]) if cmf_series is not None and not pd.isna(cmf_series.iloc[-1]) else None
-
-# OBV divergence: compare 5-day OBV trend direction vs 5-day price trend direction
-if len(df) >= 10:
-    obv_series = df.ta.obv()
-    price_rising = df['close'].tail(5).mean() > df['close'].tail(10).head(5).mean()
-    obv_rising = obv_series.tail(5).mean() > obv_series.tail(10).head(5).mean()
-    if price_rising and not obv_rising:
-        volume_divergence = "bearish"   # Price up, volume down = suspect rally
-    elif not price_rising and obv_rising:
-        volume_divergence = "bullish"   # Price down, volume up = accumulation
-    else:
-        volume_divergence = "none"
-else:
-    volume_divergence = None
-```
-
-**Storage**: Add `mfi_14` (Float), `cmf_20` (Float), `volume_divergence` (String(10)) to `TechnicalIndicator` via same Alembic migration.
-
-**LLM Integration**: Include in prompt as: `"MFI: {mfi:.0f} | CMF: {cmf:.2f} | Phân kỳ khối lượng: {volume_divergence}"`.
-
----
-
-### Feature 3: Sector Momentum Signals
-
-**Pattern**: Extend `SectorService` with `get_sector_momentum(group_code)` method. Uses existing `SectorSnapshot` data, no new table.
-
-```python
-# In SectorService — new method:
-async def get_sector_momentum(self, group_code: str, window: int = 5) -> str:
-    """Returns 'rising', 'falling', or 'neutral' based on rolling avg_score_change."""
-    snapshots = await self.sector_repo.get_recent(group_code, limit=window)
-    if len(snapshots) < 2:
-        return "neutral"
-    changes = [s.avg_score_change for s in snapshots if s.avg_score_change is not None]
-    if not changes:
-        return "neutral"
-    rolling_mean = sum(changes) / len(changes)
-    if rolling_mean > 0.5:
-        return "rising"
-    elif rolling_mean < -0.5:
-        return "falling"
-    return "neutral"
-```
-
-**LLM Integration**: In `ReportService._generate_for_symbol()`, fetch the stock's industry group code, call `get_sector_momentum()`, and pass result to `ReportDataBuilder.build()` as `sector_momentum`. Add to prompt template: `"Động lực ngành: {sector_momentum} (5 phiên gần nhất)"`.
-
-**No new DB table or migration needed** — reads from existing `sector_snapshots`.
-
----
-
-### Feature 4: Structured LLM Output (Price Levels, Risk Rating, Catalysts)
-
-**Pattern**: Expand `StockReport` Pydantic model in `ai/client.py`.
-
-```python
-from typing import Literal
-from pydantic import BaseModel, Field
-
-class PriceLevels(BaseModel):
-    entry_price: float | None = Field(None, description="Giá vào lệnh gợi ý (VND)")
-    exit_price: float | None = Field(None, description="Giá chốt lời mục tiêu (VND)")
-    stop_loss: float | None = Field(None, description="Giá cắt lỗ (VND)")
-    rationale: str = Field(description="Cơ sở tính toán các mức giá từ S/R và ATR")
-
-class StockReport(BaseModel):
-    # --- Existing 9 fields unchanged ---
-    summary: str
-    technical_analysis: str
-    fundamental_analysis: str
-    sentiment_analysis: str
-    macro_impact: str
-    long_term_suggestion: str
-    swing_trade_suggestion: str
-    recommendation: str
-    confidence: str
-    # --- 4 new fields for v1.4 ---
-    price_levels: PriceLevels = Field(description="Các mức giá giao dịch cụ thể")
-    risk_rating: Literal["high", "medium", "low"] = Field(description="Mức độ rủi ro tổng thể")
-    risk_reasoning: str = Field(description="Lý do đánh giá rủi ro (D/E, biến động, tin tức)")
-    catalysts: list[str] = Field(description="Yếu tố xúc tác tuần này, tối đa 3 mục")
-    signal_conflicts: str = Field(description="Giải thích mâu thuẫn giữa tín hiệu kỹ thuật và cơ bản nếu có, hoặc 'Không có mâu thuẫn'")
-```
-
-**Context window**: Adding 4 new output fields increases LLM output by ~200-400 tokens. Current `num_ctx: 4096` covers it. No change to `options` needed.
-
-**DB storage**: `AnalysisReport.content_json` (JSONB) stores the full `StockReport` dict automatically — new fields are included without migration. Add `entry_price` (Float, nullable), `stop_loss` (Float, nullable), `risk_rating` (String(10), nullable) as direct columns for SQL-queryable fast access (add to same Alembic migration).
-
-**Prompt changes**: Update `REPORT_SYSTEM_PROMPT` to explicitly instruct the LLM to compute price levels from support/resistance data (which is already passed in the prompt via `nearest_support`, `nearest_resistance`, `pivot_point`).
+| ruff, mypy, pytest, pytest-asyncio | already in dev deps | No changes |
+| `uv add --dev pytest-benchmark` | optional perf regression tests | Add only when we wire perf assertions into CI |
 
 ---
 
 ## Installation
 
-No new Python packages are needed. All dependencies are in `apps/prometheus/pyproject.toml` already.
-
 ```bash
-# Verify volume indicators are available in installed pandas-ta 0.4.71b0
-uv run python -c "import pandas_ta as ta; print([x for x in ta.Category.get('volume', []) if x in ['mfi', 'cmf', 'vwap', 'obv']])"
-# Expected: ['cmf', 'mfi', 'obv', 'vwap']
+# From apps/prometheus/
+uv add cachetools hishel diskcache pandera[pandas] prometheus-client prometheus-fastapi-instrumentator
 
-# Verify native candlestick pattern functions
-uv run python -c "import pandas_ta as ta; print([x for x in dir(ta) if x.startswith('cdl')])"
-# Expected: ['cdl', 'cdl_doji', 'cdl_inside', 'cdl_pattern', 'cdl_z']
-
-# Generate Alembic migration after model changes (run from workspace root)
-cd apps/prometheus && uv run alembic revision --autogenerate -m "v1.4_ai_depth_fields"
-uv run alembic upgrade head
+# Optional, when health dashboard needs host metrics
+uv add psutil
 ```
+
+That's the entire v1.5 dependency footprint: **6 small pure-Python packages, zero new services.**
 
 ---
 
-## What NOT to Add
+## Integration Points with Existing Stack
 
-| Avoid | Why | Use Instead |
-|-------|-----|-------------|
-| TA-Lib (C library + Python wrapper) | Requires `sudo dpkg -i ta-lib_0.6.4_amd64.deb` on this WSL2/Linux system — adds a C binary dependency and system-level install step for 5 patterns solvable with pandas math | Pure pandas OHLC math for hammer/engulfing/shooting_star; pandas-ta native for doji/inside |
-| scipy | Not installed; would only replace the manual peak detection in `trend.py` which already works and has tests | Keep existing `find_peaks_manual` / `find_troughs_manual` in `trend.py` |
-| langchain / llm orchestration frameworks | Massive transitive dependency footprint (50+ packages) for a single-model, single-task usage | Direct `OllamaClient.generate_report()` already handles retries, health checks, structured output |
-| vector database (chromadb, qdrant, pgvector) | No RAG pattern needed; reports are per-stock daily with fixed context | PostgreSQL JSONB for structured report storage |
-| OpenAI/Anthropic API SDK | Explicitly out of scope (paid API, hardware constraint is RTX 3060 local-only) | Ollama local model |
-| Second LLM model (smaller/faster) | RTX 3060 12GB VRAM is at capacity with qwen2.5:14b; model switching adds complexity | Improve prompts for existing model — better prompts yield better results than model changes |
-| Any new frontend library | v1.4 is backend-only (new signals + new report fields); frontend will render new fields from existing `content_json` | Use existing `content_json` parsing in frontend |
+### FastAPI lifespan
+- `prometheus-fastapi-instrumentator` registers in `create_app()` after middleware setup. `/metrics` becomes available immediately.
+- diskcache `Cache(directory=...)` instance created in lifespan startup, closed on shutdown. Inject via FastAPI `Depends`.
+- `cachetools.TTLCache` lives as module-level singleton (process-local) — no lifespan management.
+
+### APScheduler jobs
+- Wrap each scheduled job body with a `Histogram.time()` context manager from `prometheus-client` → emits `localstock_pipeline_duration_seconds{phase=...}` for free.
+- Use `with logger.contextualize(job_id=job.id, run_id=uuid4()):` at job entry → every nested log line gets job context. Loguru-native, no new lib.
+- Add APScheduler event listeners (`EVENT_JOB_ERROR`, `EVENT_JOB_EXECUTED`) → increment Prometheus counters. ~20 LOC.
+
+### httpx clients (vnstock + news)
+- Replace `httpx.AsyncClient()` with `httpx.AsyncClient(transport=hishel.AsyncCacheTransport(httpx.AsyncHTTPTransport(), storage=hishel.AsyncSQLiteStorage(...)))`.
+- Storage path under `var/cache/http/`. Respects `Cache-Control` from upstream — vnstock responses without cache headers will pass through unchanged (so no behavioural risk).
+
+### SQLAlchemy
+- Register two `event.listens_for` hooks on the engine for `before_cursor_execute` / `after_cursor_execute` → log queries > 250 ms with bind params (sanitized).
+- New Alembic revisions per index (one revision per logical change — keeps rollback granular).
+
+### Pandera in pipeline
+- Define `OHLCVSchema`, `IndicatorSchema`, `FundamentalsSchema` as `pa.DataFrameSchema` next to the SQLAlchemy models.
+- Validate at I/O boundaries: after vnstock fetch (raw → validated), before DB insert (computed → validated). Failed validation → log + quarantine row, don't crash pipeline.
 
 ---
 
@@ -248,38 +126,106 @@ uv run alembic upgrade head
 
 | Recommended | Alternative | When to Use Alternative |
 |-------------|-------------|-------------------------|
-| Pure pandas candlestick math (5 patterns) | TA-Lib (60 patterns) | If v2 requires 15+ patterns AND the team accepts a C build dependency |
-| JSONB for candlestick storage | Individual Boolean columns per pattern | If SQL filtering `WHERE CDL_HAMMER = 1 AND CDL_DOJI = 0` becomes a query need |
-| Expand `StockReport` Pydantic (one LLM call) | Separate LLM call for price levels only | If price-level reasoning needs a fresh context window not shared with narrative |
-| Sector momentum from existing `SectorSnapshot` | New crawl for sector index prices | If sector ETF price momentum (not score momentum) is needed for accuracy |
-| Rolling `avg_score_change` mean for momentum | MACD-style signal line on score series | If false signal suppression becomes important at v2 level |
+| `cachetools` (in-process TTL/LRU) | **Redis** (managed or self-hosted) | Only if we ever run multiple workers/processes that must share cache state. **Single-user APScheduler-in-process app does not.** Adds a sidecar to manage, secure, back up. |
+| `cachetools` | `aiocache` (abstraction over memory/Redis/Memcached) | If we genuinely expect to swap backends later. We don't — and `aiocache` adds an indirection layer for a swap that's unlikely to happen. |
+| `cachetools` | Python stdlib `functools.lru_cache` / `async-lru` | `lru_cache` has no TTL — wrong tool for indicators that go stale. `async-lru` is fine for trivial coroutine memoization but lacks TTL too. |
+| `diskcache` | SQLite directly | We'd reinvent diskcache. It IS SQLite, just wrapped. |
+| `hishel` | Hand-rolled httpx response cache | Hand-rolling RFC 9111 (vary headers, revalidation, stale-while-revalidate) is a tarpit. hishel is 1.x stable, maintained by encode (httpx authors' orbit). |
+| Loguru + `serialize=True` | `structlog` | If we were starting fresh, structlog. We aren't — loguru is everywhere in the codebase already. Cost > benefit. |
+| Loguru + `serialize=True` | stdlib `logging` + `python-json-logger` | More config, less ergonomic. Loguru already does this in one line. |
+| `prometheus-client` | `statsd` + statsd daemon | Push model needs a daemon. We have no daemon. Pull model is free here. |
+| `prometheus-client` | OpenTelemetry SDK | OTel is the future, but for a single-host single-user app the metrics-only Prom path is 10× simpler. Revisit if we ever export traces to an external backend. |
+| `prometheus-client` | Lightweight custom counter dict | Throwing away the standard tooling for ~5 lines of "saved" deps. False economy — we'd rebuild histograms badly. |
+| `pandera` | `great_expectations` | GE is a *framework* (config files, expectations stores, data docs HTML, CLI). Massive over-spec for in-line DataFrame checks in a 400-stock pipeline. Slow startup, heavy dep tree, opinionated runtime. |
+| `pandera` | Hand-rolled Pydantic models per row | Pydantic validates row-at-a-time — converting a 400×500 DataFrame to Pydantic models is slow and loses pandas semantics (NaN handling, dtype checks, vectorized constraints). Pandera validates the frame, not the rows. |
+| Alembic for indexes | `sqlalchemy-utils` | sqlalchemy-utils is a grab-bag (TimezoneType, JSON utilities, etc.) we don't need. Index DDL belongs in migrations regardless. |
+| Native PG partitioning | `citus` / `timescaledb` | Both require server extensions. Supabase free tier won't allow arbitrary extensions. Native declarative partitioning is enough at our scale. |
+
+---
+
+## What NOT to Use
+
+| Avoid | Why | Use Instead |
+|-------|-----|-------------|
+| **Redis** (as new dep) | Adds a sidecar service to install, run, monitor, and secure — for a single-process single-user app. No multi-worker scenario justifies it. | `cachetools` in-process + `diskcache` for persistence |
+| **Celery / RQ / Dramatiq** | Distributed task queue when we already have APScheduler in-process and one user. Pure complexity tax. | Existing APScheduler |
+| **Great Expectations** | Heavy framework, slow imports, JSON config files, expectation suites, data docs site generation — none of which we need. | `pandera` schemas |
+| **statsd / DataDog / New Relic** | Push metrics to external service we don't run, or pay for. | `prometheus-client` `/metrics` endpoint |
+| **OpenTelemetry full stack** (tracer + collector + exporter) | Massive for a 1-host app. The collector alone is a service to run. | `prometheus-client` for metrics; loguru JSON for "traces" via correlation IDs. Reconsider if we ever go multi-host. |
+| **`logging` stdlib JSONFormatter rewrite** | Means dual-logging-system limbo for months. | Loguru `serialize=True` |
+| **`asyncio.gather` for the 400-stock fan-out** | Unbounded concurrency → vnstock rate limits + thrash Postgres pool. | `anyio.Semaphore(N)` + task group; tune N (~10–20). No new dep. |
+| **`sqlalchemy-utils`** | Broad utility lib; we'd use < 1% of it. | Inline helpers / Alembic ops |
+| **`alembic-utils`** (for views/triggers) | We aren't using DB views/triggers/functions in v1.5 plan. | n/a |
+| **`asyncio-pool` / `aiomultiprocess`** | Process pool when the workload is I/O-bound (HTTP + DB). | `anyio` semaphore |
+| **TimescaleDB-specific features** | Supabase free won't let us add the extension. | Native PG partitioning if/when needed |
+
+---
+
+## Stack Patterns by Variant
+
+**If pipeline phase is I/O-bound (vnstock fetch, news scrape, Ollama call):**
+- Use `anyio.create_task_group()` + `anyio.Semaphore(10–20)` for bounded concurrency.
+- Wrap with `tenacity.retry` (already installed) for transient failures.
+- Cache responses with `hishel` at httpx layer.
+
+**If pipeline phase is CPU-bound (indicator computation, pattern detection):**
+- Stay sync inside the worker; pandas/numpy release the GIL on vectorized ops anyway.
+- If a phase becomes a bottleneck, move it to `asyncio.to_thread()` rather than a process pool. Single-user app — we don't need true parallelism.
+
+**If a result is reusable within a single pipeline run** (e.g., sector classification fetched once, used by 50 stocks):
+- `cachetools.TTLCache(maxsize=1024, ttl=3600)` module-level.
+
+**If a result is reusable across pipeline runs** (e.g., parsed financial statements, sector mapping):
+- `diskcache.Cache("var/cache/diskcache")` with explicit keys.
+
+**If pipeline NaN/missing-data ratio exceeds threshold:**
+- Pandera schema with `pa.Check(lambda s: s.isna().mean() < 0.05)` — fails loudly, pipeline quarantines symbol, doesn't poison downstream scoring.
 
 ---
 
 ## Version Compatibility
 
-| Package | Current | Compatibility Note |
-|---------|---------|-------------------|
-| pandas-ta | 0.4.71b0 | `mfi()`, `cmf()`, `cdl_doji()`, `cdl_inside()` confirmed available in this exact version (verified via `ta.Category` and `dir(ta)`) |
-| ollama | >=0.6 | Nested Pydantic models with `Literal` types work as `format=model_json_schema()` — confirmed in Context7 docs with vision/structured output examples |
-| pydantic | >=2.13 | `Literal["high", "medium", "low"]` renders as `{"enum": ["high", "medium", "low"]}` in JSON schema — Ollama respects enum constraints |
-| SQLAlchemy | >=2.0 | `JSON` column type (used for `content_json`) already in production; adding more `Float`/`String` nullable columns is standard |
+| Package | Compatible With | Notes |
+|---------|-----------------|-------|
+| `pandera[pandas] 0.31.1` | `pandas 2.2.x`, `pydantic 2.13.x`, `numpy 2.x` | Pandera 0.30+ explicitly supports Pydantic v2 and pandas 2.1+. Verified against pyproject.toml. |
+| `prometheus-fastapi-instrumentator 7.1.0` | `fastapi 0.135.x`, `starlette 0.40+` | 7.x line is current with FastAPI 0.115+. |
+| `hishel 1.2.1` | `httpx 0.28.x` | hishel 1.x targets httpx 0.27+. Matches our `httpx>=0.28`. |
+| `cachetools 7.0.6` | Python 3.12 | Pure Python, no constraints. Note: 7.x dropped Python 3.8; we're on 3.12 — fine. |
+| `diskcache 5.6.3` | Python 3.12, SQLite ≥ 3.7 | Pure Python. Storage dir must not be on a network FS. |
+| `prometheus-client 0.25.0` | Python 3.9+ | No FastAPI version coupling. |
+| **Existing `loguru 0.7.x`** | Python 3.12, asyncio | `serialize=True` + `contextualize()` are both stable since 0.6. No upgrade needed. |
+
+**Conflict watch:**
+- `pandera` pulls `typing_inspect` and `typeguard`. Both are widely used and unlikely to clash.
+- `hishel` storage drivers: pick *one* (`AsyncSQLiteStorage` recommended). Don't mix with on-disk filesystem storage in same app.
+- `prometheus-client` exposes a global default registry; `prometheus-fastapi-instrumentator` uses it by default. If we ever want to isolate metrics per test, pass `registry=CollectorRegistry()` explicitly.
+
+---
+
+## Fallback / Escape Hatches
+
+| Scenario | Fallback |
+|----------|----------|
+| We later run multiple uvicorn workers and need shared cache | Add `redis` + `aiocache` adapter. cachetools call sites are decorator-based and trivially swappable. Not v1.5. |
+| diskcache corrupts (rare, but SQLite on weird FS) | Delete `var/cache/diskcache/` — pure cache, no source-of-truth data. |
+| hishel cache returns stale data during vnstock outage | Force-refresh path: `client.get(url, extensions={"force_cache": False})` per request. Document in runbook. |
+| Prometheus scraper not installed | `/metrics` still works as a GET — manual `curl localhost:8000/metrics` for spot checks; health dashboard can read it directly. |
+| Pandera validation too strict, blocks pipeline | Schemas support `lazy=True` → collect all errors, log, optionally `coerce` instead of fail. Use `lazy=True` from day one in the pipeline; reserve `lazy=False` for tests. |
+| Loguru JSON output too noisy | Add `filter=` callable on the JSON sink to drop debug-level events. No code rewrite. |
 
 ---
 
 ## Sources
 
-| Claim | Source | Confidence |
-|-------|--------|------------|
-| pandas-ta 0.4.71b0 `mfi`, `cmf`, `vwap`, `obv` in volume category | Direct: `uv run python -c "import pandas_ta as ta; print(ta.Category)"` | HIGH |
-| `cdl_doji`, `cdl_inside` native (no TA-Lib); `cdl_pattern` requires TA-Lib | Direct: inspected `cdl_pattern` source via `inspect.getsource`; confirmed `if Imports["talib"]` guard | HIGH |
-| TA-Lib requires `.deb` system package on Linux | Context7 `/ta-lib/ta-lib` docs — `sudo dpkg -i ta-lib_0.6.4_amd64.deb` for Debian | HIGH |
-| TA-Lib NOT installed on this system | Direct: `uv run python -c "import talib"` → ImportError | HIGH |
-| Ollama nested Pydantic schemas with `Literal` work as `format=` | Context7 `/ollama/ollama-python` + `/llmstxt/ollama_llms_txt` structured output docs | HIGH |
-| `SectorSnapshot` has `avg_score_change` column | Direct: `db/models.py` line 439, confirmed nullable Float | HIGH |
-| `AnalysisReport.content_json` is JSONB (stores arbitrary dict) | Direct: `db/models.py` line 387 — `Mapped[dict] = mapped_column(JSON)` | HIGH |
-| OBV already computed in `TechnicalIndicator` | Direct: `db/models.py` line 160, `analysis/technical.py` line 183 | HIGH |
+- PyPI metadata fetched 2026-04-29 for: `structlog`, `prometheus-client`, `pandera`, `cachetools`, `aiocache`, `hishel`, `diskcache`, `async-lru`, `redis`, `sqlalchemy-utils`, `prometheus-fastapi-instrumentator`, `starlette-prometheus`, `opentelemetry-api`, `great-expectations` — HIGH confidence on versions.
+- `apps/prometheus/pyproject.toml` (read directly) — HIGH confidence on existing pinned versions.
+- `apps/prometheus/src/localstock/config.py` (read directly) — confirmed APScheduler-in-process model, no Redis configured, single uvicorn assumption.
+- Loguru docs (`serialize`, `contextualize`, `bind`) — features are pre-0.7, stable. HIGH confidence from training + cross-checked against changelog dates.
+- Pandera docs — `[pandas]` extra, Pydantic v2 support since 0.20.x. HIGH confidence (verified via PyPI requires_dist).
+- hishel project (encode-adjacent author) — HTTP caching transport, RFC 9111. MEDIUM-HIGH (training + PyPI 1.2.1 release confirms maturity).
+- prometheus-fastapi-instrumentator README — middleware integration pattern. HIGH confidence (widely used, 7.x stable).
+- Postgres declarative partitioning since PG14 — supported on Supabase (PG15+). HIGH confidence.
 
 ---
-*Stack research for: LocalStock v1.4 AI Analysis Depth*
-*Researched: 2026-04-25*
+*Stack research for: LocalStock v1.5 Performance & Data Quality additions*
+*Researched: 2026-04-29*
