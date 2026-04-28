@@ -113,7 +113,50 @@
 
 | REQ-ID | Phase | Plan(s) | Status |
 |--------|-------|---------|--------|
-| _to be populated_ | | | |
+| OBS-01 | Phase 22 | TBD | Pending |
+| OBS-02 | Phase 22 | TBD | Pending |
+| OBS-03 | Phase 22 | TBD | Pending |
+| OBS-04 | Phase 22 | TBD | Pending |
+| OBS-05 | Phase 22 | TBD | Pending |
+| OBS-06 | Phase 22 | TBD | Pending |
+| OBS-07 | Phase 23 | TBD | Pending |
+| OBS-08 | Phase 23 | TBD | Pending |
+| OBS-09 | Phase 23 | TBD | Pending |
+| OBS-10 | Phase 23 | TBD | Pending |
+| OBS-11 | Phase 24 | TBD | Pending |
+| OBS-12 | Phase 24 | TBD | Pending |
+| OBS-13 | Phase 24 | TBD | Pending |
+| OBS-14 | Phase 24 | TBD | Pending |
+| OBS-15 | Phase 24 | TBD | Pending |
+| OBS-16 | Phase 24 | TBD | Pending |
+| OBS-17 | Phase 24 | TBD | Pending |
+| DQ-01  | Phase 25 | TBD | Pending |
+| DQ-02  | Phase 25 | TBD | Pending |
+| DQ-03  | Phase 25 | TBD | Pending |
+| DQ-04  | Phase 25 | TBD | Pending |
+| DQ-05  | Phase 25 | TBD | Pending |
+| DQ-06  | Phase 25 | TBD | Pending |
+| DQ-07  | Phase 25 | TBD | Pending |
+| DQ-08  | Phase 25 | TBD | Pending |
+| CACHE-01 | Phase 26 | TBD | Pending |
+| CACHE-02 | Phase 26 | TBD | Pending |
+| CACHE-03 | Phase 26 | TBD | Pending |
+| CACHE-04 | Phase 26 | TBD | Pending |
+| CACHE-05 | Phase 26 | TBD | Pending |
+| CACHE-06 | Phase 26 | TBD | Pending |
+| CACHE-07 | Phase 26 | TBD | Pending |
+| PERF-01 | Phase 27 | TBD | Pending |
+| PERF-02 | Phase 27 | TBD | Pending |
+| PERF-03 | Phase 27 | TBD | Pending |
+| PERF-04 | Phase 27 | TBD | Pending |
+| PERF-05 | Phase 27 | TBD | Pending |
+| PERF-06 | Phase 27 | TBD | Pending |
+| DB-01 | Phase 28 | TBD | Pending |
+| DB-02 | Phase 28 | TBD | Pending |
+| DB-03 | Phase 28 | TBD | Pending |
+| DB-04 | Phase 28 | TBD | Pending |
+
+**Coverage:** 42/42 v1.5 requirements mapped ✓ (no orphans, no duplicates)
 
 ---
 
