@@ -752,26 +752,29 @@ grep -rEln 'logger\.[a-z]+\(\s*f["\x27]' apps/prometheus/src | wc -l  # 0
 | A6 | No existing `.github/workflows/` directory exists | §7 GHA snippet | Verified absent; Phase 22 must decide whether to introduce one or defer GHA gate to later milestone. |
 | A7 | Helios will optionally send `X-Request-ID`; not required | §3 middleware | Helios changes are out-of-scope for Phase 22 (frontend phase later). Backend works either way. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Where does `configure_logging()` run for CLI scripts (`bin/crawl.py`, `bin/analyze.py`, `bin/score.py`)?**
    - What we know: They import `from loguru import logger` and emit logs. They don't go through `create_app()`.
    - What's unclear: Should each `bin/*.py` call `configure_logging()` at module top, or import a shared `bin/__init__.py` that does so?
-   - Recommendation: Add `configure_logging()` call at top of each `bin/*.py` (idempotent; cheap). Planner can add this as a small task.
+   - **RESOLVED:** ACCEPTED — Add `configure_logging()` call at top of each `bin/*.py` (idempotent; cheap). Wired in plan 22-01 Task 4.
 
 2. **Should `RequestLogMiddleware` skip `/health/*` and `/metrics` paths?**
    - What we know: Health probes hit every few seconds; doubling log volume per scrape.
    - What's unclear: Phase 22 spec doesn't say.
-   - Recommendation: Skip `/health` and `/metrics` (Phase 23 will add `/metrics`). Configurable env: `LOG_REQUEST_SKIP_PATHS=/health,/metrics`. Planner decides.
+   - **RESOLVED:** REJECTED skip — log all paths including `/health` and `/metrics` (single-user app, low volume). Volume concern noted as W-3 from review; revisit in Phase 23 metrics work if needed.
 
 3. **Do we need `logger.complete()` on FastAPI shutdown?**
    - What we know: `enqueue=True` keeps a worker thread; on SIGTERM the queue may have pending records.
    - What's unclear: Whether uvicorn graceful shutdown drains atexit handlers before process exits.
-   - Recommendation: Call `logger.complete()` in `get_lifespan` post-yield block. Cheap insurance.
+   - **RESOLVED:** ACCEPTED — Call `logger.complete()` in `get_lifespan` post-yield block. Wired in plan 22-04 Task 2.
 
 4. **`field_validator` on `log_level`?**
    - What we know: `LOG_LEVEL=invalid` will currently start the app and fail at first `logger.add(level=...)` — late error.
-   - Recommendation: Add validator that uppercases + checks against loguru's level set. Fail-fast.
+   - **RESOLVED:** ACCEPTED — Add validator that uppercases + checks against loguru's level set. Fail-fast. Wired in plan 22-02.
+
+5. **Minimal `.github/workflows/lint.yml` for OBS-06 CI gate?**
+   - **RESOLVED:** ACCEPTED — Add minimal `.github/workflows/lint.yml` in plan 22-06.
 
 ## Environment Availability
 

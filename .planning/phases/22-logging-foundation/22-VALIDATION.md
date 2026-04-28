@@ -41,8 +41,8 @@ created: 2025-04-23
 | TBD | TBD | TBD | OBS-01 | — | All log lines parseable as JSON | unit | `pytest tests/test_observability/test_json_format.py` | ❌ W0 | ⬜ pending |
 | TBD | TBD | TBD | OBS-02 | — | request_id propagated cross-module | integration | `pytest tests/test_observability/test_request_id.py` | ❌ W0 | ⬜ pending |
 | TBD | TBD | TBD | OBS-03 | — | run_id present in pipeline logs | integration | `pytest tests/test_observability/test_run_id.py` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | OBS-04 | T-22-01 | Tokens/passwords redacted as `***` | unit | `pytest tests/test_observability/test_redaction.py` | ❌ W0 | ⬜ pending |
-| TBD | TBD | TBD | OBS-05 | — | InterceptHandler bridges stdlib | unit | `pytest tests/test_observability/test_intercept.py` | ❌ W0 | ⬜ pending |
+| TBD | TBD | TBD | OBS-04 | T-22-01 | Request log middleware emits method/path/status/duration_ms | integration | `pytest tests/test_observability/test_request_log.py` | ❌ W0 | ⬜ pending |
+| TBD | TBD | TBD | OBS-05 | — | Tokens/passwords/auth headers redacted as `***` | unit | `pytest tests/test_observability/test_redaction.py` | ❌ W0 | ⬜ pending |
 | TBD | TBD | TBD | OBS-06 | — | CI lint catches f-string logger calls | shell | `bash scripts/lint-no-fstring-logs.sh` | ❌ W0 | ⬜ pending |
 
 *Final task IDs will be assigned by the planner. Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
