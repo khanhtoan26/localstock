@@ -230,6 +230,14 @@ def _validate_price_levels(report, current_close: float):
 
     # Check 1: Price ordering (only when all three are present)
     if ep is not None and sl is not None and tp is not None:
+        # Auto-correct simple stop_loss/entry_price inversion
+        if sl > ep and ep < tp and sl < tp:
+            logger.info(
+                f"Auto-correcting inverted stop_loss/entry_price: "
+                f"swapping sl={sl} <-> ep={ep}"
+            )
+            report.stop_loss, report.entry_price = ep, sl
+            sl, ep = ep, sl
         if not (sl < ep < tp):
             _null_prices()
             return report
