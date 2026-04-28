@@ -1,0 +1,12 @@
+# .pre-commit-config.yaml
+# Phase 22 (OBS-06): block f-string log calls at commit time.
+# The hook simply invokes the canonical lint script so pre-commit and CI agree.
+repos:
+  - repo: local
+    hooks:
+      - id: no-fstring-log
+        name: "loguru: no f-string log calls"
+        entry: bash apps/prometheus/scripts/lint-no-fstring-logs.sh
+        language: system
+        pass_filenames: false
+        always_run: true
