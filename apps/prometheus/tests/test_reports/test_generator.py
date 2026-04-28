@@ -565,11 +565,13 @@ class TestValidatePriceLevels:
         assert result.target_price == 82000
 
     def test_invalid_ordering_entry_above_target(self):
+        """Auto-corrects entry_price/target_price inversion."""
         report = self._make_report(ep=85000, sl=70000, tp=82000)
         result = _validate_price_levels(report, current_close=74000.0)
-        assert result.entry_price is None
-        assert result.stop_loss is None
-        assert result.target_price is None
+        # Swapped: ep=82000, tp=85000 → valid ordering
+        assert result.stop_loss == 70000
+        assert result.entry_price == 82000
+        assert result.target_price == 85000
 
     def test_price_outside_30pct_range(self):
         # target = 200000 is >30% away from close=74000

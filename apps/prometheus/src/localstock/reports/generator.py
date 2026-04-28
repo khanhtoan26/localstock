@@ -238,6 +238,14 @@ def _validate_price_levels(report, current_close: float):
             )
             report.stop_loss, report.entry_price = ep, sl
             sl, ep = ep, sl
+        # Auto-correct entry_price/target_price inversion
+        if sl < ep and ep > tp and sl < tp:
+            logger.info(
+                f"Auto-correcting inverted entry_price/target_price: "
+                f"swapping ep={ep} <-> tp={tp}"
+            )
+            report.entry_price, report.target_price = tp, ep
+            ep, tp = tp, ep
         if not (sl < ep < tp):
             _null_prices()
             return report
