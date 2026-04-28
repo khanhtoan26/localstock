@@ -25,7 +25,7 @@ configure_vnstock_api_key()
 
 
 async def main(top_n: int = 10) -> None:
-    logger.info(f"Generating AI reports for top {top_n} stocks...")
+    logger.info("cli.run_reports.started", top_n=top_n)
     factory = get_session_factory()
     async with factory() as session:
         service = ReportService(session)

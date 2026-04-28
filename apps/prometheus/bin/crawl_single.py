@@ -23,7 +23,7 @@ configure_vnstock_api_key()
 
 
 async def main(symbol: str) -> None:
-    logger.info(f"Crawling data for {symbol}...")
+    logger.info("cli.crawl_single.started", symbol=symbol)
     factory = get_session_factory()
     async with factory() as session:
         pipeline = Pipeline(session)

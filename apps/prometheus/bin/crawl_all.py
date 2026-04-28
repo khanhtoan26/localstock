@@ -23,7 +23,7 @@ configure_vnstock_api_key()
 
 
 async def main(run_type: str = "daily") -> None:
-    logger.info(f"Starting full pipeline ({run_type})...")
+    logger.info("cli.crawl_all.started", run_type=run_type)
     factory = get_session_factory()
     async with factory() as session:
         pipeline = Pipeline(session)
