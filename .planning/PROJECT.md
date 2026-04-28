@@ -8,19 +8,9 @@ LocalStock là một AI Stock Agent cá nhân cho thị trường chứng khoán
 
 Agent tự động phân tích và xếp hạng cổ phiếu HOSE — cho tôi danh sách gợi ý đáng mua kèm lý do rõ ràng, cập nhật hàng ngày, không tốn phí API.
 
-## Current Milestone: v1.4 AI Analysis Depth
+## Current Milestone: Planning next milestone
 
-**Goal:** Transform robotic AI recommendations into actionable trade guidance — with price levels, signal conflict resolution, recent catalysts, and explicit risk ratings.
-
-**Target features:**
-- Specific entry/exit/stop-loss price levels in each stock report
-- Signal conflict explanation (when technical and fundamental signals disagree)
-- Recent catalyst section (what changed this week that affects the recommendation)
-- Explicit risk rating per recommendation (high/medium/low with reasoning)
-- More signals fed to LLM (candlestick patterns, volume analysis, sector trend)
-- Restructured prompts to extract structured, actionable outputs
-
-**Previous milestone:** v1.3 UI/UX Refinement shipped 2026-04-25 (Phases 14–17, 14 plans)
+**Previous milestone:** v1.4 AI Analysis Depth shipped 2026-04-28 (Phases 18–21, 11 plans)
 
 ## Requirements
 
@@ -55,14 +45,16 @@ Agent tự động phân tích và xếp hạng cổ phiếu HOSE — cho tôi d
 - ✓ Market session progress bar trên header (HOSE phases, countdown) — v1.3
 - ✓ Market overview 4 metrics với data thật (GET /api/market/summary) — v1.3
 
+- ✓ 5 candlestick patterns + volume divergence + sector momentum signals — v1.4
+- ✓ Specific entry/exit/stop-loss price levels generated in stock report — v1.4
+- ✓ Signal conflict explanation (technical vs fundamental disagreement surfaced) — v1.4
+- ✓ Recent catalyst section in report (7-day news + score delta) — v1.4
+- ✓ Explicit risk rating per recommendation (high/medium/low with reasoning) — v1.4
+- ✓ Restructured AI prompts producing structured, actionable JSON output — v1.4
+
 ### Active
 
-- [ ] Specific entry/exit/stop-loss price levels generated in stock report
-- [ ] Signal conflict explanation (technical vs fundamental disagreement surfaced explicitly)
-- [ ] Recent catalyst section in report (what changed this week)
-- [ ] Explicit risk rating per recommendation (high/medium/low with reasoning)
-- [ ] Additional signals fed to LLM: candlestick patterns, volume divergence, sector momentum
-- [ ] Restructured AI prompts producing structured, actionable JSON output
+(None — start next milestone with `/gsd-new-milestone`)
 
 ### Out of Scope
 
@@ -76,14 +68,14 @@ Agent tự động phân tích và xếp hạng cổ phiếu HOSE — cho tôi d
 
 ## Context
 
-- **Current version:** v1.3 shipped 2026-04-25
-- **Codebase:** ~8,500 LOC Python (backend) + ~41,200 LOC TypeScript (frontend) + ~4,100 LOC CSS (v1.2 baseline; +31,495/-3,786 LOC in v1.3 across 399 files)
+- **Current version:** v1.4 shipped 2026-04-28
+- **Codebase:** ~8,500 LOC Python (backend) + ~41,200 LOC TypeScript (frontend) + ~4,100 LOC CSS (v1.4: 370 files changed, +24,896/-23,598 LOC)
 - **Backend:** Python + FastAPI + SQLAlchemy + Alembic + PostgreSQL (Supabase)
 - **Frontend:** Next.js 16 + shadcn/ui + Tailwind v4 + lightweight-charts v5
-- **AI:** Ollama local LLM (RTX 3060, 12GB VRAM) for sentiment analysis and report generation
+- **AI:** Ollama local LLM (RTX 3060, 12GB VRAM) — num_ctx 8192, StockReport 15 fields
 - **Notifications:** Telegram bot via python-telegram-bot
 - **Automation:** APScheduler daily pipeline after market close (15:30)
-- **Tests:** 324 backend unit tests + 8 new market API tests (332 total) + 44 frontend vitest tests
+- **Tests:** 326+ backend tests + 55 frontend vitest tests
 - **Thị trường mục tiêu:** Sàn HOSE (~400 mã có thanh khoản cao)
 
 ## Constraints
@@ -113,6 +105,10 @@ Agent tự động phân tích và xếp hạng cổ phiếu HOSE — cho tôi d
 | nuqs removed — search dùng local useState | URL persistence thêm complexity không cần thiết cho tool cá nhân | ✓ Good — v1.3 |
 | GET /api/market/summary dùng MAX(date) | Robust với weekends/holidays — không bao giờ dùng date.today() | ✓ Good — v1.3 |
 | MarketSummaryCards staleTime 30min | Khớp với daily crawl rhythm — tránh refetch thừa | ✓ Good — v1.3 |
+| Pure OHLC math for candlestick patterns | No TA-Lib C binary dependency — pandas-ta + math sufficient | ✓ Good — v1.4 |
+| No new API endpoints for v1.4 | content_json JSONB absorbs new StockReport fields automatically | ✓ Good — v1.4 |
+| num_ctx 8192 (from 4096) | Sufficient headroom for new signal prompt content | ✓ Good — v1.4 |
+| Auto-correct price inversions | Swap rather than null when stop/entry/target ordering fixable | ✓ Good — v1.4 |
 
 ## Evolution
 
@@ -132,4 +128,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-25 after milestone v1.4 started*
+*Last updated: 2026-04-28 after v1.4 milestone shipped*

@@ -92,6 +92,52 @@
 
 ---
 
+## Milestone: v1.4 — AI Analysis Depth
+
+**Shipped:** 2026-04-28
+**Phases:** 4 (18–21) | **Plans:** 11 | **Commits:** 73
+
+### What Was Built
+- Signal computation: 5 candlestick patterns (pandas-ta + pure OHLC math), MFI-based volume divergence with 100k liquidity gate, 4-zone sector momentum classification
+- Prompt restructuring: StockReport extended from 9→15 fields, num_ctx 8192, structured signal injection, post-generation price validation with auto-correction
+- Report content: Entry zone (support + Bollinger), stop-loss/target price (S/R-anchored), risk rating (high/medium/low + Vietnamese reasoning), signal conflict detection, 7-day news catalyst synthesis
+- Frontend trade plan: TradePlanSection with VND prices, colored risk badge + tooltip, conditional signal conflict alert, graceful degradation
+- 5 UAT bug fixes: formatVND rounding, NaN JSON storage, vnstock 4.x wide-format, price inversion auto-correction, LLM risk_rating prompt
+
+### What Worked
+- "No new API endpoints" decision — content_json JSONB absorbed 6 new StockReport fields with zero backend route changes
+- TDD for pure computation functions (compute_entry_zone, compute_stop_loss, compute_target_price) — all 22 tests written before service wiring
+- Post-generation validation caught real LLM price hallucinations — auto-correction (swap stop↔entry when fixable) prevented null trade plans
+- Phase dependency chain (18→19→20→21) was clean — each phase's contract was fully defined before downstream consumption
+- UAT found 2 real issues (formatVND rounding, risk_rating null) that would have shipped as bugs — verification gates work
+
+### What Was Inefficient
+- vnstock 4.0.1 breaking change (DataFrame format) was discovered in production UAT, not during crawl development — should have pinned version or tested upgrade path
+- ROADMAP.md plan checkboxes (phases 19-21) left unchecked — same lesson from v1.3 still not automated
+- Phases 18-19 lack individual VERIFICATION.md — verified only through Phase 20's downstream integration
+- NaN-in-JSON bug required session rollback fix — defensive coding (clean NaN before any JSON serialization) should be a standard pattern
+
+### Patterns Established
+- `_clean_nan()` recursive helper for nested dict/list NaN→None conversion before JSON storage
+- Price validation auto-correction: swap prices when ordering is fixable, null only when not
+- Wide-format DataFrame detection: check `"yearReport" in df.columns` to distinguish vnstock 3.x vs 4.x
+- `maximumFractionDigits: 1` in Intl.NumberFormat for prices that may have decimals (never Math.round)
+- Signal formatters as pure functions (format_candlestick, format_volume_divergence) for prompt injection
+
+### Key Lessons
+1. Pin critical data dependencies (vnstock version) or test upgrade paths in CI — breaking format changes cause pipeline failures
+2. Post-generation LLM validation is essential — price hallucinations are frequent; auto-correction is better than null
+3. Defensive NaN handling should be a project-wide pattern — any data touching JSON serialization needs NaN→None cleaning
+4. VERIFICATION.md should be created per-phase, not relied on from downstream — audit flagged this as tech debt
+5. UAT is the last safety gate — both issues found would have degraded the user experience if shipped
+
+### Cost Observations
+- Model mix: ~15% opus (planning/verification), ~70% sonnet (execution), ~15% haiku (exploration)
+- Sessions: ~3 across 3 days
+- Notable: v1.4 was the most bug-dense milestone — 5 issues found and fixed during UAT, all from external factors (vnstock update, LLM non-determinism, JS rounding)
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -102,6 +148,7 @@
 | v1.1 | ~3 | 4 | Theme system, educational hub, glossary linking |
 | v1.2 | ~2 | 4 | Admin Console with job monitoring and pipeline control |
 | v1.3 | ~3 | 4 | Pure module extraction + TDD stubs; code review auto-fix pattern |
+| v1.4 | ~3 | 4 | Post-LLM validation; NaN defensive patterns; UAT as last safety gate |
 
 ### Cumulative Quality
 
@@ -111,6 +158,7 @@
 | v1.1 | 326 | 0 | 12 |
 | v1.2 | 326 | 0 | 8 |
 | v1.3 | 332 | 44 | 14 |
+| v1.4 | 326+ | 55 | 11 |
 
 ### Top Lessons (Verified Across Milestones)
 
@@ -118,3 +166,5 @@
 2. Keep requirement tracking up-to-date per phase, not per milestone
 3. Pure module extraction (no React deps) enables fast vitest unit testing — establish this pattern early in UI phases
 4. Settle design decisions in CONTEXT.md before execution — mid-execution pivots (sidebar, colors) are expensive
+5. Pin critical data dependencies or test upgrade paths — vnstock 4.x broke pipeline at UAT
+6. Post-generation LLM validation is essential — auto-correct when possible, null only as last resort

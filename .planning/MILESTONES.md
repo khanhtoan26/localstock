@@ -59,3 +59,19 @@
 **Known deferred items at close:** 2 (Phase 07 UAT, Phase 09 verification — v1.1 artifacts)
 
 ---
+
+## v1.4 AI Analysis Depth (Shipped: 2026-04-28)
+
+**Phases completed:** 4 phases (18-21), 11 plans
+
+**Key accomplishments:**
+
+- Signal computation: 5 candlestick patterns (doji, inside, hammer, engulfing, shooting star) via pandas-ta + pure OHLC math, MFI-based volume divergence with 100k liquidity gate, 4-zone sector momentum classification
+- Prompt restructuring: StockReport extended from 9 to 15 fields, num_ctx raised to 8192, structured signal injection (🔔 TÍN HIỆU BỔ SUNG section), post-generation price validation with auto-correction
+- Report content: Entry zone (support + Bollinger, close±2% fallback), stop-loss/target price (S/R-anchored), risk rating (high/medium/low + Vietnamese reasoning), signal conflict detection (|tech−fund|>25), 7-day news catalyst synthesis
+- Frontend trade plan: TradePlanSection with VND-formatted prices + % variance, colored risk badge with tooltip, conditional signal conflict alert, graceful degradation for pre-v1.4 reports
+- Bug fixes during UAT: formatVND decimal precision, NaN→None for JSON storage, vnstock 4.x wide-format handling, LLM risk_rating prompt strengthening, price inversion auto-correction
+
+**Known deferred items at close:** 1 (Phase 21 VERIFICATION.md human_needed — UAT completed all checks)
+
+---

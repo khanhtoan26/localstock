@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.4
 milestone_name: AI Analysis Depth
-status: executing
-stopped_at: Phase 19 complete
-last_updated: "2026-04-28T10:48:00.000Z"
-last_activity: 2026-04-28 — Phase 19 executed (3 plans, 3 waves), StockReport 15 fields, signal formatters, prompt restructuring, price validation
+status: shipped
+stopped_at: Milestone complete
+last_updated: "2026-04-28T15:35:00.000Z"
+last_activity: 2026-04-28 — v1.4 milestone shipped (4 phases, 11 plans)
 progress:
-  total_phases: 5
-  completed_phases: 2
-  total_plans: 7
-  completed_plans: 7
+  total_phases: 4
+  completed_phases: 4
+  total_plans: 11
+  completed_plans: 11
   percent: 100
 ---
 
@@ -18,17 +18,15 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-25)
+See: .planning/PROJECT.md (updated 2026-04-28)
 
 **Core value:** Agent tự động phân tích và xếp hạng cổ phiếu HOSE — cho tôi danh sách gợi ý đáng mua kèm lý do rõ ràng, cập nhật hàng ngày, không tốn phí API.
-**Current focus:** Phase 19 — Prompt & Schema Restructuring — COMPLETE
+**Current focus:** Planning next milestone
 
 ## Current Position
 
-Phase: 21 of 21 (Frontend Trade Plan Display) — COMPLETED ✅
-Plan: 2 of 2
-Status: All plans executed, tests pass (55/55 frontend, 37/37 crawler)
-Last activity: 2026-04-28 — Phase 21 executed (2 plans, 2 waves)
+Milestone: v1.4 AI Analysis Depth — SHIPPED ✅
+Next: `/gsd-new-milestone` to start v1.5
 
 Progress: [██████████] 100%
 
@@ -36,31 +34,19 @@ Progress: [██████████] 100%
 
 **Velocity:**
 
-- Total plans completed: 53 (v1.0: 27, v1.1: 12, v1.2: 8, v1.3: 15, v1.4: 8)
-- Total plans created: 53 (v1.4 Phase 21: +2)
-- Average duration: —
-- Total execution time: —
+- Total plans completed: 53 (v1.0: 23, v1.1: 12, v1.2: 8, v1.3: 14, v1.4: 11)
+- Total plans created: 53
 
 ## Accumulated Context
 
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.
-Full decision history from v1.0–v1.3 archived in `.planning/milestones/`.
-
-Recent decisions affecting v1.4:
-
-- No new Python dependencies — all v1.4 features use already-installed packages (pandas-ta, Ollama SDK, pydantic)
-- No new API endpoints — content_json JSONB absorbs new StockReport fields automatically
-- No new DB tables — signals route through existing indicator_data dict into LLM prompt
+Full decision history from v1.0–v1.4 archived in `.planning/milestones/`.
 
 ### Watch Out For (from research)
 
-- LLM price hallucination — inject exact S/R values in prompt; validate post-generation
-- Context window overflow — raise num_ctx from 4096 to 6144+ before adding new prompt content (Phase 19)
-- StockReport backward compat — all new fields must be Optional[T] = None (Phase 19)
-- TA-Lib NOT installed — use pandas-ta native + pure OHLC math only (Phase 18)
-- Entry zone fallback — close ± 2% for stocks with <40 price history rows (Phase 20)
+(Cleared at milestone boundary — new items from next milestone's research phase)
 
 ### Pending Todos
 
@@ -68,7 +54,7 @@ None.
 
 ### Blockers/Concerns
 
-- Code review Phase 17: 3 warnings in REVIEW.md not yet fixed (silent zero-to-null, hardcoded strings, date-alignment) — non-blocking for v1.4
+None.
 
 ## Deferred Items
 
@@ -78,11 +64,10 @@ Items carried over from v1.3:
 |----------|------|--------|
 | uat | Phase 07: 07-UAT.md — 9 pending scenarios | testing |
 | verification | Phase 09: 09-VERIFICATION.md | human_needed |
+| verification | Phase 21: 21-VERIFICATION.md | human_needed (UAT completed) |
 
 ## Session Continuity
 
-Last session: 2026-04-26T02:24:49.273Z
-Stopped at: Phase 19 context gathered
-Resume: `/gsd-plan-phase 19`
-
-**Planned Phase:** 19 (Prompt & Schema Restructuring) — 3 plans — 2026-04-28T03:08:08.231Z
+Last session: 2026-04-28
+Stopped at: v1.4 milestone shipped
+Resume: `/gsd-new-milestone`
