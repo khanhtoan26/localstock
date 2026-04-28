@@ -175,7 +175,10 @@ class Pipeline:
                     period = (
                         f"Q{length}" if str(length).isdigit() else str(length)
                     )
-                    data = row.to_dict()
+                    data = {
+                        k: (None if isinstance(v, float) and v != v else v)
+                        for k, v in row.to_dict().items()
+                    }
                     await self.financial_repo.upsert_statement(
                         symbol=symbol,
                         year=year,
