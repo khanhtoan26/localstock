@@ -11,11 +11,11 @@ export function formatScore(value: number | null | undefined): string {
   return value.toFixed(1);
 }
 
-/** Format Vietnamese price (VND uses dots as thousand separators) */
-const vnFormatter = new Intl.NumberFormat("vi-VN");
+/** Format Vietnamese price (VND uses dots as thousand separators, 1 decimal max) */
+const vnFormatter = new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 1 });
 export function formatVND(value: number | null | undefined): string {
   if (value == null) return "—";
-  return vnFormatter.format(Math.round(value));
+  return vnFormatter.format(value);
 }
 
 /** Format percentage with 1 decimal + % */
