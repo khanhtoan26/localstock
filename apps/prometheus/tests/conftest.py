@@ -1,9 +1,38 @@
 """Shared pytest fixtures for LocalStock tests."""
 
+import os
+
+# D-08: enqueue=False guard — sentinel must be set BEFORE configure_logging() is imported,
+# so any module-level loguru configuration sees pytest mode and avoids background threads
+# that can hang teardown (Phase 22 CONTEXT.md D-08).
+os.environ.setdefault("PYTEST_CURRENT_TEST", "init")
+
 from datetime import date
 
 import pandas as pd
 import pytest
+from loguru import logger
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _configure_test_logging():
+    """Force LOG_LEVEL=DEBUG and enqueue=False under pytest (CONTEXT.md D-08).
+
+    The ImportError fallback is intentional: during Wave 0 (test scaffolds) the
+    `localstock.observability` package may not yet exist. The existing test suite
+    must continue to collect and run while later waves land the implementation.
+    """
+    os.environ["LOG_LEVEL"] = "DEBUG"
+    try:
+        from localstock.observability.logging import configure_logging
+
+        configure_logging()
+    except ImportError:
+        # Wave 0 ran before Wave 1 — observability package not yet created.
+        # Allowed: tests for non-observability suites still work.
+        pass
+    yield
+    logger.complete()
 
 
 @pytest.fixture
