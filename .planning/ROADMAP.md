@@ -58,7 +58,7 @@
 
 - [x] **Phase 18: Signal Computation** - Candlestick pattern detection + volume divergence + sector momentum signal methods
 - [ ] **Phase 19: Prompt & Schema Restructuring** - Expanded StockReport Pydantic model + restructured prompts + context window + post-generation validation
-- [ ] **Phase 20: Service Wiring & Report Content** - Full pipeline integration delivering entry/stop-loss/target/risk/conflict/catalyst in every report
+- [x] **Phase 20: Service Wiring & Report Content** - Full pipeline integration delivering entry/stop-loss/target/risk/conflict/catalyst in every report — completed 2026-04-28
 - [ ] **Phase 21: Frontend Trade Plan Display** - TradePlanSection on stock detail page with VND-formatted prices, risk badge, and conditional conflict section
 
 ## Phase Details
