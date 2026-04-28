@@ -6,6 +6,8 @@ Per Pitfall 4: Health check before LLM calls — skip sentiment if Ollama is dow
 Per REPT-01: StockReport model for structured report generation output.
 """
 
+from typing import Optional
+
 import httpx
 from loguru import logger
 from ollama import AsyncClient, ResponseError
@@ -40,8 +42,10 @@ class SentimentResult(BaseModel):
 class StockReport(BaseModel):
     """Structured report output from LLM for stock analysis.
 
-    Per REPT-01: All 9 sections for a complete AI-generated analysis report.
+    Per REPT-01: All 15 fields for a complete AI-generated analysis report.
     Used as Ollama format parameter for structured JSON generation.
+    9 required str fields + 6 Optional fields (entry_price, stop_loss,
+    target_price, risk_rating, catalyst, signal_conflicts).
 
     Attributes:
         summary: 2-3 sentence overview of the stock.
@@ -53,6 +57,12 @@ class StockReport(BaseModel):
         swing_trade_suggestion: Swing trade suggestion with T+3 warning.
         recommendation: Mua mạnh / Mua / Nắm giữ / Bán / Bán mạnh.
         confidence: Cao / Trung bình / Thấp.
+        entry_price: Suggested entry price in VND (numeric).
+        stop_loss: Suggested stop-loss price in VND (numeric).
+        target_price: Suggested target price in VND (numeric).
+        risk_rating: Risk level — high / medium / low.
+        catalyst: Recent catalyst driving the stock.
+        signal_conflicts: Conflicts between technical and fundamental signals.
     """
 
     summary: str = Field(description="Tóm tắt 2-3 câu về mã cổ phiếu")
@@ -64,6 +74,12 @@ class StockReport(BaseModel):
     swing_trade_suggestion: str = Field(description="Gợi ý lướt sóng kèm cảnh báo T+3")
     recommendation: str = Field(description="Mua mạnh / Mua / Nắm giữ / Bán / Bán mạnh")
     confidence: str = Field(description="Cao / Trung bình / Thấp")
+    entry_price: Optional[float] = Field(default=None, description="Giá vào lệnh (VND, số)")
+    stop_loss: Optional[float] = Field(default=None, description="Giá cắt lỗ (VND, số)")
+    target_price: Optional[float] = Field(default=None, description="Giá mục tiêu (VND, số)")
+    risk_rating: Optional[str] = Field(default=None, description="high / medium / low")
+    catalyst: Optional[str] = Field(default=None, description="Chất xúc tác gần đây")
+    signal_conflicts: Optional[str] = Field(default=None, description="Xung đột tín hiệu kỹ thuật-cơ bản")
 
 
 class OllamaClient:
@@ -186,7 +202,7 @@ class OllamaClient:
             symbol: Stock ticker symbol (e.g., "VNM") for logging.
 
         Returns:
-            StockReport with all 9 analysis sections filled by LLM.
+            StockReport with all 15 fields filled by LLM.
 
         Raises:
             ConnectionError: If Ollama server is not reachable (retried 2 times).
@@ -202,7 +218,7 @@ class OllamaClient:
                 {"role": "user", "content": data_prompt},
             ],
             format=StockReport.model_json_schema(),
-            options={"temperature": 0.3, "num_ctx": 4096},
+            options={"temperature": 0.3, "num_ctx": 8192},
             keep_alive=self.keep_alive,
         )
 

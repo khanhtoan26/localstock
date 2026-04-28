@@ -1,12 +1,13 @@
 """Tests for StockReport model, ReportDataBuilder, prompts, and OllamaClient.generate_report().
 
 Tests:
-- StockReport has all 9 required fields
+- StockReport has all 15 fields (9 required + 6 Optional)
 - StockReport validates correctly with sample data
+- StockReport backward compatibility (9-field JSON still deserializes)
 - build_report_prompt returns formatted string with expected sections
 - build_report_prompt handles None values gracefully
 - ReportDataBuilder.build returns dict with all template keys populated
-- build_report_prompt output is under 3000 characters
+- build_report_prompt output is under character budget
 - REPORT_SYSTEM_PROMPT contains Vietnamese instructions, T+3, long-term/swing
 - REPORT_USER_TEMPLATE has placeholder markers
 - StockReport importable from localstock.ai.client
@@ -38,6 +39,12 @@ class TestStockReportModel:
         "swing_trade_suggestion",
         "recommendation",
         "confidence",
+        "entry_price",
+        "stop_loss",
+        "target_price",
+        "risk_rating",
+        "catalyst",
+        "signal_conflicts",
     ]
 
     def test_has_all_required_fields(self):
@@ -46,10 +53,10 @@ class TestStockReportModel:
         for field in self.REQUIRED_FIELDS:
             assert field in props, f"Missing field: {field}"
 
-    def test_exactly_9_fields(self):
+    def test_exactly_15_fields(self):
         schema = StockReport.model_json_schema()
         props = schema.get("properties", {})
-        assert len(props) == 9
+        assert len(props) == 15
 
     def test_validates_with_sample_data(self):
         report = StockReport(
@@ -76,6 +83,77 @@ class TestStockReportModel:
             assert "description" in field_info, (
                 f"Field {field_name} missing description"
             )
+
+
+class TestStockReportBackwardCompat:
+    """Backward compatibility: old JSON without new fields deserializes."""
+
+    def test_old_json_without_new_fields(self):
+        """JSON from pre-v1.4 reports (9 fields only) should parse without error."""
+        old_json = json.dumps({
+            "summary": "VNM tổng quan",
+            "technical_analysis": "RSI tích cực",
+            "fundamental_analysis": "P/E hợp lý",
+            "sentiment_analysis": "Tin tức tốt",
+            "macro_impact": "Vĩ mô thuận lợi",
+            "long_term_suggestion": "Nên mua dài hạn",
+            "swing_trade_suggestion": "Lướt sóng thận trọng",
+            "recommendation": "Mua",
+            "confidence": "Cao",
+        })
+        report = StockReport.model_validate_json(old_json)
+        assert report.summary == "VNM tổng quan"
+        assert report.entry_price is None
+        assert report.stop_loss is None
+        assert report.target_price is None
+        assert report.risk_rating is None
+        assert report.catalyst is None
+        assert report.signal_conflicts is None
+
+    def test_new_json_with_all_fields(self):
+        """JSON with all 15 fields parses correctly."""
+        full_json = json.dumps({
+            "summary": "VNM tổng quan",
+            "technical_analysis": "RSI tích cực",
+            "fundamental_analysis": "P/E hợp lý",
+            "sentiment_analysis": "Tin tức tốt",
+            "macro_impact": "Vĩ mô thuận lợi",
+            "long_term_suggestion": "Nên mua dài hạn",
+            "swing_trade_suggestion": "Lướt sóng thận trọng",
+            "recommendation": "Mua",
+            "confidence": "Cao",
+            "entry_price": 75000.0,
+            "stop_loss": 70000.0,
+            "target_price": 82000.0,
+            "risk_rating": "medium",
+            "catalyst": "Doanh thu Q4 tăng 15%",
+            "signal_conflicts": None,
+        })
+        report = StockReport.model_validate_json(full_json)
+        assert report.entry_price == 75000.0
+        assert report.stop_loss == 70000.0
+        assert report.target_price == 82000.0
+        assert report.risk_rating == "medium"
+        assert report.catalyst == "Doanh thu Q4 tăng 15%"
+        assert report.signal_conflicts is None
+
+    def test_partial_new_fields(self):
+        """JSON with some new fields present, others missing."""
+        partial_json = json.dumps({
+            "summary": "VNM tổng quan",
+            "technical_analysis": "RSI tích cực",
+            "fundamental_analysis": "P/E hợp lý",
+            "sentiment_analysis": "Tin tức tốt",
+            "macro_impact": "Vĩ mô thuận lợi",
+            "long_term_suggestion": "Nên mua dài hạn",
+            "swing_trade_suggestion": "Lướt sóng thận trọng",
+            "recommendation": "Mua",
+            "confidence": "Cao",
+            "risk_rating": "low",
+        })
+        report = StockReport.model_validate_json(partial_json)
+        assert report.risk_rating == "low"
+        assert report.entry_price is None
 
 
 class TestBuildReportPrompt:
@@ -339,7 +417,7 @@ class TestOllamaClientGenerateReport:
             assert "Việt Nam" in messages[0]["content"]
             # Check options
             assert call_kwargs.kwargs["options"]["temperature"] == 0.3
-            assert call_kwargs.kwargs["options"]["num_ctx"] == 4096
+            assert call_kwargs.kwargs["options"]["num_ctx"] == 8192
 
     @pytest.mark.asyncio
     async def test_uses_report_system_prompt(self):
