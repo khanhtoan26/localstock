@@ -156,38 +156,61 @@ class Pipeline:
     ) -> None:
         """Store financial statement DataFrames to the database.
 
-        Parses vnstock Finance DataFrames to extract year, period,
-        and converts rows to dicts for upsert.
+        Handles both vnstock 3.x format (rows with yearReport/lengthReport)
+        and vnstock 4.x wide format (rows are line items, columns are quarters).
 
         Args:
             symbol: Stock ticker.
             reports: Dict mapping report_type to DataFrame.
         """
+        import math
         import pandas as pd
+
+        def _clean_nan(obj):
+            """Recursively replace NaN/inf with None in nested structures."""
+            if isinstance(obj, float) and (math.isnan(obj) or math.isinf(obj)):
+                return None
+            if isinstance(obj, dict):
+                return {k: _clean_nan(v) for k, v in obj.items()}
+            if isinstance(obj, list):
+                return [_clean_nan(v) for v in obj]
+            return obj
 
         for report_type, df in reports.items():
             if df is None or (isinstance(df, pd.DataFrame) and df.empty):
                 continue
             try:
-                for _, row in df.iterrows():
-                    year = int(row.get("yearReport", 0))
-                    length = row.get("lengthReport", "")
-                    period = (
-                        f"Q{length}" if str(length).isdigit() else str(length)
-                    )
-                    data = {
-                        k: (None if isinstance(v, float) and v != v else v)
-                        for k, v in row.to_dict().items()
-                    }
+                if "yearReport" in df.columns:
+                    # vnstock 3.x long format: one row per year/period
+                    for _, row in df.iterrows():
+                        year = int(row.get("yearReport", 0))
+                        length = row.get("lengthReport", "")
+                        period = (
+                            f"Q{length}" if str(length).isdigit() else str(length)
+                        )
+                        data = _clean_nan(row.to_dict())
+                        await self.financial_repo.upsert_statement(
+                            symbol=symbol,
+                            year=year,
+                            period=period,
+                            report_type=report_type,
+                            data=data,
+                            source="VCI",
+                        )
+                else:
+                    # vnstock 4.x wide format: rows are line items, columns are quarters
+                    # Store entire report as single record per report_type
+                    data = _clean_nan(df.to_dict(orient="records"))
                     await self.financial_repo.upsert_statement(
                         symbol=symbol,
-                        year=year,
-                        period=period,
+                        year=0,
+                        period="latest",
                         report_type=report_type,
-                        data=data,
+                        data={"items": data, "format": "wide"},
                         source="VCI",
                     )
             except Exception as e:
+                await self.session.rollback()
                 logger.warning(
                     f"Failed to store {report_type} for {symbol}: {e}"
                 )
