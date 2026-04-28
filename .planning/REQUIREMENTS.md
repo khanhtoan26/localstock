@@ -15,24 +15,24 @@ Requirements for AI Analysis Depth milestone. All map to roadmap phases.
 
 ### Prompt & Schema
 
-- [ ] **PROMPT-01**: Ollama context window raised from 4096 to 6144+ tokens before any new prompt content is added
-- [ ] **PROMPT-02**: `StockReport` Pydantic model extended with `entry_price`, `stop_loss`, `target_price`, `risk_rating`, `catalyst`, `signal_conflicts` — all `Optional[T] = None` for backward compatibility
-- [ ] **PROMPT-03**: Prompts restructured to inject S/R anchors (nearest_support, nearest_resistance, support_1/2, resistance_1/2, pivot_point), candlestick patterns, volume divergence, and sector momentum as explicit named context
-- [ ] **PROMPT-04**: Post-generation validation enforces `stop_loss < entry_price < target_price` and all price levels within ±30% of current close
+- [x] **PROMPT-01**: Ollama context window raised from 4096 to 6144+ tokens before any new prompt content is added
+- [x] **PROMPT-02**: `StockReport` Pydantic model extended with `entry_price`, `stop_loss`, `target_price`, `risk_rating`, `catalyst`, `signal_conflicts` — all `Optional[T] = None` for backward compatibility
+- [x] **PROMPT-03**: Prompts restructured to inject S/R anchors (nearest_support, nearest_resistance, support_1/2, resistance_1/2, pivot_point), candlestick patterns, volume divergence, and sector momentum as explicit named context
+- [x] **PROMPT-04**: Post-generation validation enforces `stop_loss < entry_price < target_price` and all price levels within ±30% of current close
 
 ### Report Content
 
-- [ ] **REPORT-01**: AI report includes entry zone as a price range (from nearest_support + Bollinger band range), with fallback to `close ± 2%` for low-history stocks
-- [ ] **REPORT-02**: AI report includes stop-loss (max(support_2, close × 0.93) — HOSE ±7% limit aware) and target price (nearest_resistance or close × 1.10)
-- [ ] **REPORT-03**: AI report includes risk rating (Literal["high","medium","low"]) with Vietnamese reasoning from LLM
-- [ ] **REPORT-04**: AI report includes signal conflict explanation when |tech_score − fund_score| > 25, naming the conflicting signals and LLM's resolution
-- [ ] **REPORT-05**: AI report includes recent catalyst section synthesized by LLM from 7-day news articles + composite score delta
+- [x] **REPORT-01**: AI report includes entry zone as a price range (from nearest_support + Bollinger band range), with fallback to `close ± 2%` for low-history stocks
+- [x] **REPORT-02**: AI report includes stop-loss (max(support_2, close × 0.93) — HOSE ±7% limit aware) and target price (nearest_resistance or close × 1.10)
+- [x] **REPORT-03**: AI report includes risk rating (Literal["high","medium","low"]) with Vietnamese reasoning from LLM
+- [x] **REPORT-04**: AI report includes signal conflict explanation when |tech_score − fund_score| > 25, naming the conflicting signals and LLM's resolution
+- [x] **REPORT-05**: AI report includes recent catalyst section synthesized by LLM from 7-day news articles + composite score delta
 
 ### Frontend
 
-- [ ] **FRONTEND-01**: `/stock/[symbol]` shows dedicated Trade Plan section with entry zone, stop-loss, and target price formatted in VND (e.g., 45.200đ)
-- [ ] **FRONTEND-02**: Trade Plan section shows colored risk badge (red=high, yellow=medium, green=low) with tooltip displaying Vietnamese reasoning text
-- [ ] **FRONTEND-03**: Signal conflict section conditionally rendered — only shown when `signal_conflicts` field is non-null in report
+- [x] **FRONTEND-01**: `/stock/[symbol]` shows dedicated Trade Plan section with entry zone, stop-loss, and target price formatted in VND (e.g., 45.200đ)
+- [x] **FRONTEND-02**: Trade Plan section shows colored risk badge (red=high, yellow=medium, green=low) with tooltip displaying Vietnamese reasoning text
+- [x] **FRONTEND-03**: Signal conflict section conditionally rendered — only shown when `signal_conflicts` field is non-null in report
 
 ## v2 Requirements
 
@@ -68,18 +68,18 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SIGNAL-01 | Phase 18 | Complete |
 | SIGNAL-02 | Phase 18 | Complete |
 | SIGNAL-03 | Phase 18 | Complete |
-| PROMPT-01 | Phase 19 | Pending |
-| PROMPT-02 | Phase 19 | Pending |
-| PROMPT-03 | Phase 19 | Pending |
-| PROMPT-04 | Phase 19 | Pending |
-| REPORT-01 | Phase 20 | Pending |
-| REPORT-02 | Phase 20 | Pending |
-| REPORT-03 | Phase 20 | Pending |
-| REPORT-04 | Phase 20 | Pending |
-| REPORT-05 | Phase 20 | Pending |
-| FRONTEND-01 | Phase 21 | Pending |
-| FRONTEND-02 | Phase 21 | Pending |
-| FRONTEND-03 | Phase 21 | Pending |
+| PROMPT-01 | Phase 19 | Complete |
+| PROMPT-02 | Phase 19 | Complete |
+| PROMPT-03 | Phase 19 | Complete |
+| PROMPT-04 | Phase 19 | Complete |
+| REPORT-01 | Phase 20 | Complete |
+| REPORT-02 | Phase 20 | Complete |
+| REPORT-03 | Phase 20 | Complete |
+| REPORT-04 | Phase 20 | Complete |
+| REPORT-05 | Phase 20 | Complete |
+| FRONTEND-01 | Phase 21 | Complete |
+| FRONTEND-02 | Phase 21 | Complete |
+| FRONTEND-03 | Phase 21 | Complete |
 
 **Coverage:**
 - v1.4 requirements: 15 total
@@ -88,4 +88,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-04-25*
-*Last updated: 2026-04-25 after initial definition*
+*Last updated: 2026-04-28 — all v1.4 requirements satisfied (milestone audit passed)*
