@@ -89,7 +89,12 @@ Plans:
   2. StockReport gains six new Optional fields (entry_price, stop_loss, target_price, risk_rating, catalyst, signal_conflicts) — all default to None so existing deserialization of old reports does not break
   3. Prompts explicitly name S/R anchors (nearest_support, nearest_resistance, support_1/2, resistance_1/2, pivot_point), candlestick patterns, volume divergence, and sector momentum as distinct context variables in the formatted prompt string
   4. Post-generation validation rejects any LLM output where stop_loss >= entry_price or entry_price >= target_price, or where any price level falls outside ±30% of the current close — returning a safe fallback rather than crashing
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 19-01-PLAN.md — StockReport schema extension (6 Optional fields) + num_ctx 8192 + backward compat tests
+- [ ] 19-02-PLAN.md — Prompt restructuring (system rules + 🔔 TÍN HIỆU BỔ SUNG section) + signal formatters
+- [ ] 19-03-PLAN.md — Post-generation price validation + risk_rating normalization + service wiring
 
 ### Phase 20: Service Wiring & Report Content
 **Goal**: Every generated stock report contains entry zone, stop-loss, target price, risk rating, signal conflict explanation, and recent catalyst — fully integrated through ReportService and persisted via content_json
