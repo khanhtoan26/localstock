@@ -26,6 +26,7 @@ from localstock.db.repositories.event_repo import EventRepository
 from localstock.db.repositories.financial_repo import FinancialRepository
 from localstock.db.repositories.price_repo import PriceRepository
 from localstock.db.repositories.stock_repo import StockRepository
+from localstock.observability.context import run_id_var
 from localstock.services.price_adjuster import adjust_prices_for_event
 
 
@@ -64,92 +65,109 @@ class Pipeline:
         self.session.add(run)
         await self.session.commit()
 
+        run_id = str(run.id)
+        token = run_id_var.set(run_id)
         try:
-            # Step 1: Fetch stock listings (non-critical — fall back to DB)
-            try:
-                count = await self.stock_repo.fetch_and_store_listings()
-                logger.info(f"Step 1: Stored {count} HOSE stock listings")
-            except Exception as e:
-                logger.warning(f"Step 1: Listing fetch failed ({e}), using existing DB stocks")
-
-            # Step 2: Get all HOSE symbols
-            symbols = await self.stock_repo.get_all_hose_symbols()
-            run.symbols_total = len(symbols)
-
-            # Step 3: Crawl prices (incremental)
-            price_results, price_failed = await self._crawl_prices(symbols)
-
-            # Step 4: Crawl financials
-            fin_results, fin_failed = await self.finance_crawler.fetch_batch(
-                symbols
-            )
-
-            # Step 4b: Store financial statements in DB
-            for symbol, reports in fin_results.items():
-                await self._store_financials(symbol, reports)
-
-            # Step 5: Crawl company profiles
-            company_results, company_failed = (
-                await self.company_crawler.fetch_batch(symbols)
-            )
-
-            # Step 5b: Store company profiles in DB
-            for symbol, overview_df in company_results.items():
+            with logger.contextualize(run_id=run_id, pipeline_run_id=run.id):
+                logger.info("pipeline.run.started", run_type=run_type)
                 try:
-                    stock_dict = self.company_crawler.overview_to_stock_dict(
-                        overview_df
-                    )
-                    import pandas as pd
+                    # Step 1: Fetch stock listings (non-critical — fall back to DB)
+                    try:
+                        count = await self.stock_repo.fetch_and_store_listings()
+                        logger.info("pipeline.listings.stored", step=1, count=count)
+                    except Exception as e:
+                        logger.warning(
+                            "pipeline.listings.fetch_failed",
+                            step=1,
+                            error=str(e),
+                        )
 
-                    await self.stock_repo.upsert_stocks(
-                        pd.DataFrame([stock_dict])
+                    # Step 2: Get all HOSE symbols
+                    symbols = await self.stock_repo.get_all_hose_symbols()
+                    run.symbols_total = len(symbols)
+
+                    # Step 3: Crawl prices (incremental)
+                    price_results, price_failed = await self._crawl_prices(symbols)
+
+                    # Step 4: Crawl financials
+                    fin_results, fin_failed = await self.finance_crawler.fetch_batch(
+                        symbols
                     )
+
+                    # Step 4b: Store financial statements in DB
+                    for symbol, reports in fin_results.items():
+                        await self._store_financials(symbol, reports)
+
+                    # Step 5: Crawl company profiles
+                    company_results, company_failed = (
+                        await self.company_crawler.fetch_batch(symbols)
+                    )
+
+                    # Step 5b: Store company profiles in DB
+                    for symbol, overview_df in company_results.items():
+                        try:
+                            stock_dict = self.company_crawler.overview_to_stock_dict(
+                                overview_df
+                            )
+                            import pandas as pd
+
+                            await self.stock_repo.upsert_stocks(
+                                pd.DataFrame([stock_dict])
+                            )
+                        except Exception as e:
+                            logger.warning(
+                                "pipeline.company.store_failed",
+                                symbol=symbol,
+                                error=str(e),
+                            )
+
+                    # Step 6: Crawl corporate events
+                    event_results, event_failed = (
+                        await self.event_crawler.fetch_batch(symbols)
+                    )
+
+                    # Step 7: Store event results in DB
+                    for symbol, events_df in event_results.items():
+                        try:
+                            await self.event_repo.upsert_events(symbol, events_df)
+                        except Exception as e:
+                            logger.warning(
+                                "pipeline.events.store_failed",
+                                symbol=symbol,
+                                error=str(e),
+                            )
+
+                    # Step 8: Apply price adjustments for unprocessed events
+                    await self._apply_price_adjustments()
+
+                    # Update run status
+                    all_failed = {
+                        f[0]
+                        for f in price_failed
+                        + fin_failed
+                        + company_failed
+                        + event_failed
+                    }
+                    run.symbols_success = len(symbols) - len(all_failed)
+                    run.symbols_failed = len(all_failed)
+                    run.errors = (
+                        {"failed_symbols": sorted(all_failed)} if all_failed else None
+                    )
+                    run.status = "completed"
+                    run.completed_at = datetime.now(UTC)
+
                 except Exception as e:
-                    logger.warning(
-                        f"Failed to store company profile for {symbol}: {e}"
-                    )
+                    logger.exception("pipeline.run.errored")
+                    run.status = "failed"
+                    run.completed_at = datetime.now(UTC)
+                    run.errors = {"error": str(e)}
+                finally:
+                    logger.info("pipeline.run.completed", status=run.status)
 
-            # Step 6: Crawl corporate events
-            event_results, event_failed = (
-                await self.event_crawler.fetch_batch(symbols)
-            )
-
-            # Step 7: Store event results in DB
-            for symbol, events_df in event_results.items():
-                try:
-                    await self.event_repo.upsert_events(symbol, events_df)
-                except Exception as e:
-                    logger.warning(
-                        f"Failed to store events for {symbol}: {e}"
-                    )
-
-            # Step 8: Apply price adjustments for unprocessed events
-            await self._apply_price_adjustments()
-
-            # Update run status
-            all_failed = {
-                f[0]
-                for f in price_failed
-                + fin_failed
-                + company_failed
-                + event_failed
-            }
-            run.symbols_success = len(symbols) - len(all_failed)
-            run.symbols_failed = len(all_failed)
-            run.errors = (
-                {"failed_symbols": sorted(all_failed)} if all_failed else None
-            )
-            run.status = "completed"
-            run.completed_at = datetime.now(UTC)
-
-        except Exception as e:
-            logger.error(f"Pipeline failed: {e}")
-            run.status = "failed"
-            run.completed_at = datetime.now(UTC)
-            run.errors = {"error": str(e)}
-
-        await self.session.commit()
-        return run
+            await self.session.commit()
+            return run
+        finally:
+            run_id_var.reset(token)
 
     async def _store_financials(
         self, symbol: str, reports: dict
@@ -212,7 +230,10 @@ class Pipeline:
             except Exception as e:
                 await self.session.rollback()
                 logger.warning(
-                    f"Failed to store {report_type} for {symbol}: {e}"
+                    "pipeline.financials.store_failed",
+                    report_type=report_type,
+                    symbol=symbol,
+                    error=str(e),
                 )
 
     async def _crawl_prices(
@@ -241,7 +262,7 @@ class Pipeline:
 
                 if latest and latest >= date.today():
                     logger.debug(
-                        f"Skipping {symbol}: already up to date"
+                        "pipeline.prices.skip_up_to_date", symbol=symbol
                     )
                     continue
 
@@ -252,7 +273,11 @@ class Pipeline:
                 results[symbol] = df
             except Exception as e:
                 failed.append((symbol, str(e)))
-                logger.warning(f"Price crawl failed for {symbol}: {e}")
+                logger.warning(
+                    "pipeline.prices.crawl_failed",
+                    symbol=symbol,
+                    error=str(e),
+                )
         return results, failed
 
     async def _apply_price_adjustments(self) -> None:
@@ -303,20 +328,24 @@ class Pipeline:
                         )
                     await self.event_repo.mark_processed(event.id)
                     logger.info(
-                        f"Applied price adjustment for {event.symbol}: "
-                        f"ratio={event.ratio}, ex_date={event.exright_date}"
+                        "pipeline.adjustment.applied",
+                        symbol=event.symbol,
+                        ratio=event.ratio,
+                        ex_date=str(event.exright_date),
                     )
-                except Exception as e:
-                    logger.error(
-                        f"Failed to adjust prices for {event.symbol} "
-                        f"event {event.id}: {e}"
+                except Exception:
+                    logger.exception(
+                        "pipeline.adjustment.failed",
+                        symbol=event.symbol,
+                        event_id=event.id,
                     )
             elif event.ratio and event.exright_date:
                 # Mark non-adjustable events as processed (cash dividends, etc.)
                 await self.event_repo.mark_processed(event.id)
                 logger.info(
-                    f"Skipped adjustment for {event.symbol} "
-                    f"({event.event_type}): not an adjustable event type"
+                    "pipeline.adjustment.skipped",
+                    symbol=event.symbol,
+                    event_type=event.event_type,
                 )
 
     async def run_single(self, symbol: str) -> dict:
@@ -328,7 +357,7 @@ class Pipeline:
         Returns:
             Summary dict with status and counts.
         """
-        logger.info(f"Running single-symbol pipeline for {symbol}")
+        logger.info("pipeline.run_single.start", symbol=symbol)
         summary: dict = {
             "symbol": symbol,
             "status": "completed",
