@@ -106,7 +106,11 @@ Plans:
   3. A generated report includes a risk rating of "high", "medium", or "low" with Vietnamese reasoning text explaining the rating
   4. When |tech_score − fund_score| > 25, the report includes a signal conflict explanation naming the conflicting signals and the LLM's resolution; when the gap is <= 25, the field is null
   5. A generated report includes a recent catalyst section synthesized from the past 7 days of news articles plus the composite score delta since the prior run
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 20-01-PLAN.md — Pure computation functions (entry zone, SL/TP, signal conflict) + TDD tests
+- [ ] 20-02-PLAN.md — Service wiring (both methods) + prompt template extension + catalyst + integration tests
 
 ### Phase 21: Frontend Trade Plan Display
 **Goal**: The stock detail page shows a dedicated Trade Plan section that surfaces entry zone, stop-loss, target price, risk badge, and signal conflict — all conditionally rendered from the existing report API response
