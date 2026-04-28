@@ -56,8 +56,9 @@ created: 2025-04-23
 - [ ] `apps/prometheus/tests/test_observability/test_json_format.py` — stubs for OBS-01
 - [ ] `apps/prometheus/tests/test_observability/test_request_id.py` — stubs for OBS-02
 - [ ] `apps/prometheus/tests/test_observability/test_run_id.py` — stubs for OBS-03
-- [ ] `apps/prometheus/tests/test_observability/test_redaction.py` — stubs for OBS-04 (also covers diagnose=False regression)
-- [ ] `apps/prometheus/tests/test_observability/test_intercept.py` — stubs for OBS-05
+- [ ] `apps/prometheus/tests/test_observability/test_request_log.py` — stubs for OBS-04 (request log middleware)
+- [ ] `apps/prometheus/tests/test_observability/test_redaction.py` — stubs for OBS-05 (also covers diagnose=False regression)
+- [ ] `apps/prometheus/tests/test_observability/test_intercept.py` — stubs for stdlib bridge (supports OBS-01)
 - [ ] `apps/prometheus/scripts/lint-no-fstring-logs.sh` — CI lint shell script
 
 *Framework already installed; only test files + lint script are new.*
