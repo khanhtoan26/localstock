@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useSyncExternalStore } from "react";
 import { useTranslations } from "next-intl";
+import { Progress as ProgressPrimitive } from "@base-ui/react/progress";
 import { ProgressTrack, ProgressIndicator } from "@/components/ui/progress";
 import { getCurrentHosePhase } from "./hose-session";
 
@@ -65,9 +66,11 @@ export function MarketSessionBar() {
           {t(i18nKey)}
         </span>
         {/* Progress track: 96px wide, 4px tall, token-based colors */}
-        <ProgressTrack className="w-24 h-1">
-          <ProgressIndicator style={{ width: `${session.pct}%` }} />
-        </ProgressTrack>
+        <ProgressPrimitive.Root value={session.pct}>
+          <ProgressTrack className="w-24 h-1">
+            <ProgressIndicator style={{ width: `${session.pct}%` }} />
+          </ProgressTrack>
+        </ProgressPrimitive.Root>
         {/* Countdown: fixed width 64px, left-aligned */}
         <span className="w-16 text-muted-foreground">
           {t("left", { time: countdownTime })}
