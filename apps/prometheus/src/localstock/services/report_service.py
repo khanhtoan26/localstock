@@ -21,9 +21,17 @@ from localstock.db.repositories.price_repo import PriceRepository
 from localstock.db.repositories.ratio_repo import RatioRepository
 from localstock.db.repositories.report_repo import ReportRepository
 from localstock.db.repositories.score_repo import ScoreRepository
+from localstock.db.repositories.sector_repo import SectorSnapshotRepository
 from localstock.db.repositories.stock_repo import StockRepository
 from localstock.macro.crawler import MacroCrawler
-from localstock.reports.generator import ReportDataBuilder, build_report_prompt
+from localstock.analysis.signals import compute_sector_momentum
+from localstock.analysis.technical import TechnicalAnalyzer
+from localstock.reports.generator import (
+    ReportDataBuilder,
+    build_report_prompt,
+    _normalize_risk_rating,
+    _validate_price_levels,
+)
 from localstock.reports.t3 import predict_3day_trend
 from localstock.services.sentiment_service import SentimentService
 
@@ -55,6 +63,7 @@ class ReportService:
         self.industry_repo = IndustryRepository(session)
         self.stock_repo = StockRepository(session)
         self.price_repo = PriceRepository(session)
+        self.sector_repo = SectorSnapshotRepository(session)
         self.sentiment_service = SentimentService(session)
         self.ollama = OllamaClient()
 
@@ -167,6 +176,31 @@ class ReportService:
                         "close_price": latest_price.close if latest_price else None,
                     }
 
+                # Compute Phase 18 signals for prompt injection
+                signals_data = {}
+                prices = await self.price_repo.get_prices(symbol)
+                if prices:
+                    import pandas as pd
+                    ohlcv_df = pd.DataFrame([{
+                        "open": p.open, "high": p.high, "low": p.low,
+                        "close": p.close, "volume": p.volume,
+                    } for p in prices[-60:]])
+                    analyzer = TechnicalAnalyzer()
+                    signals_data["candlestick_patterns"] = analyzer.compute_candlestick_patterns(ohlcv_df)
+                    signals_data["volume_divergence"] = analyzer.compute_volume_divergence(ohlcv_df)
+
+                # Sector momentum
+                sector_data_for_signal = None
+                if stock and stock.industry_icb3:
+                    sector_snapshot = await self.sector_repo.get_latest(stock.industry_icb3)
+                    if sector_snapshot:
+                        sector_data_for_signal = {
+                            "avg_score_change": sector_snapshot.avg_score_change,
+                            "avg_score": sector_snapshot.avg_score,
+                            "group_code": sector_snapshot.group_code,
+                        }
+                signals_data["sector_momentum"] = compute_sector_momentum(sector_data_for_signal)
+
                 # Score data for prompt
                 score_data = {
                     "total": score.total_score,
@@ -190,11 +224,18 @@ class ReportService:
                     macro_data=macro_data,
                     t3_data=t3_data,
                     stock_info=stock_info,
+                    signals_data=signals_data,
                 )
                 prompt = build_report_prompt(data)
 
                 # Generate report via LLM
                 report = await self.ollama.generate_report(prompt, symbol)
+
+                # Post-generation validation (PROMPT-04)
+                current_close = latest_price.close if latest_price else None
+                if current_close:
+                    report = _validate_price_levels(report, current_close)
+                report = _normalize_risk_rating(report)
 
                 # Map recommendation to DB enum
                 mapped_rec = RECOMMENDATION_MAP.get(
@@ -317,6 +358,31 @@ class ReportService:
                     "close_price": latest_price.close if latest_price else None,
                 }
 
+            # Compute Phase 18 signals for prompt injection
+            signals_data = {}
+            prices = await self.price_repo.get_prices(symbol)
+            if prices:
+                import pandas as pd
+                ohlcv_df = pd.DataFrame([{
+                    "open": p.open, "high": p.high, "low": p.low,
+                    "close": p.close, "volume": p.volume,
+                } for p in prices[-60:]])
+                analyzer = TechnicalAnalyzer()
+                signals_data["candlestick_patterns"] = analyzer.compute_candlestick_patterns(ohlcv_df)
+                signals_data["volume_divergence"] = analyzer.compute_volume_divergence(ohlcv_df)
+
+            # Sector momentum
+            sector_data_for_signal = None
+            if stock and stock.industry_icb3:
+                sector_snapshot = await self.sector_repo.get_latest(stock.industry_icb3)
+                if sector_snapshot:
+                    sector_data_for_signal = {
+                        "avg_score_change": sector_snapshot.avg_score_change,
+                        "avg_score": sector_snapshot.avg_score,
+                        "group_code": sector_snapshot.group_code,
+                    }
+            signals_data["sector_momentum"] = compute_sector_momentum(sector_data_for_signal)
+
             t3_data = predict_3day_trend(indicator_data)
 
             data = ReportDataBuilder().build(
@@ -328,9 +394,16 @@ class ReportService:
                 macro_data=macro_data,
                 t3_data=t3_data,
                 stock_info=stock_info,
+                signals_data=signals_data,
             )
             prompt = build_report_prompt(data)
             report = await self.ollama.generate_report(prompt, symbol)
+
+            # Post-generation validation (PROMPT-04)
+            current_close = latest_price.close if latest_price else None
+            if current_close:
+                report = _validate_price_levels(report, current_close)
+            report = _normalize_risk_rating(report)
 
             mapped_rec = RECOMMENDATION_MAP.get(report.recommendation, "hold")
 

@@ -250,6 +250,10 @@ class TestReportServiceRunFull:
         mock_price = MagicMock()
         mock_price.close = 97000.0
         service.price_repo.get_latest = AsyncMock(return_value=mock_price)
+        service.price_repo.get_prices = AsyncMock(return_value=[])
+
+        # Mock sector repo for sector momentum
+        service.sector_repo.get_latest = AsyncMock(return_value=None)
 
         # Mock T+3 prediction
         mock_predict.return_value = {
@@ -342,6 +346,10 @@ class TestReportServiceRunFull:
         mock_price = MagicMock()
         mock_price.close = 97000.0
         service.price_repo.get_latest = AsyncMock(return_value=mock_price)
+        service.price_repo.get_prices = AsyncMock(return_value=[])
+
+        # Mock sector repo for sector momentum
+        service.sector_repo.get_latest = AsyncMock(return_value=None)
 
         mock_predict.return_value = {
             "direction": "bullish",

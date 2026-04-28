@@ -23,6 +23,8 @@ from localstock.ai.client import StockReport
 from localstock.reports.generator import (
     ReportDataBuilder,
     build_report_prompt,
+    _validate_price_levels,
+    _normalize_risk_rating,
 )
 
 
@@ -529,3 +531,115 @@ class TestOllamaClientGenerateReport:
             call_kwargs = client.client.chat.call_args
             messages = call_kwargs.kwargs["messages"]
             assert messages[0]["content"] == REPORT_SYSTEM_PROMPT
+
+
+class TestValidatePriceLevels:
+    """Test post-generation price validation per D-09, D-10."""
+
+    def _make_report(self, ep=75000.0, sl=70000.0, tp=82000.0, risk="medium"):
+        return StockReport(
+            summary="test", technical_analysis="test",
+            fundamental_analysis="test", sentiment_analysis="test",
+            macro_impact="test", long_term_suggestion="test",
+            swing_trade_suggestion="test", recommendation="Mua",
+            confidence="Cao",
+            entry_price=ep, stop_loss=sl, target_price=tp,
+            risk_rating=risk, catalyst="test catalyst",
+            signal_conflicts="test conflicts",
+        )
+
+    def test_valid_prices_preserved(self):
+        report = self._make_report(ep=75000, sl=70000, tp=82000)
+        result = _validate_price_levels(report, current_close=74000.0)
+        assert result.entry_price == 75000
+        assert result.stop_loss == 70000
+        assert result.target_price == 82000
+
+    def test_invalid_ordering_stop_above_entry(self):
+        report = self._make_report(ep=75000, sl=80000, tp=82000)
+        result = _validate_price_levels(report, current_close=74000.0)
+        assert result.entry_price is None
+        assert result.stop_loss is None
+        assert result.target_price is None
+
+    def test_invalid_ordering_entry_above_target(self):
+        report = self._make_report(ep=85000, sl=70000, tp=82000)
+        result = _validate_price_levels(report, current_close=74000.0)
+        assert result.entry_price is None
+        assert result.stop_loss is None
+        assert result.target_price is None
+
+    def test_price_outside_30pct_range(self):
+        # target = 200000 is >30% away from close=74000
+        report = self._make_report(ep=75000, sl=70000, tp=200000)
+        result = _validate_price_levels(report, current_close=74000.0)
+        assert result.entry_price is None
+        assert result.stop_loss is None
+        assert result.target_price is None
+
+    def test_non_price_fields_preserved_on_failure(self):
+        """Per D-10: risk_rating, catalyst, signal_conflicts survive price failure."""
+        report = self._make_report(ep=75000, sl=80000, tp=82000)
+        result = _validate_price_levels(report, current_close=74000.0)
+        assert result.risk_rating == "medium"
+        assert result.catalyst == "test catalyst"
+        assert result.signal_conflicts == "test conflicts"
+
+    def test_all_none_prices_pass_through(self):
+        report = self._make_report(ep=None, sl=None, tp=None)
+        result = _validate_price_levels(report, current_close=74000.0)
+        assert result.entry_price is None  # still None, not crashed
+
+    def test_partial_none_prices_range_check(self):
+        """When only some prices present, range check still runs on non-None ones."""
+        report = self._make_report(ep=75000, sl=None, tp=None)
+        result = _validate_price_levels(report, current_close=74000.0)
+        assert result.entry_price == 75000  # within range, passes
+
+
+class TestNormalizeRiskRating:
+    """Test risk_rating normalization per D-04."""
+
+    def _make_report(self, risk_rating):
+        return StockReport(
+            summary="test", technical_analysis="test",
+            fundamental_analysis="test", sentiment_analysis="test",
+            macro_impact="test", long_term_suggestion="test",
+            swing_trade_suggestion="test", recommendation="Mua",
+            confidence="Cao", risk_rating=risk_rating,
+        )
+
+    def test_english_lowercase_passthrough(self):
+        report = self._make_report("high")
+        result = _normalize_risk_rating(report)
+        assert result.risk_rating == "high"
+
+    def test_vietnamese_cao_to_high(self):
+        report = self._make_report("cao")
+        result = _normalize_risk_rating(report)
+        assert result.risk_rating == "high"
+
+    def test_vietnamese_trung_binh_to_medium(self):
+        report = self._make_report("trung bình")
+        result = _normalize_risk_rating(report)
+        assert result.risk_rating == "medium"
+
+    def test_vietnamese_thap_to_low(self):
+        report = self._make_report("thấp")
+        result = _normalize_risk_rating(report)
+        assert result.risk_rating == "low"
+
+    def test_capitalized_high(self):
+        report = self._make_report("High")
+        result = _normalize_risk_rating(report)
+        assert result.risk_rating == "high"
+
+    def test_unknown_value_becomes_none(self):
+        report = self._make_report("rất cao")
+        result = _normalize_risk_rating(report)
+        assert result.risk_rating is None
+
+    def test_none_stays_none(self):
+        report = self._make_report(None)
+        result = _normalize_risk_rating(report)
+        assert result.risk_rating is None

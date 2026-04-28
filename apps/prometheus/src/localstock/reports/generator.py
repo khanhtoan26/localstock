@@ -4,6 +4,8 @@ Per REPT-02: ReportDataBuilder assembles all stock data into prompt-ready dict.
 StockReport model is defined in ai.client (single source of truth for Ollama format schema).
 """
 
+from loguru import logger
+
 from localstock.ai.prompts import REPORT_USER_TEMPLATE
 
 
@@ -84,6 +86,92 @@ def _format_sector_momentum(mom: dict | None) -> str:
         return "N/A"
     sign = "+" if mom["score_change"] >= 0 else ""
     return f"{mom['label']} ({sign}{mom['score_change']}, nhóm {mom['group_code']})"
+
+
+RISK_RATING_MAP: dict[str, str] = {
+    "high": "high",
+    "medium": "medium",
+    "low": "low",
+    "cao": "high",
+    "trung bình": "medium",
+    "thấp": "low",
+    "High": "high",
+    "Medium": "medium",
+    "Low": "low",
+    "HIGH": "high",
+    "MEDIUM": "medium",
+    "LOW": "low",
+}
+
+
+def _normalize_risk_rating(report):
+    """Normalize risk_rating to canonical English lowercase per D-04.
+
+    Maps Vietnamese variants (cao, trung bình, thấp) and casing variants
+    to one of: "high", "medium", "low". Unknown values are set to None.
+
+    Args:
+        report: StockReport instance (mutated in place).
+
+    Returns:
+        The same StockReport with normalized risk_rating.
+    """
+    if report.risk_rating is not None:
+        normalized = RISK_RATING_MAP.get(report.risk_rating.strip())
+        if normalized is None:
+            logger.warning(
+                f"Unknown risk_rating '{report.risk_rating}' — setting to None"
+            )
+        report.risk_rating = normalized
+    return report
+
+
+def _validate_price_levels(report, current_close: float):
+    """Validate LLM-generated price levels post-generation per D-09.
+
+    Two checks:
+    1. Price ordering: stop_loss < entry_price < target_price
+    2. Range: all non-None price fields within ±30% of current_close
+
+    On failure: nulls only the 3 price fields (entry_price, stop_loss,
+    target_price). Preserves risk_rating, catalyst, signal_conflicts per D-10.
+
+    Args:
+        report: StockReport instance (mutated in place).
+        current_close: Current closing price for range validation.
+
+    Returns:
+        The same StockReport with potentially nulled price fields.
+    """
+    ep = report.entry_price
+    sl = report.stop_loss
+    tp = report.target_price
+
+    def _null_prices():
+        logger.warning(
+            f"Price validation failed: "
+            f"stop_loss={sl}, entry={ep}, target={tp}, close={current_close}"
+        )
+        report.entry_price = None
+        report.stop_loss = None
+        report.target_price = None
+
+    # Check 1: Price ordering (only when all three are present)
+    if ep is not None and sl is not None and tp is not None:
+        if not (sl < ep < tp):
+            _null_prices()
+            return report
+
+    # Check 2: Range — each non-None price within ±30% of close
+    if current_close and current_close > 0:
+        for field_name in ("entry_price", "stop_loss", "target_price"):
+            val = getattr(report, field_name)
+            if val is not None:
+                if abs(val - current_close) / current_close > 0.30:
+                    _null_prices()
+                    return report
+
+    return report
 
 
 def build_report_prompt(data: dict) -> str:
