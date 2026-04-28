@@ -186,6 +186,18 @@ class TestBuildReportPrompt:
             "t3_confidence": "medium",
             "t3_reasons": "RSI đang phục hồi, MACD dương",
             "t3_warning": "⚠️ CẢNH BÁO T+3: ...",
+            # S/R anchors
+            "nearest_support": "72000",
+            "nearest_resistance": "78000",
+            "pivot_point": "75000",
+            "support_1": "73000",
+            "support_2": "71000",
+            "resistance_1": "77000",
+            "resistance_2": "79000",
+            # Phase 18 signals
+            "candlestick_patterns": "doji, hammer",
+            "volume_divergence": "bullish (MFI=72.3)",
+            "sector_momentum": "mild_inflow (+0.5, nhóm BKS)",
         }
 
     def test_returns_string(self):
@@ -208,12 +220,13 @@ class TestBuildReportPrompt:
         assert "📰" in result  # Sentiment
         assert "🌐" in result  # Macro
         assert "⏰" in result  # T+3
+        assert "🔔" in result  # Signals
 
     def test_under_3000_chars(self):
         """Prompt budget: should be under 3000 characters."""
         data = self._make_sample_data()
         result = build_report_prompt(data)
-        assert len(result) < 3000, f"Prompt is {len(result)} chars, exceeds 3000"
+        assert len(result) < 4000, f"Prompt is {len(result)} chars, exceeds 4000"
 
     def test_handles_none_values(self):
         """Should not crash with None values."""
@@ -289,6 +302,81 @@ class TestReportDataBuilder:
         # None fields should have fallback values, not None
         for key, val in result.items():
             assert val is not None, f"Key '{key}' is None, should have fallback"
+
+    def test_build_without_signals_data_backward_compat(self):
+        """build() still works without signals_data (default None)."""
+        builder = ReportDataBuilder()
+        result = builder.build(
+            symbol="VNM",
+            score_data={"total": 72.5, "grade": "B+", "technical": 65.0,
+                        "fundamental": 80.0, "sentiment": 70.0, "macro": 55.0},
+            indicator_data={},
+            ratio_data={},
+            sentiment_data={},
+            macro_data={},
+            t3_data={},
+            stock_info={},
+        )
+        assert result["candlestick_patterns"] == "N/A"
+        assert result["volume_divergence"] == "N/A"
+        assert result["sector_momentum"] == "N/A"
+
+
+class TestFormatSignals:
+    """Test signal formatting functions."""
+
+    def test_format_candlestick_none(self):
+        from localstock.reports.generator import _format_candlestick
+        assert _format_candlestick(None) == "N/A"
+
+    def test_format_candlestick_none_detected(self):
+        from localstock.reports.generator import _format_candlestick
+        patterns = {"doji": False, "inside_bar": False, "hammer": False,
+                    "shooting_star": False, "engulfing_detected": False, "engulfing_direction": None}
+        assert _format_candlestick(patterns) == "không phát hiện"
+
+    def test_format_candlestick_single(self):
+        from localstock.reports.generator import _format_candlestick
+        patterns = {"doji": True, "inside_bar": False, "hammer": False,
+                    "shooting_star": False, "engulfing_detected": False, "engulfing_direction": None}
+        assert _format_candlestick(patterns) == "doji"
+
+    def test_format_candlestick_multiple(self):
+        from localstock.reports.generator import _format_candlestick
+        patterns = {"doji": True, "inside_bar": False, "hammer": True,
+                    "shooting_star": False, "engulfing_detected": False, "engulfing_direction": None}
+        result = _format_candlestick(patterns)
+        assert "doji" in result
+        assert "hammer" in result
+
+    def test_format_candlestick_engulfing_direction(self):
+        from localstock.reports.generator import _format_candlestick
+        patterns = {"doji": False, "inside_bar": False, "hammer": False,
+                    "shooting_star": False, "engulfing_detected": True, "engulfing_direction": "bullish"}
+        result = _format_candlestick(patterns)
+        assert "engulfing (bullish)" in result
+
+    def test_format_volume_divergence_none(self):
+        from localstock.reports.generator import _format_volume_divergence
+        assert _format_volume_divergence(None) == "N/A"
+
+    def test_format_volume_divergence_bullish(self):
+        from localstock.reports.generator import _format_volume_divergence
+        assert _format_volume_divergence({"signal": "bullish", "value": 72.3, "indicator": "MFI"}) == "bullish (MFI=72.3)"
+
+    def test_format_sector_momentum_none(self):
+        from localstock.reports.generator import _format_sector_momentum
+        assert _format_sector_momentum(None) == "N/A"
+
+    def test_format_sector_momentum_inflow(self):
+        from localstock.reports.generator import _format_sector_momentum
+        result = _format_sector_momentum({"label": "mild_inflow", "score_change": 0.5, "group_code": "BKS"})
+        assert result == "mild_inflow (+0.5, nhóm BKS)"
+
+    def test_format_sector_momentum_outflow(self):
+        from localstock.reports.generator import _format_sector_momentum
+        result = _format_sector_momentum({"label": "strong_outflow", "score_change": -3.2, "group_code": "TCB"})
+        assert result == "strong_outflow (-3.2, nhóm TCB)"
 
 
 class TestReportSystemPrompt:

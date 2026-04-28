@@ -34,6 +34,58 @@ def _safe_pct(value, fallback: str = "N/A") -> str:
         return fallback
 
 
+def _format_candlestick(patterns: dict | None) -> str:
+    """Format candlestick pattern dict to compact prompt string.
+
+    Args:
+        patterns: Dict from compute_candlestick_patterns() with bool values.
+
+    Returns:
+        Comma-separated detected pattern names, or "không phát hiện" if none,
+        or "N/A" if input is None.
+    """
+    if not patterns:
+        return "N/A"
+    detected = [k for k, v in patterns.items() if v and k != "engulfing_direction"]
+    if not detected:
+        return "không phát hiện"
+    if "engulfing_detected" in detected and patterns.get("engulfing_direction"):
+        detected = [
+            f"engulfing ({patterns['engulfing_direction']})" if k == "engulfing_detected" else k
+            for k in detected
+        ]
+    return ", ".join(detected)
+
+
+def _format_volume_divergence(div: dict | None) -> str:
+    """Format volume divergence dict to compact prompt string.
+
+    Args:
+        div: Dict from compute_volume_divergence() with signal/value/indicator keys.
+
+    Returns:
+        Formatted string like "bullish (MFI=72.3)" or "N/A" if None.
+    """
+    if not div:
+        return "N/A"
+    return f"{div['signal']} ({div['indicator']}={div['value']})"
+
+
+def _format_sector_momentum(mom: dict | None) -> str:
+    """Format sector momentum dict to compact prompt string.
+
+    Args:
+        mom: Dict from compute_sector_momentum() with label/score_change/group_code keys.
+
+    Returns:
+        Formatted string like "mild_inflow (+0.5, nhóm BKS)" or "N/A" if None.
+    """
+    if not mom:
+        return "N/A"
+    sign = "+" if mom["score_change"] >= 0 else ""
+    return f"{mom['label']} ({sign}{mom['score_change']}, nhóm {mom['group_code']})"
+
+
 def build_report_prompt(data: dict) -> str:
     """Format stock data into a report generation prompt.
 
@@ -71,6 +123,7 @@ class ReportDataBuilder:
         macro_data: dict,
         t3_data: dict,
         stock_info: dict,
+        signals_data: dict | None = None,
     ) -> dict:
         """Assemble all stock data into prompt-ready dict.
 
@@ -83,6 +136,7 @@ class ReportDataBuilder:
             macro_data: Macro conditions summary.
             t3_data: T+3 prediction results.
             stock_info: Company name, industry, close price.
+            signals_data: Phase 18 signal data (candlestick, volume, sector).
 
         Returns:
             Dict with all keys needed for REPORT_USER_TEMPLATE.
@@ -130,5 +184,23 @@ class ReportDataBuilder:
             "t3_warning": _safe(
                 t3_data.get("t3_warning"),
                 "⚠️ CẢNH BÁO T+3: Cổ phiếu mua hôm nay chỉ có thể bán sau 3 ngày làm việc.",
+            ),
+            # S/R anchors (from indicator_data)
+            "nearest_support": _safe_float(indicator_data.get("nearest_support"), ".0f"),
+            "nearest_resistance": _safe_float(indicator_data.get("nearest_resistance"), ".0f"),
+            "pivot_point": _safe_float(indicator_data.get("pivot_point"), ".0f"),
+            "support_1": _safe_float(indicator_data.get("support_1"), ".0f"),
+            "support_2": _safe_float(indicator_data.get("support_2"), ".0f"),
+            "resistance_1": _safe_float(indicator_data.get("resistance_1"), ".0f"),
+            "resistance_2": _safe_float(indicator_data.get("resistance_2"), ".0f"),
+            # Phase 18 signals (from signals_data)
+            "candlestick_patterns": _format_candlestick(
+                (signals_data or {}).get("candlestick_patterns")
+            ),
+            "volume_divergence": _format_volume_divergence(
+                (signals_data or {}).get("volume_divergence")
+            ),
+            "sector_momentum": _format_sector_momentum(
+                (signals_data or {}).get("sector_momentum")
             ),
         }

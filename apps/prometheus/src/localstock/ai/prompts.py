@@ -34,7 +34,9 @@ Quy tắc:
 5. Gợi ý lướt sóng PHẢI kèm cảnh báo T+3 và dự đoán xu hướng 3 ngày.
 6. Khuyến nghị: Mua mạnh / Mua / Nắm giữ / Bán / Bán mạnh.
 7. Viết ngắn gọn, mỗi phần 2-4 câu. Tổng báo cáo 500-800 từ.
-8. Đây là công cụ tham khảo cá nhân, không phải tư vấn đầu tư chính thức."""
+8. Đây là công cụ tham khảo cá nhân, không phải tư vấn đầu tư chính thức.
+9. Trả về entry_price, stop_loss, target_price dưới dạng số VND (không có dấu chấm phân cách hàng nghìn, ví dụ: 45200 thay vì "45.200đ").
+10. risk_rating PHẢI là một trong: "high", "medium", "low" (tiếng Anh, chữ thường)."""
 
 REPORT_USER_TEMPLATE = """📊 THÔNG TIN CỔ PHIẾU: {symbol} - {company_name}
 Ngành: {industry} | Giá đóng cửa: {close_price}
@@ -58,5 +60,12 @@ D/E: {debt_to_equity} | Tăng trưởng DT: {revenue_growth}
 Hướng: {t3_direction} | Độ tin cậy: {t3_confidence}
 Lý do: {t3_reasons}
 {t3_warning}
+
+🔔 TÍN HIỆU BỔ SUNG
+Hỗ trợ gần nhất: {nearest_support} | Kháng cự gần nhất: {nearest_resistance}
+Pivot: {pivot_point} | S1: {support_1} | S2: {support_2} | R1: {resistance_1} | R2: {resistance_2}
+Mô hình nến: {candlestick_patterns}
+Phân kỳ khối lượng (MFI): {volume_divergence}
+Động lực ngành: {sector_momentum}
 
 Hãy viết báo cáo phân tích chi tiết dựa trên dữ liệu trên."""
