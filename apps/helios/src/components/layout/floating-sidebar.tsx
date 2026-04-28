@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { useTranslations } from "next-intl"
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   BarChart3,
   Globe,
@@ -15,42 +15,57 @@ import {
   FileText,
   User,
   ShieldCheck,
-} from "lucide-react"
-import { cn } from "@/lib/utils"
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const mainNavItems = [
   { href: "/rankings", labelKey: "rankings" as const, icon: BarChart3 },
   { href: "/market", labelKey: "market" as const, icon: Globe },
   { href: "/learn", labelKey: "learn" as const, icon: BookOpen },
-]
+];
 
 const adminNavItems = [
   { href: "/admin", labelKey: "admin" as const, icon: ShieldCheck },
-]
+];
 
 const sidebarTabs = [
-  { id: "screener" as const, href: "/rankings", labelKey: "tabScreener" as const, icon: TrendingUp },
-  { id: "watchlist" as const, href: "/market", labelKey: "tabWatchlist" as const, icon: Star },
-  { id: "reports" as const, href: "/admin", labelKey: "tabReports" as const, icon: FileText },
-]
+  {
+    id: "screener" as const,
+    href: "/rankings",
+    labelKey: "tabScreener" as const,
+    icon: TrendingUp,
+  },
+  {
+    id: "watchlist" as const,
+    href: "/market",
+    labelKey: "tabWatchlist" as const,
+    icon: Star,
+  },
+  {
+    id: "reports" as const,
+    href: "/admin",
+    labelKey: "tabReports" as const,
+    icon: FileText,
+  },
+];
 
 interface SidebarProps {
-  open: boolean
+  open: boolean;
 }
 
 export function Sidebar({ open }: SidebarProps) {
-  const pathname = usePathname()
-  const t = useTranslations("nav")
+  const pathname = usePathname();
+  const t = useTranslations("nav");
 
   return (
     <aside
       className={cn(
         "absolute top-2 left-2 bottom-2 w-[260px] z-30",
         "flex flex-col rounded-[10px] bg-sidebar text-sidebar-foreground",
-        "shadow-[0_2px_8px_rgba(0,0,0,0.04)]",
         "transition-transform duration-[220ms] ease-out",
         open ? "translate-x-0" : "-translate-x-[calc(100%+16px)]",
       )}
+      style={{ boxShadow: "var(--shadow-sidebar)" }}
     >
       {/* ─── New Analysis + Search ─── */}
       <div className="shrink-0 p-2 space-y-1.5">
@@ -100,7 +115,7 @@ export function Sidebar({ open }: SidebarProps) {
       <nav className="px-2 py-1">
         <div className="space-y-0.5">
           {mainNavItems.map(({ href, labelKey, icon: Icon }) => {
-            const active = pathname.startsWith(href)
+            const active = pathname.startsWith(href);
             return (
               <Link
                 key={href}
@@ -115,7 +130,7 @@ export function Sidebar({ open }: SidebarProps) {
                 <Icon className="h-4 w-4 text-muted-foreground" />
                 <span className="truncate">{t(labelKey)}</span>
               </Link>
-            )
+            );
           })}
         </div>
 
@@ -123,7 +138,7 @@ export function Sidebar({ open }: SidebarProps) {
         <div className="my-1.5 border-t border-border" />
         <div className="space-y-0.5">
           {adminNavItems.map(({ href, labelKey, icon: Icon }) => {
-            const active = pathname.startsWith(href)
+            const active = pathname.startsWith(href);
             return (
               <Link
                 key={href}
@@ -138,7 +153,7 @@ export function Sidebar({ open }: SidebarProps) {
                 <Icon className="h-4 w-4 text-muted-foreground" />
                 <span className="truncate">{t(labelKey)}</span>
               </Link>
-            )
+            );
           })}
         </div>
       </nav>
@@ -175,5 +190,5 @@ export function Sidebar({ open }: SidebarProps) {
         </button>
       </div>
     </aside>
-  )
+  );
 }
