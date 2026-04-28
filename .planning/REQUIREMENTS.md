@@ -22,7 +22,8 @@
 **: Request log middleware ghi method, path, status, duration_ms cho mỗi request
 - [x] **OBS-05
 **: Secret/PII redaction patcher cho `Settings` — không log token/API key/URL có credentials
-- [ ] **OBS-06**: CI lint rule: zero f-string log lines (`grep 'logger\.[a-z]*(f"'` returns 0)
+- [x] **OBS-06
+**: CI lint rule: zero f-string log lines (`grep 'logger\.[a-z]*(f"'` returns 0)
 
 ### Observability — Metrics & /metrics (Phase B)
 

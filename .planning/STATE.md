@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Performance & Data Quality
 status: completed
-stopped_at: Completed 22-03-PLAN.md
-last_updated: "2026-04-28T10:49:24.807Z"
-last_activity: 2026-04-28 — ROADMAP v1.5 created mapping 42 requirements to Phases 22-28
+stopped_at: Completed 22-05-PLAN.md
+last_updated: "2026-04-28T11:30:00.000Z"
+last_activity: 2026-04-28 — 22-05 complete; OBS-06 lint gate green, 462 tests passing
 progress:
   total_phases: 8
   completed_phases: 0
   total_plans: 7
-  completed_plans: 5
-  percent: 71
+  completed_plans: 7
+  percent: 100
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-04-28)
 ## Current Position
 
 Phase: 22 — Logging Foundation
-Plan: 01 (complete) → next: 02
-Status: 22-01 complete; entering Wave 1 second plan / Wave 2
-Last activity: 2026-04-28 — ROADMAP v1.5 created mapping 42 requirements to Phases 22-28
+Plan: 05 (complete) → next: 06
+Status: 22-05 complete; f-string sweep done across src/+bin/, OBS-06 lint gate exits 0
+Last activity: 2026-04-28 — 22-05 complete; 462 tests passing
 
-Progress: [███████░░░] 71%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -50,6 +50,7 @@ Full decision history from v1.0–v1.4 archived in `.planning/milestones/`.
 - 22-02: log_level field_validator normalizes to uppercase and rejects non-loguru levels at startup (OBS-01)
 - Phase 22 Plan 01: lazy _stdout_sink callable for loguru sink to support pytest capsys per-test stdout swap; preserves serialize/enqueue/diagnose contract
 - 22-03: CorrelationIdMiddleware validates inbound X-Request-ID against ^[A-Za-z0-9-]{8,64}$ and uses logger.contextualize for loguru extras (D-02/D-04)
+- 22-05: f-string log sweep used `logger.exception()` inside every except block — auto-captures traceback through redacted JSON sink instead of f-string interpolating exception value
 
 ### Watch Out For (from research)
 
