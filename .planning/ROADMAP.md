@@ -60,6 +60,11 @@
 - [ ] **Phase 19: Prompt & Schema Restructuring** - Expanded StockReport Pydantic model + restructured prompts + context window + post-generation validation
 - [x] **Phase 20: Service Wiring & Report Content** - Full pipeline integration delivering entry/stop-loss/target/risk/conflict/catalyst in every report — completed 2026-04-28
 - [ ] **Phase 21: Frontend Trade Plan Display** - TradePlanSection on stock detail page with VND-formatted prices, risk badge, and conditional conflict section
+  **Plans:** 2 plans
+
+  Plans:
+  - [ ] 21-01-PLAN.md — Types, i18n, TradePlanSection component, unit tests
+  - [ ] 21-02-PLAN.md — Page integration + visual verification
 
 ## Phase Details
 
