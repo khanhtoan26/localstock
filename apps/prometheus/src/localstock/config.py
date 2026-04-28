@@ -32,6 +32,22 @@ class Settings(BaseSettings):
             v = v.replace("postgresql://", "postgresql+asyncpg://", 1)
         return v
 
+    @field_validator("log_level", mode="before")
+    @classmethod
+    def normalize_log_level(cls, v: object) -> str:
+        """Normalize and validate log_level (per CONTEXT.md D-06).
+
+        Loguru recognizes: TRACE < DEBUG < INFO < SUCCESS < WARNING < ERROR < CRITICAL.
+        Fail-fast at startup beats a confusing error from `logger.add(level=...)` later.
+        """
+        allowed = {"TRACE", "DEBUG", "INFO", "SUCCESS", "WARNING", "ERROR", "CRITICAL"}
+        if not isinstance(v, str):
+            raise ValueError("log_level must be a string")
+        upper = v.upper()
+        if upper not in allowed:
+            raise ValueError(f"log_level must be one of {sorted(allowed)}, got {v!r}")
+        return upper
+
     vnstock_source: str = "VCI"
     vnstock_api_key: str = ""  # Set via VNSTOCK_API_KEY env var
     crawl_delay_seconds: float = 1.0
