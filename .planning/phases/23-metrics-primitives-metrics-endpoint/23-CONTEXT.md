@@ -115,7 +115,7 @@ Instrumentator(
     should_ignore_untemplated=True,        # bỏ raw URL không match route → tránh unbounded paths
     should_group_untemplated=True,         # untemplated paths → "untemplated"
     should_instrument_requests_inprogress=True,
-    excluded_handlers=["/metrics", "/health/live"],  # avoid self-instrumentation noise
+    excluded_handlers=["^/metrics$", "^/health/live$"],  # anchored regex (instrumentator uses re.search) — avoid self-instrumentation noise without matching `/metrics-foo`
     inprogress_name="http_requests_inprogress",
     inprogress_labels=False,               # giảm label cardinality cho gauge
 )
