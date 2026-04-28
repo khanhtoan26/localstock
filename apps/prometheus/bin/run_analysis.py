@@ -9,6 +9,9 @@ Usage:
 
 import asyncio
 
+from localstock.observability import configure_logging
+configure_logging()
+
 from loguru import logger
 
 from localstock.db.database import get_session_factory

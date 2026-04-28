@@ -9,6 +9,10 @@ import subprocess
 import sys
 from pathlib import Path
 
+from localstock.observability import configure_logging
+
+configure_logging()
+
 # Resolve apps/prometheus/ directory (parent of bin/)
 PROMETHEUS_DIR = Path(__file__).resolve().parent.parent
 

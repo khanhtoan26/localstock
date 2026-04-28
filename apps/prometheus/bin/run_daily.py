@@ -13,6 +13,9 @@ import asyncio
 import sys
 from datetime import UTC, datetime
 
+from localstock.observability import configure_logging
+configure_logging()
+
 from loguru import logger
 
 from localstock import configure_ssl, configure_vnstock_api_key

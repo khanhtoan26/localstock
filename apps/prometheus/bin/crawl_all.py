@@ -9,6 +9,9 @@ Usage:
 import asyncio
 import sys
 
+from localstock.observability import configure_logging
+configure_logging()
+
 from loguru import logger
 
 from localstock import configure_ssl, configure_vnstock_api_key
