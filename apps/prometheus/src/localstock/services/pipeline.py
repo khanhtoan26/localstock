@@ -310,6 +310,28 @@ class Pipeline:
                     run.status = "failed"
                     run.completed_at = datetime.now(UTC)
                     run.errors = sanitize_jsonb({"error": str(e)})
+                    # Phase 25 / DQ-06 — leave a structured stats trail even
+                    # on hard-fail so dashboards / reports never see NULL
+                    # stats on a row with status="failed". `symbols` may be
+                    # unbound if the exception fired before Step 2; fall
+                    # back to an empty list in that case.
+                    try:
+                        sym_count = len(symbols)  # type: ignore[name-defined]
+                    except NameError:
+                        sym_count = 0
+                    self._write_stats(
+                        run,
+                        succeeded=0,
+                        failed=sym_count,
+                        skipped=0,
+                        failed_symbols=[
+                            {
+                                "symbol": "*",
+                                "step": "pipeline",
+                                "error": _truncate_error(e),
+                            }
+                        ],
+                    )
                 finally:
                     logger.info("pipeline.run.completed", status=run.status)
 

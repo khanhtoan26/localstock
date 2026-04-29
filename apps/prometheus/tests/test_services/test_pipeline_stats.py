@@ -146,3 +146,26 @@ async def test_failed_symbol_error_bounded() -> None:
     assert run.stats["failed"] == 1
     err_str = run.stats["failed_symbols"][0]["error"]
     assert len(err_str) <= MAX_ERROR_CHARS
+
+
+@pytest.mark.asyncio
+async def test_hard_failure_still_writes_stats() -> None:
+    """Even when the crawl block raises, run_full leaves a structured stats trail.
+
+    Contract: ``status="failed"`` rows MUST have ``stats`` populated so
+    downstream readers (dashboards, alerts) never branch on NULL.
+    """
+    pipe = _build_mock_pipeline(symbols=["AAA", "BBB"])
+    pipe._apply_price_adjustments = AsyncMock(
+        side_effect=RuntimeError("analyzer exploded")
+    )
+    run = await pipe.run_full(run_type="manual")
+    assert run.status == "failed"
+    assert run.stats is not None
+    assert run.stats["succeeded"] == 0
+    assert run.stats["failed"] == 2
+    assert run.stats["failed_symbols"][0]["symbol"] == "*"
+    assert run.stats["failed_symbols"][0]["step"] == "pipeline"
+    assert run.stats["failed_symbols"][0]["error"].startswith(
+        "RuntimeError: analyzer exploded"
+    )
