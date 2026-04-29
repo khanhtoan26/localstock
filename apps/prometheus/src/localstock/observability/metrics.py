@@ -219,6 +219,51 @@ def init_metrics(registry: CollectorRegistry | None = None) -> dict[str, Any]:
         "localstock_dq_validation_total",
     )
 
+    # === Phase 24-05 — Self-probe gauges (D-05, OBS-15) ===
+    metrics["db_pool_size"] = _register(
+        lambda: Gauge(
+            "localstock_db_pool_size",
+            "Current SQLAlchemy connection pool size.",
+            registry=target,
+        ),
+        "localstock_db_pool_size",
+    )
+    metrics["db_pool_checked_out"] = _register(
+        lambda: Gauge(
+            "localstock_db_pool_checked_out",
+            "Connections currently checked out of the pool.",
+            registry=target,
+        ),
+        "localstock_db_pool_checked_out",
+    )
+    metrics["last_pipeline_age_seconds"] = _register(
+        lambda: Gauge(
+            "localstock_last_pipeline_age_seconds",
+            "Seconds since the last completed pipeline run.",
+            registry=target,
+        ),
+        "localstock_last_pipeline_age_seconds",
+    )
+    metrics["last_crawl_success_count"] = _register(
+        lambda: Gauge(
+            "localstock_last_crawl_success_count",
+            "symbols_success of the most recent PipelineRun.",
+            registry=target,
+        ),
+        "localstock_last_crawl_success_count",
+    )
+
+    # === Phase 24-05 — Scheduler errors (D-06, OBS-16) ===
+    metrics["scheduler_job_errors_total"] = _register(
+        lambda: Counter(
+            "localstock_scheduler_job_errors_total",
+            "Unhandled exceptions raised by APScheduler jobs.",
+            labelnames=("job_id", "error_type"),
+            registry=target,
+        ),
+        "localstock_scheduler_job_errors_total",
+    )
+
     return metrics
 
 

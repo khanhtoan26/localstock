@@ -64,6 +64,28 @@ def setup_scheduler() -> AsyncIOScheduler:
         replace_existing=True,
     )
 
+    # Phase 24-05 (D-05, OBS-15) — self-probe job (must be AFTER pipeline jobs).
+    from apscheduler.triggers.interval import IntervalTrigger
+
+    from localstock.scheduler.health_probe import health_self_probe
+
+    scheduler.add_job(
+        health_self_probe,
+        trigger=IntervalTrigger(seconds=30),
+        id="health_self_probe",
+        name="Self-probe gauges",
+        replace_existing=True,
+        max_instances=1,
+        coalesce=True,
+    )
+
+    # Phase 24-05 (D-06, OBS-16) — error listener.
+    from apscheduler.events import EVENT_JOB_ERROR
+
+    from localstock.scheduler.error_listener import on_job_error
+
+    scheduler.add_listener(on_job_error, EVENT_JOB_ERROR)
+
     logger.info(
         "scheduler.configured",
         hour=settings.scheduler_run_hour,
