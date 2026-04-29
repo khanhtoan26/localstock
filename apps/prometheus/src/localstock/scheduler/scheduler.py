@@ -88,6 +88,35 @@ def setup_scheduler() -> AsyncIOScheduler:
 
     scheduler.add_listener(on_job_error, EVENT_JOB_ERROR)
 
+    # === Phase 25 / DQ-08 — quarantine retention (D-02, RESEARCH Pattern 5) ===
+    from localstock.db.database import get_session_factory
+    from localstock.dq.quarantine_repo import QuarantineRepository
+
+    @observe("dq.quarantine.cleanup")
+    async def _quarantine_cleanup_job() -> None:
+        """Delete quarantine_rows older than 30 days (CONTEXT D-02)."""
+        session_factory = get_session_factory()
+        async with session_factory() as session:
+            repo = QuarantineRepository(session)
+            deleted = await repo.cleanup_older_than(days=30)
+            await session.commit()
+            logger.info("dq.quarantine.cleanup.done", deleted=deleted)
+
+    scheduler.add_job(
+        _quarantine_cleanup_job,
+        trigger=CronTrigger(
+            hour=3,
+            minute=15,
+            # Pitfall F — explicit tz, scheduled away from 15:46 daily pipeline.
+            timezone="Asia/Ho_Chi_Minh",
+        ),
+        id="dq_quarantine_cleanup",
+        name="DQ quarantine retention",
+        replace_existing=True,
+        max_instances=1,
+        coalesce=True,
+    )
+
     logger.info(
         "scheduler.configured",
         hour=settings.scheduler_run_hour,
