@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Performance & Data Quality
 status: completed
-stopped_at: Completed 24-04-PLAN.md (health endpoints split — 4 probes + deprecated alias)
-last_updated: "2026-04-29T03:55:00.000Z"
-last_activity: 2026-04-29 — 24-04 complete; /health split into live/ready/pipeline/data + deprecated alias (OBS-14)
+stopped_at: Completed 24-05-PLAN.md (self-probe + scheduler errors + @observe rollout — OBS-11, OBS-15, OBS-16)
+last_updated: "2026-04-29T04:01:44Z"
+last_activity: 2026-04-29 — 24-05 complete; 5 new metric primitives + health_self_probe + EVENT_JOB_ERROR listener with 15-min Telegram dedup + @observe applied to 4 crawler fetches + daily_job (OBS-11/15/16)
 progress:
   total_phases: 8
   completed_phases: 2
   total_plans: 16
-  completed_plans: 14
-  percent: 88
+  completed_plans: 16
+  percent: 100
 ---
 
 # Project State
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-04-28)
 
 ## Current Position
 
-Phase: 22 — Logging Foundation
-Plan: 06 (complete) → Phase 22 complete
-Status: 22-06 complete; pre-commit + GHA lint gates active, OBS-06 closed
-Last activity: 2026-04-28 — 22-06 complete; OBS-06 enforced via pre-commit + GHA; Phase 22 done
+Phase: 24 — Instrumentation & Health
+Plan: 05 (complete) → 24-06 next
+Status: 24-05 complete; OBS-11 + OBS-15 + OBS-16 closed; ROADMAP SC-1 verbatim label combination produced in /metrics
+Last activity: 2026-04-29 — 24-05 complete; @observe applied to 4 crawler fetches + daily_job; scheduler error listener with 15-min Telegram dedup; 4 self-probe gauges populated every 30s
 
 Progress: [██████████] 100%
 
@@ -52,6 +52,7 @@ Full decision history from v1.0–v1.4 archived in `.planning/milestones/`.
 - 22-03: CorrelationIdMiddleware validates inbound X-Request-ID against ^[A-Za-z0-9-]{8,64}$ and uses logger.contextualize for loguru extras (D-02/D-04)
 - 22-05: f-string log sweep used `logger.exception()` inside every except block — auto-captures traceback through redacted JSON sink instead of f-string interpolating exception value
 - 24-04: /health split into 4 probes (`/health/{live,ready,pipeline,data}`) + deprecated `/health` alias with `X-Deprecated` header. Bounded 2s `asyncio.wait_for` DB ping → 503 on `OperationalError`/timeout. Static VN holiday set 2025–2026; full calendar deferred (OBS-14)
+- 24-05: dedup keyed by `(job_id, error_type)` with `threading.Lock` + 15-min window — distinct keys NOT deduped together (D-06). Telegram dispatch is `asyncio.create_task` fire-and-forget with done-callback to suppress task exceptions. `@observe('crawl.<subsystem>.fetch')` applied to PriceCrawler/FinanceCrawler/CompanyCrawler/EventCrawler entry points only — minimal CONTEXT D-01 scope. Phase 23 D-08 boundary explicitly lifted for 24-05 implementation files (documented in 24-05-SUMMARY.md)
 
 ### Watch Out For (from research)
 

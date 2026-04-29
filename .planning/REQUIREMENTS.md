@@ -35,13 +35,13 @@
 
 ### Observability — Instrumentation & Health (Phase C)
 
-- [ ] **OBS-11**: `@observe("domain.subsystem.action")` decorator (timing + log + Prometheus histogram) áp dụng lên service methods + scheduler jobs
+- [x] **OBS-11**: `@observe("domain.subsystem.action")` decorator (timing + log + Prometheus histogram) áp dụng lên service methods + scheduler jobs
 - [ ] **OBS-12**: `@timed_query` decorator + SQLAlchemy `before/after_cursor_execute` events ghi DB query duration
 - [ ] **OBS-13**: Slow query log (queries > 250 ms) emit log + counter
 - [x] **OBS-14
 **: `/health/live`, `/health/ready`, `/health/pipeline`, `/health/data` tách từ endpoint `/health` hiện tại
-- [ ] **OBS-15**: `health_self_probe` scheduler job (30s) populate gauges: DB pool size, `last_pipeline_age_seconds`, last successful crawl count
-- [ ] **OBS-16**: APScheduler `EVENT_JOB_ERROR` listener emit counter + Telegram alert khi scheduled job fail
+- [x] **OBS-15**: `health_self_probe` scheduler job (30s) populate gauges: DB pool size, `last_pipeline_age_seconds`, last successful crawl count
+- [x] **OBS-16**: APScheduler `EVENT_JOB_ERROR` listener emit counter + Telegram alert khi scheduled job fail
 - [ ] **OBS-17**: Per-stage timing trên `PipelineRun` table: crawl/analyze/score/report durations persisted
 
 ### Data Quality (Phase D)
@@ -131,12 +131,12 @@
 | OBS-08 | Phase 23 | 23-01 | Complete |
 | OBS-09 | Phase 23 | 23-01 | Complete |
 | OBS-10 | Phase 23 | 23-01 | Complete |
-| OBS-11 | Phase 24 | TBD | Pending |
+| OBS-11 | Phase 24 | 24-01, 24-05 | Complete |
 | OBS-12 | Phase 24 | TBD | Pending |
-| OBS-13 | Phase 24 | TBD | Pending |
-| OBS-14 | Phase 24 | TBD | Pending |
-| OBS-15 | Phase 24 | TBD | Pending |
-| OBS-16 | Phase 24 | TBD | Pending |
+| OBS-13 | Phase 24 | 24-03 | Complete |
+| OBS-14 | Phase 24 | 24-04 | Complete |
+| OBS-15 | Phase 24 | 24-05 | Complete |
+| OBS-16 | Phase 24 | 24-05 | Complete |
 | OBS-17 | Phase 24 | TBD | Pending |
 | DQ-01  | Phase 25 | TBD | Pending |
 | DQ-02  | Phase 25 | TBD | Pending |
