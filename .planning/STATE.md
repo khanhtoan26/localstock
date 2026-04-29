@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Performance & Data Quality
 status: Phase 24 fully closed (OBS-11, OBS-12, OBS-13, OBS-14, OBS-15, OBS-16, OBS-17). All 6 plans + Wave 0 scaffolds shipped.
-stopped_at: Completed 25-02-PLAN.md (Wave 1 — DQ-04 sanitize_jsonb wired across 5 repos; SC #2 closed end-to-end)
-last_updated: "2026-04-29T07:15:00.000Z"
-last_activity: 2026-04-29 — 25-02 complete; sanitize_jsonb canonical helper + 5 repo writes hardened; ROADMAP SC #2 verified against Postgres
+stopped_at: Completed 25-03-PLAN.md (Wave 1 — DQ-08 QuarantineRepository + 03:15 retention cron; operational half of D-02 closed)
+last_updated: "2026-04-29T06:42:00.000Z"
+last_activity: 2026-04-29 — 25-03 complete; QuarantineRepository.insert/cleanup_older_than + APScheduler dq_quarantine_cleanup cron (CronTrigger 03:15 Asia/Ho_Chi_Minh, max_instances=1, coalesce=True) wired through @observe('dq.quarantine.cleanup'); 4 RED→GREEN
 progress:
   total_phases: 8
   completed_phases: 3
   total_plans: 24
-  completed_plans: 18
+  completed_plans: 19
   percent: 71
 ---
 
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-04-28)
 
 ## Current Position
 
-Phase: 25 — Data Quality (🚧 in progress; Wave 1 plan A complete)
-Plan: 02 (complete) — DQ-04 JSONB write-boundary sanitizer landed; 25-03 still in flight.
-Status: 25-02 complete — sanitize_jsonb canonical impl + 5 repos wired (financial/report/score/notification/job) + services/pipeline.py inlined _clean_nan removed + Postgres-backed integration test asserts content_json contains no 'NaN' or 'Infinity'. ROADMAP Success Criterion #2 closed verbatim.
-Last activity: 2026-04-29 — 25-02 Wave 1 plan A: 2 commits, 8 files, 6/6 tests GREEN, full suite 537 passed (1 pre-existing Phase 24 migration failure unchanged).
+Phase: 25 — Data Quality (🚧 in progress; Wave 1 complete)
+Plan: 03 (complete) — DQ-08 QuarantineRepository + 30-day retention cron landed.
+Status: 25-03 complete — QuarantineRepository.insert (with sanitize_jsonb belt-and-suspenders) + cleanup_older_than(days=30) over quarantine_rows; APScheduler dq_quarantine_cleanup CronTrigger hour=3 minute=15 Asia/Ho_Chi_Minh max_instances=1 coalesce=True (Pitfall F), decorated with @observe('dq.quarantine.cleanup'). Operational half of CONTEXT D-02 closed; producer wiring lands in 25-05.
+Last activity: 2026-04-29 — 25-03 Wave 1 plan B: 2 commits, 3 files, 4/4 RED→GREEN, ruff clean.
 
-Progress: [███████░░░] 71%
+Progress: [████████░░] 79%
 
 ## Performance Metrics
 
@@ -56,6 +56,7 @@ Full decision history from v1.0–v1.4 archived in `.planning/milestones/`.
 - 24-06: `Pipeline._step_timer(step_name, run)` is the documented D-08 exception in `services/pipeline.py` — atomic column write (`setattr(run, f'{step_name}_duration_ms', ms)`) + histogram emission via `REGISTRY._names_to_collectors` lookup. `try/yield/except(set fail outcome, raise)/finally(record + observe)` ordering guarantees column write on exception path (Pitfall 7). Q-3 wrap granularity: crawl=Steps 1-7, analyze=`_apply_price_adjustments` only; score/report explicitly None until AutomationService integration (future phase)
 - 25-01: Wave 0 scaffolds shipped — pandera installed, dq/ package + Alembic 25a0b1c2d3e4 + Settings + Counter + 30 RED tests landed
 - 25-02: sanitize_jsonb is the single source of truth for JSONB NaN/Inf scrubbing — wired at first line of every JSONB-bound repo write (financial/report/score/notification/job). Inline `_clean_nan` in services/pipeline.py REMOVED. Recipe handles dict/list/tuple recursion + numpy.float64 (via float-subclass isinstance) + bool short-circuit. scheduler.py:156 errors-dict NOT wrapped (owned by 25-03; literal dict has no float content). DQ-04 + ROADMAP SC #2 closed.
+- 25-03: QuarantineRepository.cleanup uses Python-side `datetime.now(UTC) - timedelta(days)` cutoff bound parameter (not SQL `now() - interval`) so the boundary is testable with frozen-time fixtures. APScheduler `dq_quarantine_cleanup` registered at hour=3 minute=15 Asia/Ho_Chi_Minh with max_instances=1 + coalesce=True — Pitfall F mandate: away from 15:46 daily pipeline, single instance, stale fires coalesced. Test asserts `job.trigger.timezone` attribute (not `str(job.trigger)`, which omits tz). Producer (DQ-01 reject-to-quarantine) deferred to 25-05.
 
 ### Watch Out For (from research)
 
