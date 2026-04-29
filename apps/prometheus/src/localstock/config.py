@@ -105,6 +105,16 @@ class Settings(BaseSettings):
     # the latest trading session by more than this many sessions.
     dq_stale_threshold_sessions: int = 1
 
+    # === Phase 26 / CACHE-04 — in-process cache (D-02 TTL table, D-07) ===
+    # TTLs and maxsizes for `localstock.cache` namespace registry. Defaults
+    # match CONTEXT D-02 (24h scores, 1h market/indicators, 5s pipeline run-id).
+    cache_ranking_ttl_seconds: int = 86400
+    cache_market_ttl_seconds: int = 3600
+    cache_indicators_ttl_seconds: int = 3600
+    cache_indicators_maxsize: int = 600
+    cache_janitor_interval_seconds: int = 60
+    cache_latest_run_id_ttl_seconds: int = 5
+
     @field_validator(
         "dq_default_tier2_mode",
         "dq_tier2_rsi_mode",

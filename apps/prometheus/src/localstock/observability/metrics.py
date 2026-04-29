@@ -177,6 +177,18 @@ def init_metrics(registry: CollectorRegistry | None = None) -> dict[str, Any]:
         ),
         "localstock_cache_evictions_total",
     )
+    # Phase 26 / 26-01 (B1: 26-01 owns this declaration; 26-02 will add
+    # cache_prewarm_errors_total separately in a disjoint region of this
+    # block so Wave-1 parallel execution is merge-safe).
+    metrics["cache_compute_total"] = _register(
+        lambda: Counter(
+            "localstock_cache_compute_total",
+            "Cache cold-fill computations (single-flight gate; SC #3).",
+            labelnames=("cache_name",),
+            registry=target,
+        ),
+        "localstock_cache_compute_total",
+    )
 
     # === DB query metrics (D-06: labels = query_type, table_class) ===
     metrics["db_query_duration_seconds"] = _register(
@@ -336,3 +348,14 @@ def _get_default_registry() -> CollectorRegistry:
 # lifespan after ``configure_logging()`` so structured logs capture any failure.
 # The double-call is intentional and idempotent (D-04).
 _DEFAULT_METRICS = init_metrics()
+
+
+def get_metrics() -> dict[str, Any]:
+    """Return the module-level default metrics dict.
+
+    Phase 26 / 26-01 — accessor for ``localstock.cache`` and tests so
+    callers don't import the private ``_DEFAULT_METRICS`` name. Always
+    returns the same dict; idempotent re-init via ``init_metrics`` keeps
+    collectors stable.
+    """
+    return _DEFAULT_METRICS
