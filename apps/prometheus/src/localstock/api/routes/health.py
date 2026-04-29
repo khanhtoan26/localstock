@@ -97,6 +97,21 @@ def _trading_days_lag(latest: date, today: date) -> int:
     return lag
 
 
+def _last_trading_day_on_or_before(today: date) -> date:
+    """Return the most recent VN trading day on or before ``today``.
+
+    Walks backwards skipping weekends and ``_VN_HOLIDAYS_2025_2026``.
+    Loop is bounded defensively (worst-case Tet ~9 holidays + weekend
+    gives < 14 calendar steps; cap at 20 with a fall-through return).
+    """
+    d = today
+    for _ in range(20):
+        if _is_trading_day(d):
+            return d
+        d = d - timedelta(days=1)
+    return d
+
+
 # ---------------------------------------------------------------------------
 # /health/live — liveness, zero I/O
 # ---------------------------------------------------------------------------
@@ -183,16 +198,50 @@ async def health_pipeline(session: AsyncSession = Depends(get_session)) -> dict:
 # ---------------------------------------------------------------------------
 @router.get("/health/data", summary="Data freshness — max price date vs calendar")
 async def health_data(session: AsyncSession = Depends(get_session)) -> dict:
+    # Local import: avoid module-load cost + lets tests monkeypatch
+    # DQ_STALE_THRESHOLD_SESSIONS via ``get_settings.cache_clear()`` + setenv
+    # at request time without reloading the route module.
+    from localstock.config import get_settings
+
     result = await session.execute(select(func.max(StockPrice.date)))
     max_date: date | None = result.scalar_one_or_none()
     today = date.today()
+    last_trading = _last_trading_day_on_or_before(today)
+    threshold = get_settings().dq_stale_threshold_sessions
+
     if max_date is None:
-        return {"max_price_date": None, "trading_days_lag": None, "stale": True}
+        # Cold start — preserve back-compat keys (D-05), mark unknown in
+        # the new data_freshness block so dashboards can distinguish a
+        # cold start from a true stale alert.
+        return {
+            "max_price_date": None,
+            "trading_days_lag": None,
+            "stale": True,
+            "data_freshness": {
+                "last_trading_day": last_trading.isoformat(),
+                "max_data_date": None,
+                "sessions_behind": None,
+                "status": "unknown",
+                "threshold_sessions": threshold,
+            },
+        }
+
     lag = _trading_days_lag(max_date, today)
+    sessions_behind = lag
+    status_str = "fresh" if sessions_behind <= threshold else "stale"
     return {
+        # Phase 24 contract — preserved verbatim (CONTEXT D-05 hard rule).
         "max_price_date": max_date.isoformat(),
         "trading_days_lag": lag,
         "stale": lag > 1,
+        # DQ-07 / SC #5 — configurable-threshold freshness block.
+        "data_freshness": {
+            "last_trading_day": last_trading.isoformat(),
+            "max_data_date": max_date.isoformat(),
+            "sessions_behind": sessions_behind,
+            "status": status_str,
+            "threshold_sessions": threshold,
+        },
     }
 
 
