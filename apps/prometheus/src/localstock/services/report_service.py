@@ -36,6 +36,7 @@ from localstock.reports.generator import (
     compute_stop_loss,
     compute_target_price,
     detect_signal_conflict,
+    enforce_price_ordering,
 )
 from localstock.reports.t3 import predict_3day_trend
 from localstock.services.sentiment_service import SentimentService
@@ -305,6 +306,13 @@ class ReportService:
                 if tp is not None:
                     report.target_price = tp
 
+                # Enforce strict ordering on deterministic prices BEFORE
+                # validation — the three compute_* helpers are independent and
+                # may produce ties after rounding (e.g. ep=sl=27.5 for HPG)
+                # which would otherwise cause _validate_price_levels to null
+                # all three prices and silently hide the Trade Plan section.
+                enforce_price_ordering(report)
+
                 # Post-generation validation (PROMPT-04)
                 if current_close:
                     report = _validate_price_levels(report, current_close)
@@ -539,6 +547,10 @@ class ReportService:
                 report.stop_loss = sl
             if tp is not None:
                 report.target_price = tp
+
+            # Enforce strict ordering on deterministic prices BEFORE
+            # validation — see run_full() for rationale.
+            enforce_price_ordering(report)
 
             # Post-generation validation (PROMPT-04)
             if current_close:

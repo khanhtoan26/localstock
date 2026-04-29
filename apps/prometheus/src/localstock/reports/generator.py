@@ -134,6 +134,40 @@ def compute_target_price(nearest_resistance: float | None, close: float | None) 
     return round(close * 1.10, 1)
 
 
+def enforce_price_ordering(report) -> None:
+    """Enforce strict ordering stop_loss < entry_price < target_price.
+
+    Per D-09: validation requires strict ordering. The deterministic price
+    computations (compute_entry_zone, compute_stop_loss, compute_target_price)
+    are independent of each other and can produce ties or near-ties after
+    rounding to 1 decimal place — e.g. HPG with entry midpoint 27.48 and
+    support_2 27.52 both round to 27.5, which then fails strict ordering and
+    causes _validate_price_levels to null all three prices (silent Trade Plan
+    drop on the frontend).
+
+    This helper nudges deterministic ties apart by 0.1 (≈100 VND) so the
+    downstream validation passes. Mutates ``report`` in place. Safe to call
+    when prices are partially or fully None.
+    """
+    nudge = 0.1
+    ep = report.entry_price
+    sl = report.stop_loss
+    tp = report.target_price
+
+    if ep is not None and sl is not None and sl >= ep:
+        report.stop_loss = round(ep - nudge, 1)
+        logger.debug(
+            f"enforce_price_ordering: nudged stop_loss {sl} -> {report.stop_loss} "
+            f"(was >= entry_price {ep})"
+        )
+    if ep is not None and tp is not None and tp <= ep:
+        report.target_price = round(ep + nudge, 1)
+        logger.debug(
+            f"enforce_price_ordering: nudged target_price {tp} -> {report.target_price} "
+            f"(was <= entry_price {ep})"
+        )
+
+
 def detect_signal_conflict(
     tech_score: float | None,
     fund_score: float | None,

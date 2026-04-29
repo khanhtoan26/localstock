@@ -25,6 +25,7 @@ from localstock.reports.generator import (
     build_report_prompt,
     _validate_price_levels,
     _normalize_risk_rating,
+    enforce_price_ordering,
 )
 
 
@@ -647,3 +648,109 @@ class TestNormalizeRiskRating:
         report = self._make_report(None)
         result = _normalize_risk_rating(report)
         assert result.risk_rating is None
+
+
+class TestEnforcePriceOrdering:
+    """Test deterministic-price ordering enforcement (regression: trade-plan-missing-after-pipeline).
+
+    Background: compute_entry_zone (midpoint of nearest_support and bb_upper)
+    and compute_stop_loss (max of support_2 and close*0.93) are independent
+    computations. They can produce ties or near-ties at .1 rounding precision,
+    which then trip _validate_price_levels' strict ``sl < ep < tp`` check and
+    null all three prices — silently hiding the Trade Plan section in the UI.
+    """
+
+    def _make_report(self, ep, sl, tp):
+        return StockReport(
+            summary="x", technical_analysis="x", fundamental_analysis="x",
+            sentiment_analysis="x", macro_impact="x", long_term_suggestion="x",
+            swing_trade_suggestion="x", recommendation="Mua", confidence="Cao",
+            entry_price=ep, stop_loss=sl, target_price=tp,
+            risk_rating="medium",
+        )
+
+    def test_no_change_when_already_ordered(self):
+        report = self._make_report(ep=27.5, sl=27.3, tp=29.4)
+        enforce_price_ordering(report)
+        assert report.entry_price == 27.5
+        assert report.stop_loss == 27.3
+        assert report.target_price == 29.4
+
+    def test_nudges_stop_loss_when_equal_to_entry(self):
+        # The exact HPG 2026-04-29 case: entry midpoint and stop_loss both
+        # round to 27.5 → strict ordering would fail without nudging.
+        report = self._make_report(ep=27.5, sl=27.5, tp=29.4)
+        enforce_price_ordering(report)
+        assert report.stop_loss == 27.4
+        assert report.entry_price == 27.5
+        assert report.target_price == 29.4
+        assert report.stop_loss < report.entry_price < report.target_price
+
+    def test_nudges_stop_loss_when_above_entry(self):
+        report = self._make_report(ep=27.5, sl=27.6, tp=29.4)
+        enforce_price_ordering(report)
+        assert report.stop_loss == 27.4
+        assert report.entry_price == 27.5
+
+    def test_nudges_target_when_equal_to_entry(self):
+        report = self._make_report(ep=29.0, sl=27.5, tp=29.0)
+        enforce_price_ordering(report)
+        assert report.target_price == 29.1
+        assert report.entry_price == 29.0
+
+    def test_nudges_target_when_below_entry(self):
+        report = self._make_report(ep=29.0, sl=27.5, tp=28.9)
+        enforce_price_ordering(report)
+        assert report.target_price == 29.1
+
+    def test_handles_partial_none(self):
+        report = self._make_report(ep=27.5, sl=None, tp=29.4)
+        enforce_price_ordering(report)
+        # No-op for None side
+        assert report.stop_loss is None
+        assert report.entry_price == 27.5
+        assert report.target_price == 29.4
+
+    def test_handles_all_none(self):
+        report = self._make_report(ep=None, sl=None, tp=None)
+        enforce_price_ordering(report)
+        assert report.entry_price is None
+        assert report.stop_loss is None
+        assert report.target_price is None
+
+    def test_pipeline_e2e_hpg_regression(self):
+        """End-to-end regression: HPG 04-29 inputs through inject + enforce + validate.
+
+        Before the fix, this scenario produced (None, None, None) and the
+        Trade Plan section was hidden. After the fix, the prices survive
+        with deterministic ordering and pass range validation.
+        """
+        from localstock.reports.generator import (
+            compute_entry_zone, compute_stop_loss, compute_target_price,
+        )
+
+        close = 27.65
+        nearest_support, nearest_resistance, support_2, bb_upper = (
+            26.05, 29.4, 27.52, 28.908481431228928,
+        )
+        entry_lower, entry_upper = compute_entry_zone(
+            nearest_support, bb_upper, close, 506
+        )
+        sl = compute_stop_loss(support_2, close)
+        tp = compute_target_price(nearest_resistance, close)
+
+        report = self._make_report(ep=None, sl=None, tp=None)
+        if entry_lower is not None and entry_upper is not None:
+            report.entry_price = round((entry_lower + entry_upper) / 2, 1)
+        if sl is not None:
+            report.stop_loss = sl
+        if tp is not None:
+            report.target_price = tp
+
+        enforce_price_ordering(report)
+        report = _validate_price_levels(report, close)
+
+        assert report.entry_price is not None
+        assert report.stop_loss is not None
+        assert report.target_price is not None
+        assert report.stop_loss < report.entry_price < report.target_price
