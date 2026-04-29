@@ -1,17 +1,115 @@
-"""Phase 25 / DQ-01 + DQ-02 — Validation runner (Tier 1 partition + Tier 2 dispatch).
+"""Phase 25 / DQ-01 + DQ-02 — Validation runner (D-01, D-06).
 
-Implementations land in 25-05 (Tier 1) and 25-07 (Tier 2). Wave 0 stub.
+Implements the Tier 1 partition (this plan, 25-05). Tier 2 dispatch
+(`evaluate_tier2`) lands in 25-07.
 """
+
 from __future__ import annotations
 
 from typing import Any
 
-
-def partition_valid_invalid(df: Any, schema: Any) -> tuple[Any, list[dict], Any]:
-    """Run a pandera schema and split rows into (valid_df, invalid_rows, errors). (Wave 2)"""
-    raise NotImplementedError("DQ-01: implemented in 25-05-PLAN.md")
+import pandas as pd
+import pandera.errors as pae
 
 
+def partition_valid_invalid(
+    df: pd.DataFrame,
+    schema: Any,
+) -> tuple[pd.DataFrame, list[dict], pd.DataFrame | None]:
+    """Validate ``df`` against ``schema`` lazily; partition rows.
+
+    Returns ``(valid_df, invalid_rows, failure_cases_df)``.
+
+    Each ``invalid_rows`` dict flattens the offending row's columns at the
+    top level (so callers can read ``item["symbol"]`` directly) and adds
+    metadata keys:
+      - ``rule``    — canonical rule name (CONTEXT D-01 vocabulary)
+      - ``reason``  — pandera check name as captured
+      - ``all_rules`` — every distinct rule the row violated
+      - ``row``     — the original row as a dict (used by the pipeline
+                      caller as the quarantine ``payload``)
+    """
+    if schema is None:  # defensive — Wave 0 stub leftover
+        raise RuntimeError("partition_valid_invalid: schema is None")
+
+    try:
+        valid = schema.validate(df, lazy=True)
+        return valid, [], None
+    except pae.SchemaErrors as exc:
+        failure_cases = exc.failure_cases
+
+        # Per-row rule map: idx -> [(rule, check_name), ...]
+        rule_by_idx: dict[int, list[tuple[str, str]]] = {}
+        # Frame-level (no specific row index) rules apply to every row.
+        frame_rules: list[tuple[str, str]] = []
+
+        for _, fc in failure_cases.iterrows():
+            check_name = str(fc.get("check") or fc.get("check_number") or "unknown")
+            column = "" if pd.isna(fc.get("column")) else str(fc.get("column") or "")
+            rule = _normalize_rule(check_name, column)
+            idx_val = fc.get("index")
+            if pd.isna(idx_val):
+                frame_rules.append((rule, check_name))
+            else:
+                try:
+                    idx_int = int(idx_val)
+                except (TypeError, ValueError):
+                    continue
+                rule_by_idx.setdefault(idx_int, []).append((rule, check_name))
+
+        bad_idx_set: set[int] = set(rule_by_idx.keys())
+        if frame_rules:
+            # Any frame-level failure invalidates every row in the frame.
+            bad_idx_set.update(int(i) for i in df.index.tolist())
+
+        invalid_rows: list[dict] = []
+        for i in sorted(bad_idx_set):
+            rules = rule_by_idx.get(i, []) + frame_rules
+            primary_rule, primary_check = (
+                rules[0] if rules else ("unknown", "unknown")
+            )
+            row_dict = df.loc[i].to_dict()
+            invalid_rows.append(
+                {
+                    **row_dict,  # flatten so callers can read item["symbol"]
+                    "row": row_dict,
+                    "rule": primary_rule,
+                    "reason": primary_check,
+                    "all_rules": sorted({r[0] for r in rules}),
+                }
+            )
+
+        valid_df = df.drop(index=list(bad_idx_set), errors="ignore")
+        return valid_df, invalid_rows, failure_cases
+
+
+def _normalize_rule(check_name: str, column: str) -> str:
+    """Map pandera check names → CONTEXT D-01 canonical rule strings."""
+    cn = (check_name or "").lower()
+    if "future_date" in cn:
+        return "future_date"
+    if "nan_ratio" in cn:
+        return "nan_ratio_exceeded"
+    if "malformed_date" in cn:
+        return "malformed_date"
+    if "unique" in cn or "duplicate" in cn:
+        return "duplicate_pk"
+    if "str_matches" in cn:
+        return "bad_symbol_format"
+    if "greater_than" in cn or cn == "gt" or cn.startswith("greater_than"):
+        return f"non_positive_{column}" if column else "negative_price"
+    if "greater_than_or_equal" in cn or cn == "ge":
+        return f"negative_{column}" if column else "negative_value"
+    if "not_nullable" in cn or "nullable" in cn:
+        return f"null_{column}" if column else "null_value"
+    if "dtype" in cn or "type" in cn:
+        return f"bad_type_{column}" if column else "bad_type"
+    return cn or "unknown"
+
+
+# ---------------------------------------------------------------------
+# Tier 2 — implemented in 25-07.
+# ---------------------------------------------------------------------
 def evaluate_tier2(
     rule: str,
     df: Any,
@@ -19,5 +117,5 @@ def evaluate_tier2(
     *,
     symbol: str | None = None,
 ) -> None:
-    """Evaluate a Tier 2 advisory rule under shadow/enforce dispatch. (Wave 3)"""
+    """Evaluate a Tier 2 advisory rule under shadow/enforce dispatch."""
     raise NotImplementedError("DQ-02: implemented in 25-07-PLAN.md")
