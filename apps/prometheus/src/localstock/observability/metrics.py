@@ -219,6 +219,22 @@ def init_metrics(registry: CollectorRegistry | None = None) -> dict[str, Any]:
         "localstock_dq_validation_total",
     )
 
+    # === Phase 25 / DQ-02 — Tier 2 violation counter (D-06) ===
+    # NOTE: distinct from dq_validation_failures_total above.
+    # That tracks Tier 1 schema-validate-stage outcomes (validator, severity).
+    # THIS tracks per-rule violations with shadow/strict tier label so the
+    # 14-day shadow → strict promotion is visible in the same series.
+    # NEVER add a `symbol` label (Phase 23 D-06 / OBS-09 hard rule).
+    metrics["dq_violations_total"] = _register(
+        lambda: Counter(
+            "localstock_dq_violations_total",
+            "Total DQ rule violations (Tier 1 strict + Tier 2 shadow/enforce).",
+            labelnames=("rule", "tier"),  # tier ∈ advisory|strict
+            registry=target,
+        ),
+        "localstock_dq_violations_total",
+    )
+
     # === Phase 24-05 — Self-probe gauges (D-05, OBS-15) ===
     metrics["db_pool_size"] = _register(
         lambda: Gauge(

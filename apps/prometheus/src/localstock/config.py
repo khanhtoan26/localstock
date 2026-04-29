@@ -92,6 +92,43 @@ class Settings(BaseSettings):
     # Phase 24 — slow-query threshold (D-02, OBS-13)
     slow_query_threshold_ms: int = Field(default=250, ge=1, le=10000)
 
+    # === Phase 25 / DQ — per-rule shadow dispatcher (D-06) ===
+    # Per CONTEXT D-06: env flags per rule; default = shadow until promotion.
+    # The `dq_default_tier2_mode` applies when a per-rule mode is unset.
+    dq_default_tier2_mode: str = "shadow"  # validated to {'shadow','enforce'}
+    dq_tier2_rsi_mode: str | None = None
+    dq_tier2_gap_mode: str | None = None
+    dq_tier2_missing_mode: str | None = None
+
+    # === Phase 25 / DQ-07 — stale-data threshold (D-05) ===
+    # /health/data flips from "fresh" → "stale" once max(prices.date) lags
+    # the latest trading session by more than this many sessions.
+    dq_stale_threshold_sessions: int = 1
+
+    @field_validator(
+        "dq_default_tier2_mode",
+        "dq_tier2_rsi_mode",
+        "dq_tier2_gap_mode",
+        "dq_tier2_missing_mode",
+        mode="before",
+    )
+    @classmethod
+    def _validate_tier2_mode(cls, v: object) -> object:
+        """Per-rule Tier 2 modes must be one of {shadow, enforce} (D-06).
+
+        ``None`` and empty-string both mean "fall back to dq_default_tier2_mode".
+        """
+        if v is None:
+            return None
+        if isinstance(v, str) and v == "":
+            return None
+        allowed = {"shadow", "enforce"}
+        if not isinstance(v, str) or v.lower() not in allowed:
+            raise ValueError(
+                f"tier2 mode must be one of {sorted(allowed)}, got {v!r}"
+            )
+        return v.lower()
+
     model_config = {"env_file": _find_env_file(), "env_file_encoding": "utf-8"}
 
 
