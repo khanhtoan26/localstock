@@ -137,7 +137,7 @@
 - [x] 25-04-PLAN.md — DQ-06 PipelineRun.stats dual-write + _truncate_error
 - [x] 25-05-PLAN.md — DQ-01 OHLCVSchema + reject-to-quarantine in _crawl_prices (closes SC #1)
 - [x] 25-06-PLAN.md — DQ-05 per-symbol try/except across services (closes SC #3)
-- [ ] 25-07-PLAN.md — DQ-02 + DQ-03 Tier 2 dispatcher + shadow-mode promotion runbook (closes SC #4)
+- [x] 25-07-PLAN.md — DQ-02 + DQ-03 Tier 2 dispatcher + shadow-mode promotion runbook (closes SC #4)
 - [ ] 25-08-PLAN.md — DQ-07 /health/data stale extension (closes SC #5)
 
 ### Phase 26: Caching
@@ -205,7 +205,7 @@
 | 22. Logging Foundation | v1.5 | 0/? | Not started | - |
 | 23. Metrics Primitives & /metrics | v1.5 | 0/? | Not started | - |
 | 24. Instrumentation & Health | v1.5 | 6/6 | Complete | 2026-04-29 |
-| 25. Data Quality | v1.5 | 6/8 | In progress | 25-06 complete (Wave 4 done, SC #3 ✅); 25-07/25-08 next |
+| 25. Data Quality | v1.5 | 7/8 | In progress | 25-07 complete (Wave 5 partial, SC #4 ✅); 25-08 next |
 | 26. Caching | v1.5 | 0/? | Not started | - |
 | 27. Pipeline Performance | v1.5 | 0/? | Not started | - |
 | 28. Database Optimization | v1.5 | 0/? | Not started | - |

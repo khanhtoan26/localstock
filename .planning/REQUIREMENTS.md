@@ -48,9 +48,9 @@
 
 - [x] **DQ-01
 **: Tier 1 validators (block per-symbol) — pandera schemas reject corrupt OHLCV: negative price, future date, NaN ratio > threshold, duplicate (symbol,date) PK
-- [ ] **DQ-02
+- [x] **DQ-02
 **: Tier 2 advisory validators (warn + metric, no block): RSI > 99.5, gap > 30%, missing rows > 20%
-- [ ] **DQ-03
+- [x] **DQ-03
 **: Shadow mode mặc định 14 ngày cho Tier 2 rules trước khi cho phép promote sang Tier 1 (operational policy documented)
 - [ ] **DQ-04
 **: NaN/Inf sanitizer ở JSONB write boundary — `df.replace([±inf], NaN).where(notna(), None)` áp dụng trước mọi insert vào JSONB column
@@ -147,8 +147,8 @@
 | OBS-16 | Phase 24 | 24-05 | Complete |
 | OBS-17 | Phase 24 | 24-02 + 24-06 | Done |
 | DQ-01  | Phase 25 | 25-05 | Done |
-| DQ-02  | Phase 25 | TBD | Pending |
-| DQ-03  | Phase 25 | TBD | Pending |
+| DQ-02  | Phase 25 | 25-07-PLAN.md | Done |
+| DQ-03  | Phase 25 | 25-07-PLAN.md | Done |
 | DQ-04  | Phase 25 | TBD | Pending |
 | DQ-05  | Phase 25 | 25-06-PLAN.md | Complete |
 | DQ-06  | Phase 25 | TBD | Pending |
