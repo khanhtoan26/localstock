@@ -24,6 +24,7 @@ from localstock.observability.middleware import (
     CorrelationIdMiddleware,
     RequestLogMiddleware,
 )
+from localstock.cache.middleware import CacheHeaderMiddleware
 from localstock.scheduler.scheduler import get_lifespan
 
 
@@ -84,6 +85,15 @@ def create_app() -> FastAPI:
     app.add_middleware(RequestLogMiddleware)
     instrumentator.instrument(app)
     app.add_middleware(CorrelationIdMiddleware)
+    # Phase 26 / 26-02 — X-Cache header (D-08, P-4). Added AFTER
+    # CorrelationIdMiddleware in source so it sits OUTSIDE correlation in
+    # runtime LIFO order (CORS → CacheHeader → CorrelationId → Prom →
+    # RequestLog → handler). Header attachment doesn't log, so running
+    # outside correlation is benign; what matters is that the dispatch
+    # awaits ``call_next`` in the same Task as the handler so the
+    # ``cache_outcome_var`` ContextVar set inside ``get_or_compute`` is
+    # visible after ``await``.
+    app.add_middleware(CacheHeaderMiddleware)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["http://localhost:3000"],
