@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Performance & Data Quality
-status: completed
-stopped_at: "Completed 25-07-PLAN.md (Wave 5 — DQ-02 Tier 2 dispatcher + DQ-03 promotion runbook; SC #4 ✅)"
-last_updated: "2026-04-29T16:40:00.000Z"
-last_activity: "2026-04-29 — 26-03 Wave 2 complete (CACHE-02 ✅, ROADMAP SC #2 ✅ verbatim closed). PipelineRunRepository.get_latest_completed() reads max-completed PK with status filter (T-26-03-02). cache.version.resolve_latest_run_id wraps it in get_or_compute(namespace='pipeline:latest_run_id', key='current') — 5s TTL (D-02) absorbs request bursts. Public re-export added to localstock.cache. Lazy import of get_or_compute inside helper sidesteps circular load with __init__.py. Verbatim SC #2 test: seed run1 → populate scores:ranking:run=1 → insert run2 → invalidate both namespaces (simulating 26-05 finalize hook) → resolver returns run2 immediately (no 5s wait); old run=1 key unreachable by composers — old key never serves stale data. 5s-TTL hit/miss test pins counters delta. 18/18 cache+repo tests GREEN; ruff clean. Full suite: 583 passed, 2 out-of-scope fails (Phase-24 migration_downgrade pre-existing; test_market_route::test_endpoint_calls_repo polluted by 26-04 cache-wrapping — owner: 26-04). 4 commits (4c1646a RED repo, 54ff416 GREEN repo, 05a697d RED versioning, 937565b GREEN versioning) with Copilot co-author trailer."
+status: planning
+stopped_at: "Completed 26-04-PLAN.md (Wave 2 — CACHE-01 + ROADMAP SC #1 closed; /scores/top + /market/summary cached)"
+last_updated: "2026-04-29T10:00:00.000Z"
+last_activity: "2026-04-29 — 26-04 Wave 2: 2 commits, 7 files changed, 4/4 new tests GREEN (perf_ranking, perf_market, route_caching_integration ×2), full project 588 passed (1 pre-existing Phase-24 fail). CACHE-01 ✅; ROADMAP SC #1 ✅ verbatim closed (p95 = 2.36 ms scores / 2.01 ms market — 21×–25× under 50 ms gate)."
 progress:
   total_phases: 8
   completed_phases: 4
   total_plans: 30
-  completed_plans: 28
-  percent: 93
+  completed_plans: 29
+  percent: 96
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-28)
 
 **Core value:** Agent tự động phân tích và xếp hạng cổ phiếu HOSE — cho tôi danh sách gợi ý đáng mua kèm lý do rõ ràng, cập nhật hàng ngày, không tốn phí API.
-**Current focus:** v1.6 Performance Caching — **Phase 26 IN PROGRESS** (3/6 plans complete). 26-01 ✅ closes CACHE-04 + ROADMAP SC #3; 26-02 ✅ closes CACHE-07; 26-03 ✅ closes CACHE-02 + ROADMAP SC #2. Next: 26-04 SUMMARY pending, then 26-05/06.
+**Current focus:** v1.6 Performance Caching — **Phase 26 IN PROGRESS** (4/6 plans complete). 26-01 ✅ closes CACHE-04 + ROADMAP SC #3; 26-02 ✅ closes CACHE-07; 26-03 ✅ closes CACHE-02 + ROADMAP SC #2; 26-04 ✅ closes CACHE-01 + ROADMAP SC #1. Next: 26-05 (pre-warm) || 26-06 (janitor).
 
 ## Current Position
 
-Phase: 26 — Caching (IN PROGRESS — 3/6 plans complete; ROADMAP SC #2 ✅ + SC #3 ✅ closed)
-Plan: 03 (complete) — PipelineRunRepository.get_latest_completed + cache.version.resolve_latest_run_id (5s TTL) + verbatim SC #2 closure. Wave 2 sibling 26-04 has feat commit (f208c4a) but SUMMARY pending.
-Status: 26-03 complete — `db/repositories/pipeline_run_repo.py` ships `PipelineRunRepository.get_latest_completed() -> int | None` (async-SQLAlchemy 2.0 read-only repo, mirrors news_repo.py shape; `select(PipelineRun.id).where(status='completed').order_by(completed_at.desc()).limit(1)` filters running/failed rows — T-26-03-02). New `cache/version.py` exposes `resolve_latest_run_id(session_factory)` wrapping the repo call in `get_or_compute(namespace='pipeline:latest_run_id', key='current', compute_fn=_fetch)` — 5s TTL from D-02 absorbs request bursts (T-26-03-03). Lazy import of `get_or_compute` inside the helper body sidesteps circular load; `cache/__init__.py` re-exports `resolve_latest_run_id` AFTER `get_or_compute` is defined. ROADMAP SC #2 verbatim closure (`tests/test_cache/test_versioning.py::test_new_pipeline_run_invalidates_old_keys`): seeds run1 → populates `scores:ranking:limit=50:run=N1` → inserts run2 → invalidates both namespaces (simulating 26-05 finalize hook) → resolver returns N2 immediately without waiting for 5s TTL; old `run=N1` key is unreachable because composers only ever address the current run_id. 5s-TTL hit/miss test pins `cache_hits_total{cache_name='pipeline:latest_run_id'}` delta=1 and `cache_misses_total` delta=1 across two back-to-back calls. 18/18 cache + new repo tests GREEN; `uvx ruff check` clean on `src/localstock/cache/`, `src/localstock/db/repositories/pipeline_run_repo.py`, `tests/test_cache/test_versioning.py`, `tests/test_db/test_pipeline_run_repo.py`. Full project suite 583 passed, 2 out-of-scope fails: Phase-24 `migration_downgrade` (pre-existing, ignored per prompt) and `test_market_route::TestMarketSummaryResponse::test_endpoint_calls_repo` (NEW failure caused by 26-04 wrapping `/market/summary` with `get_or_compute` — cached results bypass the test's mock; passes in isolation; logged to `.planning/phases/26-caching/deferred-items.md` for 26-04 owner). 4 commits with Copilot co-author trailer: 4c1646a (test 26-03 RED repo), 54ff416 (feat 26-03 GREEN repo), 05a697d (test 26-03 RED versioning), 937565b (feat 26-03 GREEN versioning).
-Last activity: 2026-04-29 — 26-03 Wave 2: 4 commits, 4 files created + 1 modified, 5/5 RED→GREEN (3 repo + 2 versioning), 18/18 cache+repo, 583/585 full suite (2 out-of-scope), ruff clean. CACHE-02 ✅; ROADMAP SC #2 ✅ verbatim closed.
+Phase: 26 — Caching (IN PROGRESS — 4/6 plans complete; ROADMAP SC #1 ✅ + SC #2 ✅ + SC #3 ✅ closed)
+Plan: 04 (complete) — `/api/scores/top` + `/api/market/summary` wrapped in `get_or_compute`; `build_market_summary(session)` extracted for 26-05 pre-warm reuse; ROADMAP doc-fix `/api/scores/ranking` → `/api/scores/top` applied. SC #1 verbatim closed.
+Status: 26-04 complete — `routes/scores.py` wraps `/scores/top` in `get_or_compute(namespace='scores:ranking', key=f'limit={limit}:run={run_id}', ...)` (TTL 24h via D-02 registry); `routes/market.py` wraps `/market/summary` similarly (`market:summary`, key `run={run_id}`, TTL 1h) AND extracts `build_market_summary(session)` module-level helper (W1 fix; pre-warm reuse for 26-05 — Q-3, P-6 single-flight choke-point preserved). Both routes bypass cache when `run_id is None` (T-26-04-04 — empty-shape poison guard). `resolve_latest_run_id` shipped as a local fallback shim taking the per-request `session` (NOT `session_factory`) — avoids the module-singleton-engine event-loop pollution under pytest-asyncio function-scoped loops; canonical 26-03 helper (`localstock.cache.resolve_latest_run_id`) remains available for future migration. **CacheHeaderMiddleware wiring fix-forward**: moved to innermost `add_middleware` position in `api/app.py` so LIFO runtime order places it INSIDE both `BaseHTTPMiddleware` subclasses (CorrelationId, RequestLog) — pure-ASGI middleware cannot read a ContextVar set inside a `BaseHTTPMiddleware`-wrapped route's task (P-4 boundary). With CacheHeader innermost, `cache_outcome_var` is visible in `send_wrapper` and the `X-Cache: hit|miss` header lands correctly. ROADMAP.md + REQUIREMENTS.md route-name doc-fix applied (Q-1: `/api/scores/ranking` → `/api/scores/top`; cache namespace `scores:ranking` unchanged — content-described). 3 RED→GREEN tests (Q-4 stdlib pattern: `time.perf_counter` + `statistics.quantiles(timings, n=20)[18]`): `test_ranking_cache_hit_p95_under_50ms` (verbatim SC #1 — 100 hot calls), `test_market_summary_cache_hit_p95_under_50ms`, `test_route_caching_integration` (miss→hit→miss-after-invalidate + run_id-None bypass). Measured perf: p50=1.69ms / p95=2.36ms / p99=8.40ms / max=8.45ms for `/scores/top`; p50=1.47ms / p95=2.01ms / p99=2.43ms for `/market/summary` — 21×–25× under the 50 ms gate. `tests/test_cache/conftest.py` extended with `_reset_db_singletons` autouse fixture (disposes + nulls `localstock.db.database._engine` between tests) AND post-test cache+lock clear (so cache state can't leak to subsequent test files like `test_market_route`). Resolves the 26-03-noted out-of-scope `test_endpoint_calls_repo` failure. Full project: 588 passed (only pre-existing Phase-24 `migration_downgrade` fail remains — out of scope per prompt). `uvx ruff check` clean. 2 commits with Copilot co-author trailer: f208c4a (feat 26-04 wrap routes + doc-fix), 3bc02f1 (test 26-04 SC #1 perf gate + middleware wiring + helper signature fix-forward).
+Last activity: 2026-04-29 — 26-04 Wave 2: 2 commits, 7 files changed, 4/4 new tests GREEN, full project 588 passed (1 pre-existing fail), ruff clean. CACHE-01 ✅; ROADMAP SC #1 ✅ verbatim closed (p95 = 2.36 ms / 2.01 ms — 21×–25× under 50 ms gate).
 
-Progress: [█████████░] 93%
+Progress: [█████████░] 96%
 
 ## Performance Metrics
 

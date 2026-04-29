@@ -150,7 +150,7 @@
   3. Concurrent 100 requests vào cùng cold key chỉ trigger 1 backend computation (single-flight via `asyncio.Lock`) — verified bằng counter `cache_compute_total` chỉ tăng 1
   4. Sau `run_daily_pipeline`, cache cho hot keys (ranking + market summary) đã pre-warm — first request từ user log `cache=hit` không phải `miss`
   5. `/metrics` expose `cache_hits_total`, `cache_misses_total`, `cache_evictions_total` với label `namespace`; `cache_janitor` job chạy mỗi 60s và log số entries swept
-**Plans**: 26-01 ✅ (CACHE-04 — cache core + single-flight + Wave-0 fixtures + canonical cache_compute_total; SC #3 ✅ closed); 26-02 ✅ (CACHE-07 — telemetry + middleware); 26-03 ✅ (CACHE-02 — version-key resolver; SC #2 ✅ closed); 26-04/05/06 pending
+**Plans**: 26-01 ✅ (CACHE-04 — cache core + single-flight + Wave-0 fixtures + canonical cache_compute_total; SC #3 ✅ closed); 26-02 ✅ (CACHE-07 — telemetry + middleware); 26-03 ✅ (CACHE-02 — version-key resolver; SC #2 ✅ closed); 26-04 ✅ (CACHE-01 — /scores/top + /market/summary cached + build_market_summary helper extracted; SC #1 ✅ verbatim closed, p95 = 2.36 ms / 2.01 ms — 21×–25× under 50 ms gate); 26-05/06 pending
 
 ### Phase 27: Pipeline Performance
 **Goal**: Toàn bộ pipeline (crawl + analyze + score + report cho ~400 mã) hoàn thành nhanh hơn baseline ≥ 3× nhờ concurrent crawl, không trigger vnstock soft-ban, không exhaust DB pool, không block event loop bằng pandas-ta.
