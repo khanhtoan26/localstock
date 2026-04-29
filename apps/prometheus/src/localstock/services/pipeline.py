@@ -29,6 +29,7 @@ from localstock.db.repositories.event_repo import EventRepository
 from localstock.db.repositories.financial_repo import FinancialRepository
 from localstock.db.repositories.price_repo import PriceRepository
 from localstock.db.repositories.stock_repo import StockRepository
+from localstock.dq.sanitizer import sanitize_jsonb
 from localstock.observability.context import run_id_var
 from localstock.services.price_adjuster import adjust_prices_for_event
 
@@ -210,7 +211,9 @@ class Pipeline:
                     run.symbols_success = len(symbols) - len(all_failed)
                     run.symbols_failed = len(all_failed)
                     run.errors = (
-                        {"failed_symbols": sorted(all_failed)} if all_failed else None
+                        sanitize_jsonb({"failed_symbols": sorted(all_failed)})
+                        if all_failed
+                        else None
                     )
                     run.status = "completed"
                     run.completed_at = datetime.now(UTC)
@@ -219,7 +222,7 @@ class Pipeline:
                     logger.exception("pipeline.run.errored")
                     run.status = "failed"
                     run.completed_at = datetime.now(UTC)
-                    run.errors = {"error": str(e)}
+                    run.errors = sanitize_jsonb({"error": str(e)})
                 finally:
                     logger.info("pipeline.run.completed", status=run.status)
 
@@ -230,7 +233,9 @@ class Pipeline:
             if run.status == "running":
                 run.status = "failed"
                 run.completed_at = datetime.now(UTC)
-                run.errors = {"error": "pipeline exited without setting terminal status"}
+                run.errors = sanitize_jsonb(
+                    {"error": "pipeline exited without setting terminal status"}
+                )
             try:
                 await self.session.commit()
             except Exception:
@@ -246,7 +251,9 @@ class Pipeline:
                         .values(
                             status="failed",
                             completed_at=datetime.now(UTC),
-                            errors={"error": "commit failed; status forcibly reset"},
+                            errors=sanitize_jsonb(
+                                {"error": "commit failed; status forcibly reset"}
+                            ),
                         )
                     )
                     await self.session.commit()
@@ -269,18 +276,7 @@ class Pipeline:
             symbol: Stock ticker.
             reports: Dict mapping report_type to DataFrame.
         """
-        import math
         import pandas as pd
-
-        def _clean_nan(obj):
-            """Recursively replace NaN/inf with None in nested structures."""
-            if isinstance(obj, float) and (math.isnan(obj) or math.isinf(obj)):
-                return None
-            if isinstance(obj, dict):
-                return {k: _clean_nan(v) for k, v in obj.items()}
-            if isinstance(obj, list):
-                return [_clean_nan(v) for v in obj]
-            return obj
 
         for report_type, df in reports.items():
             if df is None or (isinstance(df, pd.DataFrame) and df.empty):
@@ -294,7 +290,7 @@ class Pipeline:
                         period = (
                             f"Q{length}" if str(length).isdigit() else str(length)
                         )
-                        data = _clean_nan(row.to_dict())
+                        data = sanitize_jsonb(row.to_dict())
                         await self.financial_repo.upsert_statement(
                             symbol=symbol,
                             year=year,
@@ -306,7 +302,7 @@ class Pipeline:
                 else:
                     # vnstock 4.x wide format: rows are line items, columns are quarters
                     # Store entire report as single record per report_type
-                    data = _clean_nan(df.to_dict(orient="records"))
+                    data = sanitize_jsonb(df.to_dict(orient="records"))
                     await self.financial_repo.upsert_statement(
                         symbol=symbol,
                         year=0,

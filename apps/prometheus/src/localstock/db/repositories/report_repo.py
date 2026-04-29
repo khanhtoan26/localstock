@@ -8,6 +8,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from localstock.db.models import AnalysisReport
+from localstock.dq.sanitizer import sanitize_jsonb
 
 
 class ReportRepository:
@@ -18,6 +19,7 @@ class ReportRepository:
 
     async def upsert(self, row: dict) -> None:
         """Upsert a single analysis report. Dedup on (symbol, date, report_type)."""
+        row = sanitize_jsonb(row)  # DQ-04 (D-04): scrubs content_json + any nested NaN/Inf
         stmt = pg_insert(AnalysisReport).values(**row)
         update_cols = {
             col.name: getattr(stmt.excluded, col.name)

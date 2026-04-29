@@ -8,6 +8,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from localstock.db.models import NotificationLog
+from localstock.dq.sanitizer import sanitize_jsonb
 
 
 class NotificationRepository:
@@ -24,6 +25,7 @@ class NotificationRepository:
         details: dict | None = None,
     ) -> None:
         """Log a notification attempt. Upserts on (date, notification_type)."""
+        details = sanitize_jsonb(details)  # DQ-04 (D-04)
         stmt = pg_insert(NotificationLog).values(
             date=target_date,
             notification_type=notification_type,

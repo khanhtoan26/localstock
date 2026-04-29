@@ -7,6 +7,7 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from localstock.db.models import AdminJob
+from localstock.dq.sanitizer import sanitize_jsonb
 
 
 class JobRepository:
@@ -25,6 +26,7 @@ class JobRepository:
         Returns:
             Created AdminJob instance with id populated.
         """
+        params = sanitize_jsonb(params)  # DQ-04 (D-04)
         job = AdminJob(
             job_type=job_type,
             status="pending",
@@ -58,7 +60,7 @@ class JobRepository:
         if status in ("completed", "failed"):
             values["completed_at"] = datetime.now(UTC)
         if result is not None:
-            values["result"] = result
+            values["result"] = sanitize_jsonb(result)  # DQ-04 (D-04)
         if error is not None:
             values["error"] = error
 

@@ -8,6 +8,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from localstock.db.models import CompositeScore
+from localstock.dq.sanitizer import sanitize_jsonb
 
 
 class ScoreRepository:
@@ -20,6 +21,7 @@ class ScoreRepository:
         """Upsert composite scores. Dedup on (symbol, date)."""
         if not rows:
             return 0
+        rows = sanitize_jsonb(rows)  # DQ-04 (D-04): scrubs weights_json + any NaN/Inf
         stmt = pg_insert(CompositeScore).values(rows)
         update_cols = {
             col.name: getattr(stmt.excluded, col.name)

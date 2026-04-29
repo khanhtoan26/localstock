@@ -8,6 +8,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from localstock.db.models import FinancialStatement
+from localstock.dq.sanitizer import sanitize_jsonb
 
 
 class FinancialRepository:
@@ -44,6 +45,7 @@ class FinancialRepository:
             source: Data source ('VCI' or 'KBS').
             unit: Normalized unit (default: 'billion_vnd').
         """
+        data = sanitize_jsonb(data)  # DQ-04 (D-04): NaN/Inf → None at JSONB boundary
         stmt = pg_insert(FinancialStatement).values(
             symbol=symbol,
             year=year,
