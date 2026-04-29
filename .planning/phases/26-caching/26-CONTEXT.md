@@ -93,14 +93,16 @@ Pre-warm step calls each endpoint's underlying service method (NOT the HTTP hand
 - Trigger point: `Pipeline.run_full` step after `report` phase, before Telegram dispatch.
 - Failure mode: pre-warm errors are logged + counted but DO NOT fail the pipeline (try/except with `cache_prewarm_errors_total{namespace}` counter).
 
-### D-06 — Indicator Computation Cache: Yes, Service-Layer
-**LOCKED**: Pandas-ta indicator computations cached per `(indicator_name, symbol, pipeline_run_id)` in the `indicators` namespace.
+### D-06 — Indicator Computation Cache: Per-Symbol Bundle (RATIFIED 2026-04-29)
+**LOCKED**: Pandas-ta indicator computations cached per `(symbol, pipeline_run_id)` at the `analyze_technical_single` function boundary in `analysis_service.py`.
 
-- Cache key: `indicators:{rsi|sma_20|ema_50|macd|bollinger|...}:{symbol}:run={run_id}`
-- Wired in `analysis_service.py` at the indicator computation function boundary (single decorator or `get_or_compute` wrapper).
-- TTL 1 h, maxsize per indicator family (e.g. 600 = ~400 symbols × 1.5 buffer).
-- Major CPU win: pandas-ta runs ~50-100ms per indicator per symbol; cache hit returns in microseconds.
+- Cache key: `indicators:{symbol}:run={run_id}`
+- **Key simplification (research Q-B ratified)**: drop the `{indicator_name}` segment. Rationale: pandas-ta computes all 11 indicators in one bundled call (`analyze_technical_single`); per-indicator keys would fragment cache and force redundant computation. Per-symbol-per-run is the natural boundary.
+- TTL 1 h, maxsize ~600 (~400 symbols × 1.5 buffer).
+- Wired at `analysis_service.py:264` (verified in research §2).
+- Major CPU win: pandas-ta runs ~50-100ms per symbol bundle; cache hit returns in microseconds.
 - Pre-warm: implicit — when analysis phase populates indicators for all 400 symbols, the cache is hot for any subsequent `/api/analysis/{symbol}` reads in the same run.
+- Memory budget (research Q-5): worst case ~9 MB total for full 400-symbol coverage; well under any reasonable container ceiling.
 
 ### D-07 — Cache Module: `src/localstock/cache/` Package
 **LOCKED**: New top-level package `src/localstock/cache/` mirroring the `dq/` pattern from Phase 25.
@@ -124,13 +126,17 @@ src/localstock/cache/
 **LOCKED**:
 - **Janitor**: APScheduler `cache_janitor` job, IntervalTrigger 60 s (per CACHE-06). Sweeps each namespace's TTLCache by calling `cache.expire()` (cachetools native; pops expired keys eagerly, returning swept count). Logs `cache.janitor.sweep` with per-namespace counts. Job decorated `@observe('cache.janitor.sweep')`.
 - **Header**: FastAPI middleware adds `X-Cache: hit | miss` to responses for the cached routes (SC #1). Middleware reads a request-context flag set by `get_or_compute` (contextvars, similar to Phase 22 correlation_id pattern). NOT every route — only the ones that called into the cache.
-- **Metrics** (CACHE-07, SC #5):
-  - `cache_hits_total{namespace}` — incremented on cache hit
-  - `cache_misses_total{namespace}` — incremented on cache miss (cold or expired)
-  - `cache_compute_total{namespace}` — incremented inside the lock (SC #3 gate)
-  - `cache_evictions_total{namespace}` — incremented on TTLCache eviction (subscribe via cachetools `LRUCache.popitem` or count from janitor sweep delta)
-  - `cache_prewarm_errors_total{namespace}` — incremented on pre-warm failure (D-05)
-- **Cardinality**: only `namespace` label; never include the actual cache key (would explode cardinality on `indicators:*`). Total label combinations: ~5 namespaces × 5 metrics = 25 series.
+- **Metrics** (CACHE-07, SC #5) — label is `cache_name` (RATIFIED 2026-04-29 to match existing `observability/metrics.py` scaffolding from prior phases; was `namespace` in original CONTEXT):
+  - `cache_hits_total{cache_name}` — incremented on cache hit (already declared in metrics.py)
+  - `cache_misses_total{cache_name}` — incremented on cache miss (already declared)
+  - `cache_evictions_total{cache_name}` — incremented on eviction (already declared); subclass `TTLCache.popitem` to attribute reason='expire'|'evict' (research Q-2)
+  - `cache_compute_total{cache_name}` — NEW; incremented inside the lock (SC #3 gate)
+  - `cache_prewarm_errors_total{cache_name}` — NEW; incremented on pre-warm failure (D-05)
+- **Cardinality**: only `cache_name` label; never include the actual cache key (would explode cardinality on `indicators:*`). Total label combinations: ~5 cache_names × 5 metrics = 25 series.
+
+### Hook Location Correction (RATIFIED 2026-04-29)
+
+CONTEXT originally referenced `services/pipeline.py` for D-04 (invalidate) and D-05 (pre-warm) hooks. **Research §3+§4 verified the actual home is `services/automation_service.py`** — scoring/sentiment/reports/sector phases all run inside `AutomationService.run_daily_pipeline`, not `Pipeline.run_full`. Plans should target `automation_service.py` lines 109/142/174 (invalidate after each write phase) and line 175 (pre-warm between sector rotation and `_send_notifications`).
 
 ## Affected Files (preliminary scope — research will expand)
 
