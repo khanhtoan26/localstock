@@ -66,3 +66,19 @@ def loguru_caplog():
 
     yield _Capture()
     logger.remove(sink_id)
+
+
+# === Phase 23 — Prometheus metric registry isolation (D-04) ===
+import pytest as _pytest
+from prometheus_client import CollectorRegistry as _CollectorRegistry
+
+
+@_pytest.fixture
+def metrics_registry() -> _CollectorRegistry:
+    """Function-scoped fresh CollectorRegistry — prevents `Duplicated timeseries`
+    between tests (CONTEXT.md D-04, OBS-10).
+
+    Each test that calls ``init_metrics(registry)`` gets an isolated registry;
+    no cleanup needed (GC'd at function teardown).
+    """
+    return _CollectorRegistry()
