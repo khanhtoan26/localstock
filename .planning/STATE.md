@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Performance & Data Quality
 status: completed
-stopped_at: Completed 24-05-PLAN.md (self-probe + scheduler errors + @observe rollout — OBS-11, OBS-15, OBS-16)
-last_updated: "2026-04-29T04:01:44Z"
-last_activity: 2026-04-29 — 24-05 complete; 5 new metric primitives + health_self_probe + EVENT_JOB_ERROR listener with 15-min Telegram dedup + @observe applied to 4 crawler fetches + daily_job (OBS-11/15/16)
+stopped_at: Completed 24-06-PLAN.md (pipeline _step_timer + per-stage durations — OBS-17). Phase 24 complete.
+last_updated: "2026-04-29T05:00:00Z"
+last_activity: 2026-04-29 — 24-06 complete; Pipeline._step_timer async ctx mgr wraps run_full crawl + analyze stages; PipelineRun.{crawl,analyze}_duration_ms populated, score/report None placeholders; localstock_op_duration_seconds emitted with (pipeline,step,name,outcome) labels (OBS-17 closed). Phase 24 100% complete.
 progress:
   total_phases: 8
   completed_phases: 2
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-04-28)
 
 ## Current Position
 
-Phase: 24 — Instrumentation & Health
-Plan: 05 (complete) → 24-06 next
-Status: 24-05 complete; OBS-11 + OBS-15 + OBS-16 closed; ROADMAP SC-1 verbatim label combination produced in /metrics
-Last activity: 2026-04-29 — 24-05 complete; @observe applied to 4 crawler fetches + daily_job; scheduler error listener with 15-min Telegram dedup; 4 self-probe gauges populated every 30s
+Phase: 24 — Instrumentation & Health (✅ complete)
+Plan: 06 (complete) — Phase 24 done; next phase is 25 (Data Quality)
+Status: Phase 24 fully closed (OBS-11, OBS-12, OBS-13, OBS-14, OBS-15, OBS-16, OBS-17). All 6 plans + Wave 0 scaffolds shipped.
+Last activity: 2026-04-29 — 24-06 complete; Pipeline._step_timer wires per-stage timing into run_full; OBS-17 closed end-to-end (schema 24-02 + population 24-06)
 
 Progress: [██████████] 100%
 
@@ -53,6 +53,7 @@ Full decision history from v1.0–v1.4 archived in `.planning/milestones/`.
 - 22-05: f-string log sweep used `logger.exception()` inside every except block — auto-captures traceback through redacted JSON sink instead of f-string interpolating exception value
 - 24-04: /health split into 4 probes (`/health/{live,ready,pipeline,data}`) + deprecated `/health` alias with `X-Deprecated` header. Bounded 2s `asyncio.wait_for` DB ping → 503 on `OperationalError`/timeout. Static VN holiday set 2025–2026; full calendar deferred (OBS-14)
 - 24-05: dedup keyed by `(job_id, error_type)` with `threading.Lock` + 15-min window — distinct keys NOT deduped together (D-06). Telegram dispatch is `asyncio.create_task` fire-and-forget with done-callback to suppress task exceptions. `@observe('crawl.<subsystem>.fetch')` applied to PriceCrawler/FinanceCrawler/CompanyCrawler/EventCrawler entry points only — minimal CONTEXT D-01 scope. Phase 23 D-08 boundary explicitly lifted for 24-05 implementation files (documented in 24-05-SUMMARY.md)
+- 24-06: `Pipeline._step_timer(step_name, run)` is the documented D-08 exception in `services/pipeline.py` — atomic column write (`setattr(run, f'{step_name}_duration_ms', ms)`) + histogram emission via `REGISTRY._names_to_collectors` lookup. `try/yield/except(set fail outcome, raise)/finally(record + observe)` ordering guarantees column write on exception path (Pitfall 7). Q-3 wrap granularity: crawl=Steps 1-7, analyze=`_apply_price_adjustments` only; score/report explicitly None until AutomationService integration (future phase)
 
 ### Watch Out For (from research)
 
@@ -95,8 +96,8 @@ Items carried over from earlier milestones:
 
 ## Session Continuity
 
-Last session: 2026-04-29T02:13:38.556Z
-Stopped at: Completed 23-03-PLAN.md (docs runbook)
-Resume: `/gsd-plan-phase 22` — Logging Foundation
+Last session: 2026-04-29T05:00:00Z
+Stopped at: Completed 24-06-PLAN.md (pipeline _step_timer + per-stage durations — OBS-17). Phase 24 complete.
+Resume: `/gsd-plan-phase 25` — Data Quality (next)
 
 **Planned Phase:** 22 (Logging Foundation) — 7 plans — 2026-04-28T10:23:23.585Z

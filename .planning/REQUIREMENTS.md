@@ -42,7 +42,7 @@
 **: `/health/live`, `/health/ready`, `/health/pipeline`, `/health/data` tách từ endpoint `/health` hiện tại
 - [x] **OBS-15**: `health_self_probe` scheduler job (30s) populate gauges: DB pool size, `last_pipeline_age_seconds`, last successful crawl count
 - [x] **OBS-16**: APScheduler `EVENT_JOB_ERROR` listener emit counter + Telegram alert khi scheduled job fail
-- [ ] **OBS-17**: Per-stage timing trên `PipelineRun` table: crawl/analyze/score/report durations persisted
+- [x] **OBS-17**: Per-stage timing trên `PipelineRun` table: crawl/analyze/score/report durations persisted
 
 ### Data Quality (Phase D)
 
@@ -137,7 +137,7 @@
 | OBS-14 | Phase 24 | 24-04 | Complete |
 | OBS-15 | Phase 24 | 24-05 | Complete |
 | OBS-16 | Phase 24 | 24-05 | Complete |
-| OBS-17 | Phase 24 | TBD | Pending |
+| OBS-17 | Phase 24 | 24-02 + 24-06 | Done |
 | DQ-01  | Phase 25 | TBD | Pending |
 | DQ-02  | Phase 25 | TBD | Pending |
 | DQ-03  | Phase 25 | TBD | Pending |

@@ -68,7 +68,7 @@
 
 - [ ] **Phase 22: Logging Foundation** — Structured JSON logs với request_id/run_id correlation, secret redaction, CI lint gate
 - [x] **Phase 23: Metrics Primitives & /metrics** — Prometheus registry + endpoint, label-cardinality budget, idempotent init
-- [ ] **Phase 24: Instrumentation & Health** — `@observe`/`@timed_query` decorators, slow-query log, /health/{live,ready,pipeline,data}, scheduler error listener
+- [x] **Phase 24: Instrumentation & Health** — `@observe`/`@timed_query` decorators, slow-query log, /health/{live,ready,pipeline,data}, scheduler error listener
 - [ ] **Phase 25: Data Quality** — Pandera Tier 1 validators, NaN/Inf JSONB sanitizer, per-stock isolation, stats persistence, quarantine table
 - [ ] **Phase 26: Caching** — `cachetools.TTLCache` với version-aware keys, single-flight lock, invalidation hooks, pre-warm, janitor job
 - [ ] **Phase 27: Pipeline Performance** — `asyncio.Semaphore(8)` crawler, token-bucket + circuit breaker, tenacity retries, pool tuning, fire-and-forget Telegram
@@ -196,7 +196,7 @@
 | 21. Frontend Trade Plan Display | v1.4 | 2/2 | Complete | 2026-04-28 |
 | 22. Logging Foundation | v1.5 | 0/? | Not started | - |
 | 23. Metrics Primitives & /metrics | v1.5 | 0/? | Not started | - |
-| 24. Instrumentation & Health | v1.5 | 0/? | Not started | - |
+| 24. Instrumentation & Health | v1.5 | 6/6 | Complete | 2026-04-29 |
 | 25. Data Quality | v1.5 | 0/? | Not started | - |
 | 26. Caching | v1.5 | 0/? | Not started | - |
 | 27. Pipeline Performance | v1.5 | 0/? | Not started | - |
