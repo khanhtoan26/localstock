@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Performance & Data Quality
-status: Phase 25 Wave 2 in progress — 25-04 complete (DQ-06 PipelineRun.stats dual-write landed).
-stopped_at: Completed 25-04-PLAN.md (Wave 2 — DQ-06 stats JSONB dual-write through CONTEXT D-07)
-last_updated: "2026-04-29T07:15:00.000Z"
-last_activity: 2026-04-29 — 25-04 complete; Pipeline._write_stats + _truncate_error landed; run_full success AND except branches both populate PipelineRun.stats JSONB while dual-writing symbols_total/success/failed scalars (D-07 LOCKED through v1.5); 3/3 RED→GREEN + 3 supplementary tests, ruff clean
+status: Phase 25 Wave 3 in progress — 25-05 complete (DQ-01 OHLCV reject-to-quarantine landed; ROADMAP SC #1 ✅ closed).
+stopped_at: Completed 25-05-PLAN.md (Wave 3 — DQ-01 Tier-1 OHLCV reject-to-quarantine; SC #1 ✅)
+last_updated: "2026-04-29T07:30:00.000Z"
+last_activity: 2026-04-29 — 25-05 complete; OHLCVSchema (Tier 1 strict) + partition_valid_invalid runner + Pipeline._crawl_prices reject-to-quarantine wiring landed; bad rows divert to quarantine_rows{tier='strict'} and increment localstock_dq_violations_total{rule, tier='strict'} per rule; 4/4 RED→GREEN + 1 requires_pg integration test passing; ROADMAP SC #1 verbatim ✅ closed
 progress:
   total_phases: 8
   completed_phases: 3
   total_plans: 24
-  completed_plans: 20
-  percent: 75
+  completed_plans: 21
+  percent: 79
 ---
 
 # Project State
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-04-28)
 
 ## Current Position
 
-Phase: 25 — Data Quality (🚧 in progress; Wave 2 in progress)
-Plan: 04 (complete) — DQ-06 PipelineRun.stats dual-write landed.
-Status: 25-04 complete — Pipeline._write_stats writes structured stats JSONB ({succeeded, failed, skipped, failed_symbols}) AND dual-writes legacy scalar columns (symbols_total/success/failed) per CONTEXT D-07 LOCKED through v1.5. Module-level _truncate_error('{ExcClass}: {str(exc)[:200]}...') bounds error strings (T-25-04-01: only str(exc), no traceback) and is exported for 25-06 isolation wrappers. run_full's except branch also calls _write_stats so status='failed' rows are never NULL-stats. ROADMAP SC #3 stats-persistence half closed; non-aborting half deferred to 25-06.
-Last activity: 2026-04-29 — 25-04 Wave 2 plan A: 3 commits, 2 files modified, 3/3 originally-RED tests GREEN + 3 supplementary tests, ruff clean, 24/24 service-suite tests passing.
+Phase: 25 — Data Quality (🚧 in progress; Wave 3 in progress)
+Plan: 05 (complete) — DQ-01 OHLCV Tier-1 reject-to-quarantine landed; ROADMAP SC #1 verbatim ✅ closed.
+Status: 25-05 complete — `OHLCVSchema` (pandera DataFrameSchema, Tier 1 strict) declares symbol regex / date dtype no-coerce (Pitfall E) / OHLC>0 / volume>=0 + composite checks (future_date element-wise, nan_ratio_exceeded ≤5% frame-level, malformed_date) + unique=[symbol,date] + strict=True. `partition_valid_invalid(df, schema)` runs lazy validation, classifies failures into per-row + frame-level rule maps via `_normalize_rule` (CONTEXT D-01 vocabulary: non_positive_<col>, future_date, nan_ratio_exceeded, duplicate_pk, malformed_date, bad_symbol_format), returns (valid_df, invalid_rows, failure_cases). `Pipeline._crawl_prices` builds a validation-shaped frame (rename time→date, inject symbol col), partitions, routes invalid rows to `QuarantineRepository.insert(source='ohlcv', tier='strict', rule, reason)`, increments `localstock_dq_violations_total{rule, tier='strict'}` per rule, then drops bad indices from the original time-keyed frame before `upsert_prices`. `_coerce_payload` (Rule 1 fix) converts pd.Timestamp/datetime/numpy scalars at the json.dumps boundary. 4 RED tests + 1 requires_pg integration test all GREEN.
+Last activity: 2026-04-29 — 25-05 Wave 3: 2 commits, 4 files modified, 4/4 RED→GREEN + 1 integration test passing, ruff clean. ROADMAP SC #1 ✅ closed.
 
-Progress: [████████░░] 83%
+Progress: [████████░░] 87%
 
 ## Performance Metrics
 
@@ -58,6 +58,7 @@ Full decision history from v1.0–v1.4 archived in `.planning/milestones/`.
 - 25-02: sanitize_jsonb is the single source of truth for JSONB NaN/Inf scrubbing — wired at first line of every JSONB-bound repo write (financial/report/score/notification/job). Inline `_clean_nan` in services/pipeline.py REMOVED. Recipe handles dict/list/tuple recursion + numpy.float64 (via float-subclass isinstance) + bool short-circuit. scheduler.py:156 errors-dict NOT wrapped (owned by 25-03; literal dict has no float content). DQ-04 + ROADMAP SC #2 closed.
 - 25-03: QuarantineRepository.cleanup uses Python-side `datetime.now(UTC) - timedelta(days)` cutoff bound parameter (not SQL `now() - interval`) so the boundary is testable with frozen-time fixtures. APScheduler `dq_quarantine_cleanup` registered at hour=3 minute=15 Asia/Ho_Chi_Minh with max_instances=1 + coalesce=True — Pitfall F mandate: away from 15:46 daily pipeline, single instance, stale fires coalesced. Test asserts `job.trigger.timezone` attribute (not `str(job.trigger)`, which omits tz). Producer (DQ-01 reject-to-quarantine) deferred to 25-05.
 - 25-04: `Pipeline._write_stats(run, *, succeeded, failed, skipped, failed_symbols)` is the single write-point for `PipelineRun.stats` JSONB; dual-writes scalars `symbols_total/success/failed` per CONTEXT D-07 LOCKED through v1.5 (drop in v1.6). Module-level `_truncate_error(exc)` formats `'{ExcClass}: {str(exc)[:MAX_ERROR_CHARS]}...'` — class prefix sits OUTSIDE the 200-char cap; only `str(exc)` captured, no traceback (T-25-04-01). `failed_symbols` shape locked as `[{"symbol", "step", "error"}, ...]` for 25-06 consumption. run_full's except branch also calls `_write_stats` (succeeded=0, failed=len(symbols)) so `status="failed"` rows are never NULL-stats. Stats dict funneled through `sanitize_jsonb` before assignment (T-25-04-03 defence-in-depth). Tests use AsyncMock-session harness from sibling test_pipeline_step_timing.py — no live PG needed because stats write is in-memory attribute assignment.
+- 25-05: `OHLCVSchema` is the Tier 1 strict pandera DataFrameSchema for OHLCV ingest — symbol regex `^[A-Z0-9]{3,5}$`, date dtype `datetime64[ns]` with NO coerce (Pitfall E — caller pre-coerces with `pd.to_datetime` + explicit `malformed_date` Check), OHLC > 0, volume ≥ 0, composite future_date (element-wise) + nan_ratio_exceeded (frame-level scalar, ≤ 5% per column) + unique=[symbol,date] + strict=True. `partition_valid_invalid(df, schema)` runs `schema.validate(df, lazy=True)`, catches `pae.SchemaErrors`, builds (per-row + frame-level) rule maps; frame-level failures invalidate every row in the per-symbol batch. `_normalize_rule` is the canonical pandera-check-name → CONTEXT D-01 vocabulary mapper (`negative_price`/`non_positive_<col>`, `future_date`, `nan_ratio_exceeded`, `malformed_date`, `duplicate_pk`, `bad_symbol_format`). `_coerce_payload` (Rule 1 fix) handles pd.Timestamp / datetime / numpy scalars at the QuarantineRepository.insert → json.dumps boundary; sanitize_jsonb keeps NaN/Inf scrubbing (DQ-04 belt-and-suspenders). `Pipeline._crawl_prices` builds a validation-shaped frame (rename time→date, inject symbol col) for OHLCVSchema then drops bad indices from the original time-keyed frame before upsert_prices — separation prevents Tier 1 schema from leaking into upsert contract. Tier 1 metric increment uses `REGISTRY._names_to_collectors` lookup (Phase 23 D-08 boundary, also used by 24-06 step-timer). ROADMAP SC #1 verbatim ✅ closed.
 
 ### Watch Out For (from research)
 

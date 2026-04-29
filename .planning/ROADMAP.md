@@ -132,10 +132,10 @@
   5. `/health/data` trả status `stale` khi `MAX(stock_prices.date)` lệch trading-calendar > 1 phiên — verified bằng manual rollback date
 **Plans**: 8 plans
 - [x] 25-01-PLAN.md — Wave 0 scaffolds: pandera install + dq/ package + Alembic migration + Settings + metric + RED test scaffolds
-- [ ] 25-02-PLAN.md — DQ-04 sanitize_jsonb + repo wiring (closes SC #2)
-- [ ] 25-03-PLAN.md — DQ-08 QuarantineRepository + APScheduler cleanup cron
-- [ ] 25-04-PLAN.md — DQ-06 PipelineRun.stats dual-write + _truncate_error
-- [ ] 25-05-PLAN.md — DQ-01 OHLCVSchema + reject-to-quarantine in _crawl_prices (closes SC #1)
+- [x] 25-02-PLAN.md — DQ-04 sanitize_jsonb + repo wiring (closes SC #2)
+- [x] 25-03-PLAN.md — DQ-08 QuarantineRepository + APScheduler cleanup cron
+- [x] 25-04-PLAN.md — DQ-06 PipelineRun.stats dual-write + _truncate_error
+- [x] 25-05-PLAN.md — DQ-01 OHLCVSchema + reject-to-quarantine in _crawl_prices (closes SC #1)
 - [ ] 25-06-PLAN.md — DQ-05 per-symbol try/except across services (closes SC #3)
 - [ ] 25-07-PLAN.md — DQ-02 + DQ-03 Tier 2 dispatcher + shadow-mode promotion runbook (closes SC #4)
 - [ ] 25-08-PLAN.md — DQ-07 /health/data stale extension (closes SC #5)

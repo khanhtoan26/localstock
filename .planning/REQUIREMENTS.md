@@ -46,7 +46,7 @@
 
 ### Data Quality (Phase D)
 
-- [ ] **DQ-01
+- [x] **DQ-01
 **: Tier 1 validators (block per-symbol) — pandera schemas reject corrupt OHLCV: negative price, future date, NaN ratio > threshold, duplicate (symbol,date) PK
 - [ ] **DQ-02
 **: Tier 2 advisory validators (warn + metric, no block): RSI > 99.5, gap > 30%, missing rows > 20%
@@ -146,7 +146,7 @@
 | OBS-15 | Phase 24 | 24-05 | Complete |
 | OBS-16 | Phase 24 | 24-05 | Complete |
 | OBS-17 | Phase 24 | 24-02 + 24-06 | Done |
-| DQ-01  | Phase 25 | TBD | Pending |
+| DQ-01  | Phase 25 | 25-05 | Done |
 | DQ-02  | Phase 25 | TBD | Pending |
 | DQ-03  | Phase 25 | TBD | Pending |
 | DQ-04  | Phase 25 | TBD | Pending |
