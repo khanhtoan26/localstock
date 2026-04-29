@@ -1130,7 +1130,11 @@ SLOW_QUERY_THRESHOLD_MS=250
 
 ---
 
-## §11. Open Questions
+## §11. Open Questions (RESOLVED)
+
+All five questions below are RESOLVED — the resolution is captured either in
+CONTEXT.md (locked decision IDs D-01..D-10) or in the corresponding plan tasks.
+This section is retained for traceability of the reasoning.
 
 ### Q-1: `@observe` rollout scope — full sweep vs minimal?
 - **What we know:** D-01 says "scheduler jobs + pipeline step methods + key crawler entry points". Plan 24-06 wires step timing.
@@ -1140,10 +1144,12 @@ SLOW_QUERY_THRESHOLD_MS=250
   - The 4 step-timer wrap sites in `Pipeline.run_full` (handled by `_step_timer`, no extra decorator needed)
   - Top-level `PriceCrawler.fetch`, `FinanceCrawler.fetch`, `CompanyCrawler.fetch`, `EventCrawler.fetch` — 4 representative call sites for validation.
 - Defer "full sweep" to Phase 25 hygiene work. Flag in plan-checker.
+- **RESOLVED:** Adopted verbatim — see CONTEXT D-01 (locked initial scope) and **24-05 Task 4** (revision-mode addition that applies `@observe("scheduler.daily.run")` to `daily_job` and `@observe("crawl.{ohlcv,financial,company,event}.fetch")` to the four crawler `fetch` methods). Step-timer reuse handled by 24-06. Phase 25 inherits the "broader sweep" backlog.
 
 ### Q-2: `/health/data` — Vietnamese trading calendar
 - **What we know:** D-03 allows minimal static list; full calendar deferred.
 - **Decision recommended:** Use the small `_VN_HOLIDAYS_2025_2026` set in §3. Document in code as "covers v1.5 + v1.6; refresh annually". Add a TODO comment with the issue number for backlog tracking.
+- **RESOLVED:** Adopted — see CONTEXT D-03 and **24-04 Task 2** (`/health/data` uses static `_VN_HOLIDAYS_2025_2026` set with annual-refresh TODO).
 
 ### Q-3: Scheduler step naming for `analyze/score/report`
 - **What we know:** `Pipeline.run_full` currently has no analyze/score/report — those run via `automation_service.AutomationService.run_daily_pipeline()`.
@@ -1153,15 +1159,18 @@ SLOW_QUERY_THRESHOLD_MS=250
   - `analyze` = `_apply_price_adjustments()` (the only analytic in pipeline.py today)
   - `score`, `report` = leave as **NULL** for now; explicit `setattr(run, "score_duration_ms", None)` is fine and the migration nullability supports it.
 - A future phase will wire `AutomationService.run_daily_pipeline` to populate score/report by passing the `run` row through.
+- **RESOLVED:** Adopted — see **24-06 Task 2** (wraps `crawl` and `analyze`, leaves `score_duration_ms` / `report_duration_ms` NULL by design; documented in 24-06 truth #6). `score`/`report` population deferred to a future phase.
 
 ### Q-4: Test DB availability for OBS-12/OBS-13 integration tests
 - **What we know:** Project uses asyncpg/Postgres in production; `pg_sleep` is Postgres-only.
 - **What's unclear:** Does CI have a Postgres service or only SQLite? `tests/conftest.py` content not surveyed in this research session.
 - **Recommendation:** Plan 24-03 must include a "test DB audit" task at the start. If CI is SQLite-only, gate OBS-12/13 tests behind `@pytest.mark.integration` + provide a fallback unit test that mocks `before_cursor_execute` without a real DB.
+- **RESOLVED:** Adopted — see CONTEXT D-09 (`requires_pg` skip marker) and **24-03 Task 1 Step A** (registers `requires_pg` marker in `pyproject.toml`; Postgres-only tests skip gracefully on SQLite-only CI).
 
 ### Q-5: Phase 23 D-08 lint exemption
 - **What we know:** Phase 23 introduced a grep that fails CI on `\.(inc|observe|set)\(` outside `metrics.py`.
 - **Recommendation:** Plan 24-01 must update the lint script (or its allowlist) to permit `observability/decorators.py` and `observability/db_events.py`. Document in plan + verify in plan-checker.
+- **RESOLVED:** Re-scoped — analysis showed `lint-no-fstring-logs.sh` is regex-based for f-string log calls only and does NOT match `.inc()` / `.observe()` / `.set()`. No allowlist edit required. The Phase 23 D-08 *manual* grep boundary is lifted in Phase 24 by design — see **24-05 `<d8_audit>` block** (acknowledges metric calls in `scheduler/error_listener.py`, `scheduler/health_probe.py`, plus `@observe`-induced calls in `scheduler/scheduler.py` and `crawlers/{price,finance,company,event}_crawler.py`) and **24-06 Task 2 Step D** (acknowledges `.observe()` inside `services/pipeline.py:_step_timer`). 24-01 Step C deviation #1 reasoning verified by plan-checker.
 
 ---
 
