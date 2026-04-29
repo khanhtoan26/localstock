@@ -68,7 +68,7 @@
 - [ ] **CACHE-01**: In-process `cachetools.TTLCache` áp dụng cho `/api/scores/ranking` + `/api/market/summary` + service-layer indicator computations
 - [ ] **CACHE-02**: Cache key bao gồm `pipeline_run_id` (hoặc `latest_ohlcv_date`) — không bao giờ chỉ TTL cho scoring outputs
 - [ ] **CACHE-03**: `cache.invalidate_namespace(...)` gọi từ `automation_service.py` sau mỗi write phase
-- [ ] **CACHE-04**: Single-flight wrapper (`asyncio.Lock` per key) — chống cold-start stampede
+- [x] **CACHE-04**: Single-flight wrapper (`asyncio.Lock` per key) — chống cold-start stampede
 - [ ] **CACHE-05**: Pre-warm hot keys ở cuối `run_daily_pipeline` — không lazy-fill từ first request sau pipeline
 - [ ] **CACHE-06**: `cache_janitor` scheduler job (60s) sweep expired TTLs để tránh unbounded memory growth
 - [ ] **CACHE-07**: Cache hit/miss/eviction counters expose qua `/metrics`
@@ -157,7 +157,7 @@
 | CACHE-01 | Phase 26 | TBD | Pending |
 | CACHE-02 | Phase 26 | TBD | Pending |
 | CACHE-03 | Phase 26 | TBD | Pending |
-| CACHE-04 | Phase 26 | TBD | Pending |
+| CACHE-04 | Phase 26 | 26-01 | Done |
 | CACHE-05 | Phase 26 | TBD | Pending |
 | CACHE-06 | Phase 26 | TBD | Pending |
 | CACHE-07 | Phase 26 | TBD | Pending |
