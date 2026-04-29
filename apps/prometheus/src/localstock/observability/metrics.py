@@ -13,9 +13,43 @@ High-cardinality identifiers (ticker symbols) belong in structured logs only.
 """
 from __future__ import annotations
 
+import weakref
 from typing import Any
 
 from prometheus_client import CollectorRegistry, Counter, Gauge, Histogram
+
+# Phase 25 / DQ-02 — track every registry that ``init_metrics`` has been
+# called against so that downstream dispatchers (``evaluate_tier2``) can
+# increment the matching collector on each one. Test fixtures pass a
+# fresh ``CollectorRegistry`` and read back via ``reg.get_sample_value``,
+# so the dispatcher must find the collector on that very registry — the
+# global ``REGISTRY`` is not enough. WeakSet so test registries are
+# collected once their fixtures go out of scope.
+_TRACKED_REGISTRIES: "weakref.WeakSet[CollectorRegistry]" = weakref.WeakSet()
+
+
+def iter_tracked_collectors(name: str):
+    """Yield each distinct collector registered under ``name`` across all
+    registries seen by ``init_metrics`` (Phase 25 / DQ-02).
+
+    Deduped by ``id()`` — calling ``init_metrics`` twice on the same
+    registry will not double-increment.
+    """
+    seen: set[int] = set()
+    for reg in list(_TRACKED_REGISTRIES):
+        coll = reg._names_to_collectors.get(name)
+        if coll is not None and id(coll) not in seen:
+            seen.add(id(coll))
+            yield coll
+    # Always also check the global default REGISTRY (production path).
+    try:
+        from prometheus_client import REGISTRY as _GLOBAL
+
+        coll = _GLOBAL._names_to_collectors.get(name)
+        if coll is not None and id(coll) not in seen:
+            yield coll
+    except Exception:  # noqa: BLE001
+        return
 
 # === Bucket constants (CONTEXT.md D-03) ===
 
@@ -57,6 +91,13 @@ def init_metrics(registry: CollectorRegistry | None = None) -> dict[str, Any]:
         # lookup. Resolve to the actual default REGISTRY so production callers
         # get registered metrics. (Phase 24-01 Rule-3 fix; Phase 23 latent bug.)
         target = _get_default_registry()
+
+    # Phase 25 / DQ-02 — register the resolved registry for downstream
+    # multi-registry dispatch (see ``iter_tracked_collectors``).
+    try:
+        _TRACKED_REGISTRIES.add(target)
+    except TypeError:
+        pass  # Some registry impls may not be weak-referenceable; skip.
 
     def _register(factory, name: str):
         """Create-or-fetch helper. Catches duplicate-name ValueError."""

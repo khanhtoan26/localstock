@@ -140,7 +140,7 @@ def _normalize_rule(check_name: str, column: str) -> str:
 
 
 # ---------------------------------------------------------------------
-# Tier 2 — implemented in 25-07.
+# Tier 2 — DQ-02 / 25-07. Advisory dispatch with per-rule mode lookup.
 # ---------------------------------------------------------------------
 def evaluate_tier2(
     rule: str,
@@ -149,5 +149,58 @@ def evaluate_tier2(
     *,
     symbol: str | None = None,
 ) -> None:
-    """Evaluate a Tier 2 advisory rule under shadow/enforce dispatch."""
-    raise NotImplementedError("DQ-02: implemented in 25-07-PLAN.md")
+    """Run a Tier 2 advisory check.
+
+    - ``predicate(df)`` MUST return a DataFrame (or anything with ``.empty``)
+      of offending rows. An empty/None result == pass (no-op).
+    - ALWAYS emits ``localstock_dq_violations_total{rule, tier}`` and
+      a structured ``dq_warn`` log line when the predicate fires.
+    - In ``shadow`` mode (default): logs + counts and returns ``None``.
+    - In ``enforce`` mode: same emission then raises ``Tier2Violation``.
+
+    Tier label: ``advisory`` when mode == ``shadow``; ``strict`` when
+    mode == ``enforce``. Promotion from shadow → strict is operational
+    (env flag flip) — see ``docs/runbook/dq-tier2-promotion.md``.
+
+    Per CONTEXT D-06 + D-03 + RESEARCH §Pattern 2.
+    """
+    from loguru import logger
+
+    from localstock.dq.shadow import Tier2Violation, get_tier2_mode
+    from localstock.observability.metrics import iter_tracked_collectors
+
+    bad = predicate(df)
+    if bad is None:
+        return
+    has_empty = hasattr(bad, "empty")
+    if has_empty and bad.empty:
+        return
+
+    mode = get_tier2_mode(rule)
+    tier = "advisory" if mode == "shadow" else "strict"
+
+    try:
+        count = len(bad)
+    except TypeError:
+        count = 0
+
+    incremented = 0
+    try:
+        for counter in iter_tracked_collectors("localstock_dq_violations_total"):
+            counter.labels(rule=rule, tier=tier).inc(count)
+            incremented += 1
+    except Exception:  # noqa: BLE001 — metric lookup must never crash dispatch
+        logger.debug("dq.tier2.metric_lookup_failed", rule=rule)
+    if incremented == 0:
+        logger.debug("dq.tier2.metric_not_registered", rule=rule)
+
+    logger.warning(
+        "dq_warn",
+        rule=rule,
+        tier=tier,
+        symbol=symbol,
+        violation_count=count,
+    )
+
+    if mode == "enforce":
+        raise Tier2Violation(rule, bad)
