@@ -19,6 +19,10 @@ EXPECTED_FAMILIES = {
     "pipeline_step_duration_seconds", "pipeline_step_total",
     "pipeline_step_inprogress",
     "dq_validation_failures_total", "dq_validation_total",
+    # === Phase 24-05 (OBS-15, OBS-16) ===
+    "db_pool_size", "db_pool_checked_out",
+    "last_pipeline_age_seconds", "last_crawl_success_count",
+    "scheduler_job_errors_total",
 }
 
 # D-06 budget — labelnames frozen per family (registry name -> labelnames tuple)
@@ -37,6 +41,12 @@ EXPECTED_LABELS = {
     "localstock_pipeline_step_inprogress":          ("step",),
     "localstock_dq_validation_failures_total":      ("validator", "severity"),
     "localstock_dq_validation_total":               ("validator", "outcome"),
+    # === Phase 24-05 (OBS-15, OBS-16) ===
+    "localstock_db_pool_size":                      (),
+    "localstock_db_pool_checked_out":               (),
+    "localstock_last_pipeline_age_seconds":         (),
+    "localstock_last_crawl_success_count":          (),
+    "localstock_scheduler_job_errors_total":        ("job_id", "error_type"),
 }
 
 
