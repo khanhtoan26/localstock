@@ -37,6 +37,7 @@ from localstock.db.repositories.industry_repo import IndustryRepository
 from localstock.db.repositories.price_repo import PriceRepository
 from localstock.db.repositories.ratio_repo import RatioRepository
 from localstock.db.repositories.stock_repo import StockRepository
+from localstock.services.pipeline import _truncate_error
 
 
 def _normalize_income(raw: dict) -> dict:
@@ -82,6 +83,20 @@ class AnalysisService:
         self.tech_analyzer = TechnicalAnalyzer()
         self.fund_analyzer = FundamentalAnalyzer()
         self.industry_analyzer = IndustryAnalyzer()
+        # Phase 25 / DQ-05 (D-03) — per-symbol failure buffer drained by the
+        # pipeline orchestrator (or AutomationService) into PipelineRun.stats.
+        self._failed_symbols: list[dict] = []
+
+    def get_failed_symbols(self, reset: bool = True) -> list[dict]:
+        """Return (and optionally clear) the per-symbol failure buffer.
+
+        Phase 25 / DQ-05 (D-03) — entries shape ``{symbol, step, error}``
+        with ``error`` already truncated by :func:`_truncate_error`.
+        """
+        out = list(self._failed_symbols)
+        if reset:
+            self._failed_symbols.clear()
+        return out
 
     async def run_full(self) -> dict:
         """Run full analysis pipeline for all HOSE stocks.
@@ -123,7 +138,18 @@ class AnalysisService:
             except Exception as e:
                 summary["technical_failed"] += 1
                 summary["errors"].append(f"tech:{symbol}:{e}")
-                logger.warning("analysis.technical.failed", symbol=symbol, error=str(e))
+                logger.warning(
+                    "analysis.technical.failed",
+                    symbol=symbol,
+                    step="analyze",
+                    exception_class=type(e).__name__,
+                    message=str(e)[:200],
+                )
+                self._failed_symbols.append({
+                    "symbol": symbol,
+                    "step": "analyze",
+                    "error": _truncate_error(e),
+                })
 
         # Step 5: Fundamental analysis
         for symbol in symbols:
@@ -133,7 +159,18 @@ class AnalysisService:
             except Exception as e:
                 summary["fundamental_failed"] += 1
                 summary["errors"].append(f"fund:{symbol}:{e}")
-                logger.warning("analysis.fundamental.failed", symbol=symbol, error=str(e))
+                logger.warning(
+                    "analysis.fundamental.failed",
+                    symbol=symbol,
+                    step="analyze",
+                    exception_class=type(e).__name__,
+                    message=str(e)[:200],
+                )
+                self._failed_symbols.append({
+                    "symbol": symbol,
+                    "step": "analyze",
+                    "error": _truncate_error(e),
+                })
 
         # Step 6: Compute industry averages
         try:
@@ -454,16 +491,32 @@ class AnalysisService:
             # Get latest ratios for each symbol in the group
             group_ratios = []
             for symbol in symbols:
-                ratio = await self.ratio_repo.get_latest(symbol)
-                if ratio:
-                    group_ratios.append({
-                        "pe_ratio": ratio.pe_ratio,
-                        "pb_ratio": ratio.pb_ratio,
-                        "roe": ratio.roe,
-                        "roa": ratio.roa,
-                        "de_ratio": ratio.de_ratio,
-                        "revenue_yoy": ratio.revenue_yoy,
-                        "profit_yoy": ratio.profit_yoy,
+                # DQ-05 (D-03): per-symbol isolation — bad row inside a group
+                # cannot abort industry-average computation for the group.
+                try:
+                    ratio = await self.ratio_repo.get_latest(symbol)
+                    if ratio:
+                        group_ratios.append({
+                            "pe_ratio": ratio.pe_ratio,
+                            "pb_ratio": ratio.pb_ratio,
+                            "roe": ratio.roe,
+                            "roa": ratio.roa,
+                            "de_ratio": ratio.de_ratio,
+                            "revenue_yoy": ratio.revenue_yoy,
+                            "profit_yoy": ratio.profit_yoy,
+                        })
+                except Exception as e:
+                    logger.warning(
+                        "analysis.industry.symbol_failed",
+                        symbol=symbol,
+                        step="analyze",
+                        exception_class=type(e).__name__,
+                        message=str(e)[:200],
+                    )
+                    self._failed_symbols.append({
+                        "symbol": symbol,
+                        "step": "analyze",
+                        "error": _truncate_error(e),
                     })
 
             if not group_ratios:
@@ -472,9 +525,25 @@ class AnalysisService:
             # Find year/period from the first symbol that actually has ratio data
             first_ratio = None
             for sym in symbols:
-                first_ratio = await self.ratio_repo.get_latest(sym)
-                if first_ratio:
-                    break
+                # DQ-05 (D-03): isolate per-symbol read; one bad row cannot
+                # block locating the first viable ratio for the group.
+                try:
+                    first_ratio = await self.ratio_repo.get_latest(sym)
+                    if first_ratio:
+                        break
+                except Exception as e:
+                    logger.warning(
+                        "analysis.industry.first_ratio_failed",
+                        symbol=sym,
+                        step="analyze",
+                        exception_class=type(e).__name__,
+                        message=str(e)[:200],
+                    )
+                    self._failed_symbols.append({
+                        "symbol": sym,
+                        "step": "analyze",
+                        "error": _truncate_error(e),
+                    })
             if not first_ratio:
                 continue
 

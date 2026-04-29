@@ -30,6 +30,7 @@ from localstock.scoring.normalizer import (
     normalize_technical_score,
 )
 from localstock.services.sentiment_service import SentimentService
+from localstock.services.pipeline import _truncate_error
 
 
 class ScoringService:
@@ -45,6 +46,18 @@ class ScoringService:
         self.macro_repo = MacroRepository(session)
         self.industry_repo = IndustryRepository(session)
         self.config = ScoringConfig.from_settings()
+        # Phase 25 / DQ-05 (D-03) — per-symbol failure buffer.
+        self._failed_symbols: list[dict] = []
+
+    def get_failed_symbols(self, reset: bool = True) -> list[dict]:
+        """Return (and optionally clear) the per-symbol failure buffer.
+
+        Phase 25 / DQ-05 (D-03) — entries shape ``{symbol, step, error}``.
+        """
+        out = list(self._failed_symbols)
+        if reset:
+            self._failed_symbols.clear()
+        return out
 
     async def run_full(self, symbols: list[str] | None = None) -> dict:
         """Compute composite scores for specified or all HOSE stocks.
@@ -141,7 +154,18 @@ class ScoringService:
             except Exception as e:
                 summary["stocks_failed"] += 1
                 summary["errors"].append(f"score:{symbol}:{e}")
-                logger.warning("scoring.symbol_failed", symbol=symbol, error=str(e))
+                logger.warning(
+                    "scoring.symbol_failed",
+                    symbol=symbol,
+                    step="score",
+                    exception_class=type(e).__name__,
+                    message=str(e)[:200],
+                )
+                self._failed_symbols.append({
+                    "symbol": symbol,
+                    "step": "score",
+                    "error": _truncate_error(e),
+                })
 
         # Bulk upsert all scores
         if score_rows:
@@ -174,8 +198,25 @@ class ScoringService:
         symbols = [s.symbol for s in scores]
         rec_map: dict[str, str | None] = {}
         for sym in symbols:
-            report = await report_repo.get_latest(sym)
-            rec_map[sym] = report.recommendation if report else None
+            # DQ-05 (D-03): isolate per-symbol report-fetch — a bad row
+            # cannot abort top-stocks enrichment.
+            try:
+                report = await report_repo.get_latest(sym)
+                rec_map[sym] = report.recommendation if report else None
+            except Exception as e:
+                rec_map[sym] = None
+                logger.warning(
+                    "scoring.top_stocks.report_lookup_failed",
+                    symbol=sym,
+                    step="score",
+                    exception_class=type(e).__name__,
+                    message=str(e)[:200],
+                )
+                self._failed_symbols.append({
+                    "symbol": sym,
+                    "step": "score",
+                    "error": _truncate_error(e),
+                })
 
         return [
             {

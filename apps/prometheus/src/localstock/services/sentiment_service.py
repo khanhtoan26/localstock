@@ -28,6 +28,7 @@ from localstock.scoring.normalizer import (
     normalize_fundamental_score,
     normalize_technical_score,
 )
+from localstock.services.pipeline import _truncate_error
 
 
 class SentimentService:
@@ -41,6 +42,18 @@ class SentimentService:
         self.ratio_repo = RatioRepository(session)
         self.stock_repo = StockRepository(session)
         self.ollama = OllamaClient()
+        # Phase 25 / DQ-05 (D-03) — per-symbol failure buffer.
+        self._failed_symbols: list[dict] = []
+
+    def get_failed_symbols(self, reset: bool = True) -> list[dict]:
+        """Return (and optionally clear) the per-symbol failure buffer.
+
+        Phase 25 / DQ-05 (D-03) — entries shape ``{symbol, step, error}``.
+        """
+        out = list(self._failed_symbols)
+        if reset:
+            self._failed_symbols.clear()
+        return out
 
     async def run_full(self) -> dict:
         """Run sentiment analysis for funnel-selected stocks.
@@ -115,9 +128,18 @@ class SentimentService:
                 except Exception as e:
                     summary["errors"].append(f"sentiment:{symbol}:{article.id}:{e}")
                     logger.warning(
-                        f"Sentiment classification failed for {symbol} "
-                        f"article {article.id}: {e}"
+                        "sentiment.classify.failed",
+                        symbol=symbol,
+                        article_id=article.id,
+                        step="sentiment",
+                        exception_class=type(e).__name__,
+                        message=str(e)[:200],
                     )
+                    self._failed_symbols.append({
+                        "symbol": symbol,
+                        "step": "sentiment",
+                        "error": _truncate_error(e),
+                    })
 
                 # Rate limit LLM calls
                 await asyncio.sleep(0.5)
@@ -143,31 +165,47 @@ class SentimentService:
         prelim_scores = {}
 
         for symbol in symbols:
-            indicator = await self.indicator_repo.get_latest(symbol)
-            ratio = await self.ratio_repo.get_latest(symbol)
+            # DQ-05 (D-03): isolate per-symbol indicator/ratio reads — a
+            # bad row cannot abort funnel-candidate scoring for the batch.
+            try:
+                indicator = await self.indicator_repo.get_latest(symbol)
+                ratio = await self.ratio_repo.get_latest(symbol)
 
-            tech_score = 0.0
-            fund_score = 0.0
+                tech_score = 0.0
+                fund_score = 0.0
 
-            if indicator:
-                tech_data = {
-                    col.name: getattr(indicator, col.name)
-                    for col in indicator.__table__.columns
-                    if col.name not in ("id", "computed_at")
-                }
-                tech_score = normalize_technical_score(tech_data)
+                if indicator:
+                    tech_data = {
+                        col.name: getattr(indicator, col.name)
+                        for col in indicator.__table__.columns
+                        if col.name not in ("id", "computed_at")
+                    }
+                    tech_score = normalize_technical_score(tech_data)
 
-            if ratio:
-                ratio_data = {
-                    col.name: getattr(ratio, col.name)
-                    for col in ratio.__table__.columns
-                    if col.name not in ("id", "computed_at")
-                }
-                fund_score = normalize_fundamental_score(ratio_data)
+                if ratio:
+                    ratio_data = {
+                        col.name: getattr(ratio, col.name)
+                        for col in ratio.__table__.columns
+                        if col.name not in ("id", "computed_at")
+                    }
+                    fund_score = normalize_fundamental_score(ratio_data)
 
-            if indicator or ratio:
-                count = (1 if indicator else 0) + (1 if ratio else 0)
-                prelim_scores[symbol] = (tech_score + fund_score) / count
+                if indicator or ratio:
+                    count = (1 if indicator else 0) + (1 if ratio else 0)
+                    prelim_scores[symbol] = (tech_score + fund_score) / count
+            except Exception as e:
+                logger.warning(
+                    "sentiment.funnel.symbol_failed",
+                    symbol=symbol,
+                    step="sentiment",
+                    exception_class=type(e).__name__,
+                    message=str(e)[:200],
+                )
+                self._failed_symbols.append({
+                    "symbol": symbol,
+                    "step": "sentiment",
+                    "error": _truncate_error(e),
+                })
 
         # Sort by prelim score descending, take top N
         ranked = sorted(
