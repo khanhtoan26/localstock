@@ -29,9 +29,28 @@ from localstock.db.repositories.event_repo import EventRepository
 from localstock.db.repositories.financial_repo import FinancialRepository
 from localstock.db.repositories.price_repo import PriceRepository
 from localstock.db.repositories.stock_repo import StockRepository
+from localstock.dq import MAX_ERROR_CHARS
 from localstock.dq.sanitizer import sanitize_jsonb
 from localstock.observability.context import run_id_var
 from localstock.services.price_adjuster import adjust_prices_for_event
+
+
+def _truncate_error(exc: BaseException) -> str:
+    """Format an exception as ``'{ExcClass}: {str(exc)[:MAX_ERROR_CHARS]}'``.
+
+    Phase 25 / DQ-06 + DQ-05 — bounded error string for ``failed_symbols``
+    JSONB entries (CONTEXT D-07 + RESEARCH Pitfall G). Truncates at
+    ``MAX_ERROR_CHARS`` to keep ``PipelineRun.stats`` row size bounded even
+    when a 400-symbol pipeline produces large exception messages. Only
+    ``str(exc)`` is captured — never the traceback (T-25-04-01 mitigation).
+
+    Used both by ``_write_stats`` (to format pre-existing failed-symbol
+    tuples) and by the per-symbol isolation wrappers landing in 25-06.
+    """
+    msg = str(exc)
+    if len(msg) > MAX_ERROR_CHARS:
+        msg = msg[:MAX_ERROR_CHARS] + "..."
+    return f"{type(exc).__name__}: {msg}"
 
 
 class Pipeline:
@@ -90,6 +109,56 @@ class Pipeline:
                 hist.labels(
                     "pipeline", "step", step_name, outcome
                 ).observe(elapsed)
+
+    def _write_stats(
+        self,
+        run: PipelineRun,
+        *,
+        succeeded: int,
+        failed: int,
+        skipped: int,
+        failed_symbols: list[dict],
+    ) -> None:
+        """Phase 25 / DQ-06 — write ``PipelineRun.stats`` JSONB + dual-write scalars.
+
+        Per CONTEXT D-07 (LOCKED): writes the structured ``stats`` JSONB
+        column AND continues to populate the legacy scalar columns
+        (``symbols_total``/``symbols_success``/``symbols_failed``) through
+        v1.5 for back-compat with ``automation_service`` and the health
+        probes (RESEARCH §Audit List — Readers). Scalars deprecated and
+        dropped in v1.6.
+
+        ``failed_symbols`` shape: ``[{"symbol": str, "step": str, "error": str}, ...]``
+        with errors pre-truncated by callers via :func:`_truncate_error`
+        (T-25-04-01 mitigation — bounded message, no traceback).
+
+        The stats dict is funneled through :func:`sanitize_jsonb` before
+        assignment as a defence-in-depth step (T-25-04-03 mitigation —
+        any rogue NaN/Inf counter would otherwise hit the JSONB encoder).
+        ``run.errors`` is preserved with the legacy ``{"failed_symbols": [...]}``
+        shape for the rescue path lower in ``run_full`` and for any callers
+        still reading the older column.
+        """
+        stats = sanitize_jsonb(
+            {
+                "succeeded": succeeded,
+                "failed": failed,
+                "skipped": skipped,
+                "failed_symbols": failed_symbols,
+            }
+        )
+        run.stats = stats
+        # Dual-write scalars — through v1.5 (CONTEXT D-07 LOCKED).
+        run.symbols_total = succeeded + failed + skipped
+        run.symbols_success = succeeded
+        run.symbols_failed = failed
+        # Keep legacy ``errors`` populated for back-compat with the rescue
+        # commit path (run_full) + any external readers still on the old
+        # column. Only set it if the caller hasn't already populated it.
+        if failed_symbols and run.errors is None:
+            run.errors = sanitize_jsonb(
+                {"failed_symbols": [fs["symbol"] for fs in failed_symbols]}
+            )
 
     async def run_full(self, run_type: str = "daily") -> PipelineRun:
         """Run the complete pipeline. Returns PipelineRun with status.
@@ -200,20 +269,38 @@ class Pipeline:
                     run.score_duration_ms = None
                     run.report_duration_ms = None
 
-                    # Update run status
-                    all_failed = {
-                        f[0]
-                        for f in price_failed
-                        + fin_failed
-                        + company_failed
-                        + event_failed
-                    }
-                    run.symbols_success = len(symbols) - len(all_failed)
-                    run.symbols_failed = len(all_failed)
-                    run.errors = (
-                        sanitize_jsonb({"failed_symbols": sorted(all_failed)})
-                        if all_failed
-                        else None
+                    # Update run status — Phase 25 / DQ-06 dual-write path.
+                    # NOTE: 25-06 will replace this set-construction with a
+                    # structured failed_symbols list aggregated from per-step
+                    # isolation wrappers. For 25-04 we adapt the existing
+                    # tuple shape (symbol, error_str) to the new
+                    # {symbol, step, error} shape using best-effort step
+                    # inference (all four crawlers => step="crawl").
+                    all_failed_items: list[dict] = []
+                    seen: set[str] = set()
+                    for step_name, step_failed in (
+                        ("crawl", price_failed),
+                        ("crawl", fin_failed),
+                        ("crawl", company_failed),
+                        ("crawl", event_failed),
+                    ):
+                        for sym, err in step_failed:
+                            if sym in seen:
+                                continue
+                            seen.add(sym)
+                            all_failed_items.append(
+                                {
+                                    "symbol": sym,
+                                    "step": step_name,
+                                    "error": str(err)[:MAX_ERROR_CHARS],
+                                }
+                            )
+                    self._write_stats(
+                        run,
+                        succeeded=len(symbols) - len(seen),
+                        failed=len(seen),
+                        skipped=0,
+                        failed_symbols=all_failed_items,
                     )
                     run.status = "completed"
                     run.completed_at = datetime.now(UTC)
