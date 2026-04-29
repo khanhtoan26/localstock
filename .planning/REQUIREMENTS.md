@@ -46,14 +46,22 @@
 
 ### Data Quality (Phase D)
 
-- [ ] **DQ-01**: Tier 1 validators (block per-symbol) — pandera schemas reject corrupt OHLCV: negative price, future date, NaN ratio > threshold, duplicate (symbol,date) PK
-- [ ] **DQ-02**: Tier 2 advisory validators (warn + metric, no block): RSI > 99.5, gap > 30%, missing rows > 20%
-- [ ] **DQ-03**: Shadow mode mặc định 14 ngày cho Tier 2 rules trước khi cho phép promote sang Tier 1 (operational policy documented)
-- [ ] **DQ-04**: NaN/Inf sanitizer ở JSONB write boundary — `df.replace([±inf], NaN).where(notna(), None)` áp dụng trước mọi insert vào JSONB column
-- [ ] **DQ-05**: Per-stock try/except isolation trong pipeline — một mã fail KHÔNG kill batch (`return_exceptions=True`)
-- [ ] **DQ-06**: `PipelineRun.stats` JSONB column ghi succeeded/failed/skipped count + danh sách failed symbol
-- [ ] **DQ-07**: Stale-data detection — `/health/data` so sánh `MAX(date)` với trading-calendar; flag nếu lệch > 1 phiên
-- [ ] **DQ-08**: Quarantine table cho rejected rows — không silently drop, có thể inspect/replay sau
+- [ ] **DQ-01
+**: Tier 1 validators (block per-symbol) — pandera schemas reject corrupt OHLCV: negative price, future date, NaN ratio > threshold, duplicate (symbol,date) PK
+- [ ] **DQ-02
+**: Tier 2 advisory validators (warn + metric, no block): RSI > 99.5, gap > 30%, missing rows > 20%
+- [ ] **DQ-03
+**: Shadow mode mặc định 14 ngày cho Tier 2 rules trước khi cho phép promote sang Tier 1 (operational policy documented)
+- [ ] **DQ-04
+**: NaN/Inf sanitizer ở JSONB write boundary — `df.replace([±inf], NaN).where(notna(), None)` áp dụng trước mọi insert vào JSONB column
+- [ ] **DQ-05
+**: Per-stock try/except isolation trong pipeline — một mã fail KHÔNG kill batch (`return_exceptions=True`)
+- [ ] **DQ-06
+**: `PipelineRun.stats` JSONB column ghi succeeded/failed/skipped count + danh sách failed symbol
+- [ ] **DQ-07
+**: Stale-data detection — `/health/data` so sánh `MAX(date)` với trading-calendar; flag nếu lệch > 1 phiên
+- [ ] **DQ-08
+**: Quarantine table cho rejected rows — không silently drop, có thể inspect/replay sau
 
 ### Caching (Phase E)
 

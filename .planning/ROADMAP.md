@@ -131,7 +131,7 @@
   4. Tier 2 advisory rules (RSI > 99.5, gap > 30%, missing > 20%) emit log `dq_warn` + counter `dq_violations_total{rule, tier="advisory"}` nhưng KHÔNG block — shadow mode flag default true
   5. `/health/data` trả status `stale` khi `MAX(stock_prices.date)` lệch trading-calendar > 1 phiên — verified bằng manual rollback date
 **Plans**: 8 plans
-- [ ] 25-01-PLAN.md — Wave 0 scaffolds: pandera install + dq/ package + Alembic migration + Settings + metric + RED test scaffolds
+- [x] 25-01-PLAN.md — Wave 0 scaffolds: pandera install + dq/ package + Alembic migration + Settings + metric + RED test scaffolds
 - [ ] 25-02-PLAN.md — DQ-04 sanitize_jsonb + repo wiring (closes SC #2)
 - [ ] 25-03-PLAN.md — DQ-08 QuarantineRepository + APScheduler cleanup cron
 - [ ] 25-04-PLAN.md — DQ-06 PipelineRun.stats dual-write + _truncate_error
@@ -205,7 +205,7 @@
 | 22. Logging Foundation | v1.5 | 0/? | Not started | - |
 | 23. Metrics Primitives & /metrics | v1.5 | 0/? | Not started | - |
 | 24. Instrumentation & Health | v1.5 | 6/6 | Complete | 2026-04-29 |
-| 25. Data Quality | v1.5 | 0/? | Not started | - |
+| 25. Data Quality | v1.5 | 1/8 | In progress | Wave 0 (25-01) complete; 25-02..25-08 unblocked |
 | 26. Caching | v1.5 | 0/? | Not started | - |
 | 27. Pipeline Performance | v1.5 | 0/? | Not started | - |
 | 28. Database Optimization | v1.5 | 0/? | Not started | - |
