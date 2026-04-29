@@ -12,9 +12,12 @@ Error handling per D-02: failed symbols are skipped and logged.
 Pipeline continues even if individual symbols fail.
 """
 
+import time
+from contextlib import asynccontextmanager
 from datetime import UTC, date, datetime, timedelta
 
 from loguru import logger
+from prometheus_client import REGISTRY
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from localstock.crawlers.company_crawler import CompanyCrawler
@@ -48,6 +51,45 @@ class Pipeline:
         self.company_crawler = CompanyCrawler()
         self.event_crawler = EventCrawler()
 
+    @asynccontextmanager
+    async def _step_timer(self, step_name: str, run: PipelineRun):
+        """Phase 24 / OBS-17 — time a pipeline step.
+
+        Records the elapsed milliseconds onto
+        ``run.<step_name>_duration_ms`` AND emits the
+        ``localstock_op_duration_seconds`` histogram with labels
+        ``(domain="pipeline", subsystem="step", action=<step_name>,
+        outcome={"success","fail"})`` — even when the wrapped block raises.
+
+        D-08 / RESEARCH Pitfall 7: ordering is
+        ``try / yield / except (set fail outcome, re-raise) / finally
+        (record column + observe metric)``. The ``finally`` block runs before
+        the exception propagates, guaranteeing the duration column is written.
+
+        D-08 boundary note: ``services/pipeline.py`` is the documented
+        exception that may call ``.observe()`` directly on a
+        ``observability/metrics.py`` primitive (the ``@observe`` decorator
+        cannot write the per-stage column). See 24-CONTEXT.md.
+        """
+        t0 = time.perf_counter()
+        outcome = "success"
+        try:
+            yield
+        except Exception:
+            outcome = "fail"
+            raise
+        finally:
+            elapsed = time.perf_counter() - t0
+            duration_ms = int(elapsed * 1000)
+            setattr(run, f"{step_name}_duration_ms", duration_ms)
+            hist = REGISTRY._names_to_collectors.get(
+                "localstock_op_duration_seconds"
+            )
+            if hist is not None:
+                hist.labels(
+                    "pipeline", "step", step_name, outcome
+                ).observe(elapsed)
+
     async def run_full(self, run_type: str = "daily") -> PipelineRun:
         """Run the complete pipeline. Returns PipelineRun with status.
 
@@ -71,74 +113,91 @@ class Pipeline:
             with logger.contextualize(run_id=run_id, pipeline_run_id=run.id):
                 logger.info("pipeline.run.started", run_type=run_type)
                 try:
-                    # Step 1: Fetch stock listings (non-critical — fall back to DB)
-                    try:
-                        count = await self.stock_repo.fetch_and_store_listings()
-                        logger.info("pipeline.listings.stored", step=1, count=count)
-                    except Exception as e:
-                        logger.warning(
-                            "pipeline.listings.fetch_failed",
-                            step=1,
-                            error=str(e),
+                    # ──────────────────────────────────────────────────────
+                    # crawl stage — Steps 1-7 (listings + 4 crawlers + storage)
+                    # Q-3: wrap the entire crawl block in one timer so the
+                    # column reflects total wall time of data ingestion.
+                    # ──────────────────────────────────────────────────────
+                    async with self._step_timer("crawl", run):
+                        # Step 1: Fetch stock listings (non-critical — fall back to DB)
+                        try:
+                            count = await self.stock_repo.fetch_and_store_listings()
+                            logger.info("pipeline.listings.stored", step=1, count=count)
+                        except Exception as e:
+                            logger.warning(
+                                "pipeline.listings.fetch_failed",
+                                step=1,
+                                error=str(e),
+                            )
+
+                        # Step 2: Get all HOSE symbols
+                        symbols = await self.stock_repo.get_all_hose_symbols()
+                        run.symbols_total = len(symbols)
+
+                        # Step 3: Crawl prices (incremental)
+                        price_results, price_failed = await self._crawl_prices(symbols)
+
+                        # Step 4: Crawl financials
+                        fin_results, fin_failed = await self.finance_crawler.fetch_batch(
+                            symbols
                         )
 
-                    # Step 2: Get all HOSE symbols
-                    symbols = await self.stock_repo.get_all_hose_symbols()
-                    run.symbols_total = len(symbols)
+                        # Step 4b: Store financial statements in DB
+                        for symbol, reports in fin_results.items():
+                            await self._store_financials(symbol, reports)
 
-                    # Step 3: Crawl prices (incremental)
-                    price_results, price_failed = await self._crawl_prices(symbols)
+                        # Step 5: Crawl company profiles
+                        company_results, company_failed = (
+                            await self.company_crawler.fetch_batch(symbols)
+                        )
 
-                    # Step 4: Crawl financials
-                    fin_results, fin_failed = await self.finance_crawler.fetch_batch(
-                        symbols
-                    )
+                        # Step 5b: Store company profiles in DB
+                        for symbol, overview_df in company_results.items():
+                            try:
+                                stock_dict = self.company_crawler.overview_to_stock_dict(
+                                    overview_df
+                                )
+                                import pandas as pd
 
-                    # Step 4b: Store financial statements in DB
-                    for symbol, reports in fin_results.items():
-                        await self._store_financials(symbol, reports)
+                                await self.stock_repo.upsert_stocks(
+                                    pd.DataFrame([stock_dict])
+                                )
+                            except Exception as e:
+                                logger.warning(
+                                    "pipeline.company.store_failed",
+                                    symbol=symbol,
+                                    error=str(e),
+                                )
 
-                    # Step 5: Crawl company profiles
-                    company_results, company_failed = (
-                        await self.company_crawler.fetch_batch(symbols)
-                    )
+                        # Step 6: Crawl corporate events
+                        event_results, event_failed = (
+                            await self.event_crawler.fetch_batch(symbols)
+                        )
 
-                    # Step 5b: Store company profiles in DB
-                    for symbol, overview_df in company_results.items():
-                        try:
-                            stock_dict = self.company_crawler.overview_to_stock_dict(
-                                overview_df
-                            )
-                            import pandas as pd
+                        # Step 7: Store event results in DB
+                        for symbol, events_df in event_results.items():
+                            try:
+                                await self.event_repo.upsert_events(symbol, events_df)
+                            except Exception as e:
+                                logger.warning(
+                                    "pipeline.events.store_failed",
+                                    symbol=symbol,
+                                    error=str(e),
+                                )
 
-                            await self.stock_repo.upsert_stocks(
-                                pd.DataFrame([stock_dict])
-                            )
-                        except Exception as e:
-                            logger.warning(
-                                "pipeline.company.store_failed",
-                                symbol=symbol,
-                                error=str(e),
-                            )
+                    # ──────────────────────────────────────────────────────
+                    # analyze stage — price adjustments (Q-3: only analytic
+                    # work in pipeline.py today; score/report happen in
+                    # AutomationService and remain placeholders).
+                    # ──────────────────────────────────────────────────────
+                    async with self._step_timer("analyze", run):
+                        await self._apply_price_adjustments()
 
-                    # Step 6: Crawl corporate events
-                    event_results, event_failed = (
-                        await self.event_crawler.fetch_batch(symbols)
-                    )
-
-                    # Step 7: Store event results in DB
-                    for symbol, events_df in event_results.items():
-                        try:
-                            await self.event_repo.upsert_events(symbol, events_df)
-                        except Exception as e:
-                            logger.warning(
-                                "pipeline.events.store_failed",
-                                symbol=symbol,
-                                error=str(e),
-                            )
-
-                    # Step 8: Apply price adjustments for unprocessed events
-                    await self._apply_price_adjustments()
+                    # Q-3 placeholders — explicit None so the contract is clear.
+                    # Future plan will wrap AutomationService.score() and
+                    # AutomationService.generate_report() with _step_timer.
+                    run.score_duration_ms = None
+                    run.report_duration_ms = None
 
                     # Update run status
                     all_failed = {
