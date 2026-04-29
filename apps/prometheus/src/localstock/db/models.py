@@ -128,6 +128,11 @@ class PipelineRun(Base):
     symbols_success: Mapped[int] = mapped_column(Integer, default=0)
     symbols_failed: Mapped[int] = mapped_column(Integer, default=0)
     errors: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    # Phase 24 / OBS-17 — per-step duration capture (24-02 migration)
+    crawl_duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    analyze_duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    score_duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    report_duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
 
 class TechnicalIndicator(Base):

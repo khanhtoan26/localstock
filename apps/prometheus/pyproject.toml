@@ -50,6 +50,9 @@ packages = ["src/localstock"]
 asyncio_mode = "auto"
 testpaths = ["tests"]
 timeout = 30
+markers = [
+    "requires_pg: integration tests that require a real PostgreSQL database (skipped otherwise)",
+]
 
 [dependency-groups]
 dev = [
