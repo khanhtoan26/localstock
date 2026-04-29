@@ -189,6 +189,19 @@ def init_metrics(registry: CollectorRegistry | None = None) -> dict[str, Any]:
         ),
         "localstock_cache_compute_total",
     )
+    # Phase 26 / 26-02 (D-08; B1: 26-02 owns this declaration in a region
+    # disjoint from cache_compute_total above so Wave-1 parallel execution
+    # is merge-safe). Pre-warm step failures are logged + counted but
+    # never fail the pipeline (CONTEXT D-05).
+    metrics["cache_prewarm_errors_total"] = _register(
+        lambda: Counter(
+            "localstock_cache_prewarm_errors_total",
+            "Pre-warm step failures (D-05; logged + counted, never fail pipeline).",
+            labelnames=("cache_name",),
+            registry=target,
+        ),
+        "localstock_cache_prewarm_errors_total",
+    )
 
     # === DB query metrics (D-06: labels = query_type, table_class) ===
     metrics["db_query_duration_seconds"] = _register(
