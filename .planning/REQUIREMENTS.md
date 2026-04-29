@@ -27,7 +27,8 @@
 
 ### Observability — Metrics & /metrics (Phase B)
 
-- [ ] **OBS-07**: `/metrics` endpoint expose Prometheus-format metrics qua `prometheus-fastapi-instrumentator`
+- [x] **OBS-07
+**: `/metrics` endpoint expose Prometheus-format metrics qua `prometheus-fastapi-instrumentator`
 - [ ] **OBS-08**: Module-level metric primitives định nghĩa: `http_*`, `op_*`, `cache_*`, `db_query_*`, `pipeline_step_*`, `dq_*`
 - [ ] **OBS-09**: Label cardinality budget tuân thủ ≤50 series per metric — `symbol` KHÔNG xuất hiện làm label (chỉ trong logs)
 - [ ] **OBS-10**: Idempotent registry init — không lỗi `Duplicated timeseries` khi chạy test suite
