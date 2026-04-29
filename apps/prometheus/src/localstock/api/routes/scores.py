@@ -22,7 +22,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from localstock.cache import get_or_compute
-from localstock.db.database import get_session, get_session_factory
+from localstock.db.database import get_session
 from localstock.db.models import PipelineRun
 from localstock.services.scoring_service import ScoringService
 
@@ -31,27 +31,34 @@ router = APIRouter(prefix="/api")
 _pipeline_run_lock = asyncio.Lock()
 
 
-async def resolve_latest_run_id(session_factory) -> int | None:
+async def resolve_latest_run_id(session: AsyncSession) -> int | None:
     """Return the id of the latest ``status='completed'`` pipeline run.
 
     Phase 26 fallback shim for the helper that 26-03 will eventually
     expose as ``localstock.cache.resolve_latest_run_id``. Cached for 5s
     under namespace ``pipeline:latest_run_id`` (CONTEXT D-02, key
-    ``current``) so per-request overhead stays bounded. When 26-03
-    lands, this shim can be replaced by a re-export — call signature
-    matches verbatim.
+    ``current``) so per-request overhead stays bounded.
+
+    NB: the canonical 26-03 signature takes a ``session_factory``. This
+    fallback intentionally takes the *current* request session instead —
+    that avoids touching the module-singleton engine, which under
+    pytest-asyncio's function-scoped event loops becomes bound to a
+    closed loop after the first DB-using test and breaks subsequent
+    direct route-call tests with ``RuntimeError: Event loop is closed``
+    (observed in tests/test_market_route.py::test_endpoint_calls_repo
+    with the full suite). When 26-03 lands, callers can either keep
+    using this shim or switch to the canonical factory-based helper.
     """
 
     async def _compute() -> int | None:
-        async with session_factory() as session:
-            stmt = (
-                select(PipelineRun.id)
-                .where(PipelineRun.status == "completed")
-                .order_by(PipelineRun.completed_at.desc().nulls_last())
-                .limit(1)
-            )
-            result = await session.execute(stmt)
-            return result.scalar_one_or_none()
+        stmt = (
+            select(PipelineRun.id)
+            .where(PipelineRun.status == "completed")
+            .order_by(PipelineRun.completed_at.desc().nulls_last())
+            .limit(1)
+        )
+        result = await session.execute(stmt)
+        return result.scalar_one_or_none()
 
     return await get_or_compute(
         namespace="pipeline:latest_run_id",
@@ -79,8 +86,7 @@ async def get_top_scores(
     poison a versioned key with the empty/'no scores yet' shape
     (T-26-04-04).
     """
-    factory = get_session_factory()
-    run_id = await resolve_latest_run_id(factory)
+    run_id = await resolve_latest_run_id(session)
 
     async def _compute():
         service = ScoringService(session)

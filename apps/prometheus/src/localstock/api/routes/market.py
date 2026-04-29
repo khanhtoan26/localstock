@@ -18,7 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from localstock.api.routes.scores import resolve_latest_run_id
 from localstock.cache import get_or_compute
-from localstock.db.database import get_session, get_session_factory
+from localstock.db.database import get_session
 from localstock.db.models import StockPrice
 from localstock.db.repositories.price_repo import PriceRepository
 
@@ -126,8 +126,7 @@ async def get_market_summary(
     1h (D-02). When no completed run exists yet, cache is bypassed
     (T-26-04-04).
     """
-    factory = get_session_factory()
-    run_id = await resolve_latest_run_id(factory)
+    run_id = await resolve_latest_run_id(session)
 
     async def _compute() -> MarketSummaryResponse:
         return await build_market_summary(session)

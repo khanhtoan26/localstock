@@ -78,22 +78,22 @@ def create_app() -> FastAPI:
 
     # Starlette middleware ordering is LIFO — LAST added is OUTERMOST.
     # Desired runtime order:
-    #   CORS (outer) → CorrelationId → Prometheus → RequestLog (inner) → routers
+    #   CORS (outer) → CorrelationId → Prometheus → RequestLog → CacheHeader (inner) → routers
     # `instrument(app)` is added BETWEEN RequestLogMiddleware and
     # CorrelationIdMiddleware so request_id is set when metrics fire (forward
     # compat for exemplars). See 23-RESEARCH.md §"App Wiring".
+    #
+    # Phase 26 / 26-02 fix-forward — CacheHeaderMiddleware must sit INSIDE
+    # all ``BaseHTTPMiddleware`` subclasses (RequestLog, CorrelationId).
+    # ``BaseHTTPMiddleware`` runs the downstream app in a separate ``anyio``
+    # task, so a ``cache_outcome_var`` set inside the route handler is
+    # invisible to any pure-ASGI middleware sitting OUTSIDE such a
+    # boundary. Adding CacheHeader FIRST makes it innermost (LIFO of
+    # ``add_middleware``), keeping it in the same task as the handler.
+    app.add_middleware(CacheHeaderMiddleware)
     app.add_middleware(RequestLogMiddleware)
     instrumentator.instrument(app)
     app.add_middleware(CorrelationIdMiddleware)
-    # Phase 26 / 26-02 — X-Cache header (D-08, P-4). Added AFTER
-    # CorrelationIdMiddleware in source so it sits OUTSIDE correlation in
-    # runtime LIFO order (CORS → CacheHeader → CorrelationId → Prom →
-    # RequestLog → handler). Header attachment doesn't log, so running
-    # outside correlation is benign; what matters is that the dispatch
-    # awaits ``call_next`` in the same Task as the handler so the
-    # ``cache_outcome_var`` ContextVar set inside ``get_or_compute`` is
-    # visible after ``await``.
-    app.add_middleware(CacheHeaderMiddleware)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["http://localhost:3000"],
