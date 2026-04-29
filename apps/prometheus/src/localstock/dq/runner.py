@@ -69,10 +69,11 @@ def partition_valid_invalid(
                 rules[0] if rules else ("unknown", "unknown")
             )
             row_dict = df.loc[i].to_dict()
+            payload_dict = _coerce_payload(row_dict)
             invalid_rows.append(
                 {
                     **row_dict,  # flatten so callers can read item["symbol"]
-                    "row": row_dict,
+                    "row": payload_dict,
                     "rule": primary_rule,
                     "reason": primary_check,
                     "all_rules": sorted({r[0] for r in rules}),
@@ -81,6 +82,37 @@ def partition_valid_invalid(
 
         valid_df = df.drop(index=list(bad_idx_set), errors="ignore")
         return valid_df, invalid_rows, failure_cases
+
+
+def _coerce_payload(row: dict) -> dict:
+    """Coerce a row dict's values to JSON-serializable scalars.
+
+    Pandas/numpy-native types (Timestamp, datetime, date, numpy scalars)
+    are converted to plain ``str``/``int``/``float`` so that
+    ``QuarantineRepository.insert`` → ``json.dumps`` succeeds. NaN/Inf
+    remain as ``float`` here — ``sanitize_jsonb`` (called inside
+    ``QuarantineRepository.insert``) handles those at the JSONB
+    write boundary (Rule 1 / DQ-04 belt-and-suspenders).
+    """
+    import datetime as _dt
+
+    out: dict = {}
+    for k, v in row.items():
+        if v is None:
+            out[k] = None
+        elif isinstance(v, pd.Timestamp):
+            out[k] = v.isoformat()
+        elif isinstance(v, (_dt.datetime, _dt.date)):
+            out[k] = v.isoformat()
+        elif hasattr(v, "item") and not isinstance(v, (str, bytes)):
+            # numpy scalar → native Python (np.int64/np.float64).
+            try:
+                out[k] = v.item()
+            except Exception:
+                out[k] = v
+        else:
+            out[k] = v
+    return out
 
 
 def _normalize_rule(check_name: str, column: str) -> str:

@@ -30,7 +30,10 @@ from localstock.db.repositories.financial_repo import FinancialRepository
 from localstock.db.repositories.price_repo import PriceRepository
 from localstock.db.repositories.stock_repo import StockRepository
 from localstock.dq import MAX_ERROR_CHARS
+from localstock.dq.quarantine_repo import QuarantineRepository
+from localstock.dq.runner import partition_valid_invalid
 from localstock.dq.sanitizer import sanitize_jsonb
+from localstock.dq.schemas.ohlcv import OHLCVSchema
 from localstock.observability.context import run_id_var
 from localstock.services.price_adjuster import adjust_prices_for_event
 
@@ -462,6 +465,75 @@ class Pipeline:
                 df = await self.price_crawler.fetch(
                     symbol, start_date=start, end_date=end
                 )
+                if df is None or (hasattr(df, "empty") and df.empty):
+                    continue
+
+                # DQ-01 (CONTEXT D-01) — Tier 1 strict partition. Bad rows
+                # divert to quarantine_rows; never reach stock_prices.
+                # Build a validation-shaped frame: the crawler returns
+                # ``time`` (mapped to ``date`` in the schema) and lacks
+                # the per-row ``symbol`` column the schema requires.
+                import pandas as pd
+
+                validation_df = df.copy()
+                if (
+                    "time" in validation_df.columns
+                    and "date" not in validation_df.columns
+                ):
+                    validation_df = validation_df.rename(columns={"time": "date"})
+                if (
+                    "date" in validation_df.columns
+                    and validation_df["date"].dtype != "datetime64[ns]"
+                ):
+                    validation_df["date"] = pd.to_datetime(
+                        validation_df["date"], errors="coerce"
+                    )
+                if "symbol" not in validation_df.columns:
+                    validation_df["symbol"] = symbol
+
+                valid_df, invalid_rows, _ = partition_valid_invalid(
+                    validation_df, OHLCVSchema
+                )
+
+                if invalid_rows:
+                    qrepo = QuarantineRepository(self.session)
+                    rule_counts: dict[str, int] = {}
+                    for item in invalid_rows:
+                        rule = item["rule"]
+                        rule_counts[rule] = rule_counts.get(rule, 0) + 1
+                        await qrepo.insert(
+                            source="ohlcv",
+                            symbol=symbol,
+                            payload=item["row"],
+                            reason=item["reason"],
+                            rule=rule,
+                            tier="strict",
+                        )
+                    # Tier 1 metric (CONTEXT D-06 — tier label always present).
+                    try:
+                        coll = REGISTRY._names_to_collectors.get(
+                            "localstock_dq_violations_total"
+                        )
+                        if coll is not None:
+                            for r_name, n in rule_counts.items():
+                                coll.labels(rule=r_name, tier="strict").inc(n)
+                    except Exception:
+                        logger.debug("dq.metric.lookup_failed")
+                    logger.warning(
+                        "dq.tier1.quarantined",
+                        symbol=symbol,
+                        count=len(invalid_rows),
+                        rules=sorted(rule_counts.keys()),
+                    )
+
+                # Drop quarantined indices from the original frame (which
+                # still has the ``time`` column upsert_prices expects).
+                bad_indices = set(df.index) - set(valid_df.index)
+                if bad_indices:
+                    df = df.drop(index=list(bad_indices), errors="ignore")
+                if df.empty:
+                    continue
+
                 await self.price_repo.upsert_prices(symbol, df)
                 results[symbol] = df
             except Exception as e:
