@@ -37,6 +37,13 @@ from localstock.db.repositories.industry_repo import IndustryRepository
 from localstock.db.repositories.price_repo import PriceRepository
 from localstock.db.repositories.ratio_repo import RatioRepository
 from localstock.db.repositories.stock_repo import StockRepository
+from localstock.dq.runner import evaluate_tier2
+from localstock.dq.schemas.indicators import predicate_rsi_anomaly
+from localstock.dq.schemas.ohlcv import (
+    predicate_gap_30pct,
+    predicate_missing_rows_20pct,
+)
+from localstock.dq.shadow import Tier2Violation
 from localstock.services.pipeline import _truncate_error
 
 
@@ -270,6 +277,56 @@ class AnalysisService:
         """
         # Compute indicators
         indicators_df = self.tech_analyzer.compute_indicators(ohlcv_df)
+
+        # === Phase 25 / DQ-02 (D-06) — Tier 2 advisory dispatch. ============
+        # Shadow mode by default — emits dq_violations_total{tier="advisory"}
+        # and dq_warn logs but does NOT block. Promotion to enforce via
+        # DQ_TIER2_<RULE>_MODE env flag (see docs/runbook/dq-tier2-promotion.md).
+        # Tier2Violation (enforce-mode raise) propagates up to the per-symbol
+        # try/except added in 25-06; predicate-bug exceptions are swallowed.
+        try:
+            if indicators_df is not None and not indicators_df.empty:
+                evaluate_tier2(
+                    "rsi_anomaly",
+                    indicators_df,
+                    predicate_rsi_anomaly,
+                    symbol=symbol,
+                )
+            if not ohlcv_df.empty:
+                evaluate_tier2(
+                    "gap",
+                    ohlcv_df,
+                    predicate_gap_30pct,
+                    symbol=symbol,
+                )
+                if "date" in ohlcv_df.columns and len(ohlcv_df) >= 2:
+                    d_min, d_max = ohlcv_df["date"].min(), ohlcv_df["date"].max()
+                    try:
+                        span_days = int((d_max - d_min).days)
+                    except Exception:  # noqa: BLE001
+                        span_days = 0
+                    expected_sessions = max(1, int(span_days * 5 / 7))
+                    evaluate_tier2(
+                        "missing_rows",
+                        ohlcv_df,
+                        lambda d, _e=expected_sessions: predicate_missing_rows_20pct(
+                            d, expected_session_count=_e
+                        ),
+                        symbol=symbol,
+                    )
+        except Tier2Violation:
+            # enforce-mode promotion → re-raise so 25-06 per-symbol
+            # try/except routes the symbol into failed_symbols (D-03 + D-06).
+            raise
+        except Exception as e:  # noqa: BLE001
+            # Predicate bug — never break the analysis pipeline over a
+            # buggy advisory check. Log and continue.
+            logger.warning(
+                "dq.tier2.predicate_error",
+                symbol=symbol,
+                error=str(e),
+            )
+        # =====================================================================
 
         # Volume analysis
         vol = self.tech_analyzer.compute_volume_analysis(ohlcv_df)

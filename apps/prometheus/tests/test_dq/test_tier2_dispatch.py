@@ -72,3 +72,27 @@ def test_promotion_to_strict_raises(monkeypatch) -> None:
             predicate=lambda d: d[d["rsi"] > 99.5],
             symbol="X",
         )
+
+
+def test_sc4_tier2_emits_metric_no_block() -> None:
+    """Verbatim ROADMAP Success Criterion #4 closure.
+
+    Tier 2 advisory rules emit dq_violations_total{rule, tier='advisory'}
+    + a dq_warn log line, but DO NOT block the pipeline (shadow default).
+    """
+    reg = CollectorRegistry()
+    m = init_metrics(reg)
+    _ = m["dq_violations_total"]
+    df = pd.DataFrame({"rsi": [99.7]})
+    # Must NOT raise (shadow default per CONTEXT D-06).
+    evaluate_tier2(
+        "rsi_anomaly",
+        df,
+        predicate=lambda d: d[d["rsi"] > 99.5],
+        symbol="SC4",
+    )
+    sample = reg.get_sample_value(
+        "localstock_dq_violations_total",
+        {"rule": "rsi_anomaly", "tier": "advisory"},
+    )
+    assert sample is not None and sample >= 1

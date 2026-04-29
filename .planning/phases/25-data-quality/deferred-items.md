@@ -1,0 +1,1 @@
+- [25-07] Pre-existing F401 unused imports in `apps/prometheus/src/localstock/services/analysis_service.py` (`VN_INDUSTRY_GROUPS` line 25, `StockPrice` line 34). Out of scope for 25-07.
