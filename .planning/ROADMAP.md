@@ -130,7 +130,15 @@
   3. Pipeline với 1 mã inject lỗi (raise trong crawler) hoàn thành full run; `PipelineRun.stats` JSONB hiển thị `{succeeded: 399, failed: 1, failed_symbols: ["BAD"]}` thay vì abort
   4. Tier 2 advisory rules (RSI > 99.5, gap > 30%, missing > 20%) emit log `dq_warn` + counter `dq_violations_total{rule, tier="advisory"}` nhưng KHÔNG block — shadow mode flag default true
   5. `/health/data` trả status `stale` khi `MAX(stock_prices.date)` lệch trading-calendar > 1 phiên — verified bằng manual rollback date
-**Plans**: TBD
+**Plans**: 8 plans
+- [ ] 25-01-PLAN.md — Wave 0 scaffolds: pandera install + dq/ package + Alembic migration + Settings + metric + RED test scaffolds
+- [ ] 25-02-PLAN.md — DQ-04 sanitize_jsonb + repo wiring (closes SC #2)
+- [ ] 25-03-PLAN.md — DQ-08 QuarantineRepository + APScheduler cleanup cron
+- [ ] 25-04-PLAN.md — DQ-06 PipelineRun.stats dual-write + _truncate_error
+- [ ] 25-05-PLAN.md — DQ-01 OHLCVSchema + reject-to-quarantine in _crawl_prices (closes SC #1)
+- [ ] 25-06-PLAN.md — DQ-05 per-symbol try/except across services (closes SC #3)
+- [ ] 25-07-PLAN.md — DQ-02 + DQ-03 Tier 2 dispatcher + shadow-mode promotion runbook (closes SC #4)
+- [ ] 25-08-PLAN.md — DQ-07 /health/data stale extension (closes SC #5)
 
 ### Phase 26: Caching
 **Goal**: Hot read-paths (`/api/scores/ranking`, `/api/market/summary`, indicator computations) trả về < 50 ms p95 từ cache, invalidate đúng lúc pipeline ghi xong, không stampede khi cache cold — phải có invalidation hooks trước Phase 27 (research §"E before F").
