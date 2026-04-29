@@ -158,6 +158,17 @@ def init_metrics(registry: CollectorRegistry | None = None) -> dict[str, Any]:
         "localstock_db_query_total",
     )
 
+    # === Slow query counter (Phase 24, D-04, OBS-13) ===
+    metrics["db_query_slow_total"] = _register(
+        lambda: Counter(
+            "localstock_db_query_slow_total",
+            "Queries exceeding slow_query_threshold_ms.",
+            labelnames=("query_type", "table_class"),
+            registry=target,
+        ),
+        "localstock_db_query_slow_total",
+    )
+
     # === Pipeline step metrics (D-06: labels = step, outcome) ===
     metrics["pipeline_step_duration_seconds"] = _register(
         lambda: Histogram(

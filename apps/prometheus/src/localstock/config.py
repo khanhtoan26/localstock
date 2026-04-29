@@ -3,7 +3,7 @@
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import field_validator
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings
 
 
@@ -88,6 +88,9 @@ class Settings(BaseSettings):
 
     # Score change alert threshold (per D-03)
     score_change_threshold: float = 15.0
+
+    # Phase 24 — slow-query threshold (D-02, OBS-13)
+    slow_query_threshold_ms: int = Field(default=250, ge=1, le=10000)
 
     model_config = {"env_file": _find_env_file(), "env_file_encoding": "utf-8"}
 

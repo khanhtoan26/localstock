@@ -29,6 +29,10 @@ def get_engine():
             pool_pre_ping=True,
             connect_args={"prepared_statement_cache_size": 0, "statement_cache_size": 0},
         )
+        # Phase 24-03 — DB query timing (OBS-12, OBS-13)
+        from localstock.observability.db_events import attach_query_listener
+
+        attach_query_listener(_engine)
     return _engine
 
 
