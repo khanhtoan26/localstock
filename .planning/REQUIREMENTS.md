@@ -72,8 +72,8 @@
 - [x] **CACHE-04**: Single-flight wrapper (`asyncio.Lock` per key) — chống cold-start stampede
 - [x] **CACHE-05
 **: Pre-warm hot keys ở cuối `run_daily_pipeline` — không lazy-fill từ first request sau pipeline
-- [ ] **CACHE-06**: `cache_janitor` scheduler job (60s) sweep expired TTLs để tránh unbounded memory growth
-- [ ] **CACHE-07**: Cache hit/miss/eviction counters expose qua `/metrics`
+- [x] **CACHE-06**: `cache_janitor` scheduler job (60s) sweep expired TTLs để tránh unbounded memory growth
+- [x] **CACHE-07**: Cache hit/miss/eviction counters expose qua `/metrics`
 
 ### Pipeline Performance (Phase F)
 
@@ -158,11 +158,11 @@
 | DQ-08  | Phase 25 | TBD | Pending |
 | CACHE-01 | Phase 26 | 26-04 | Done |
 | CACHE-02 | Phase 26 | 26-03 | Done |
-| CACHE-03 | Phase 26 | TBD | Pending |
+| CACHE-03 | Phase 26 | 26-05 | Done |
 | CACHE-04 | Phase 26 | 26-01 | Done |
-| CACHE-05 | Phase 26 | TBD | Pending |
-| CACHE-06 | Phase 26 | TBD | Pending |
-| CACHE-07 | Phase 26 | TBD | Pending |
+| CACHE-05 | Phase 26 | 26-05 | Done |
+| CACHE-06 | Phase 26 | 26-06 | Done |
+| CACHE-07 | Phase 26 | 26-02 | Done |
 | PERF-01 | Phase 27 | TBD | Pending |
 | PERF-02 | Phase 27 | TBD | Pending |
 | PERF-03 | Phase 27 | TBD | Pending |

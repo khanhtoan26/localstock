@@ -70,7 +70,7 @@
 - [x] **Phase 23: Metrics Primitives & /metrics** — Prometheus registry + endpoint, label-cardinality budget, idempotent init
 - [x] **Phase 24: Instrumentation & Health** — `@observe`/`@timed_query` decorators, slow-query log, /health/{live,ready,pipeline,data}, scheduler error listener
 - [x] **Phase 25: Data Quality** — Pandera Tier 1 validators, NaN/Inf JSONB sanitizer, per-stock isolation, stats persistence, quarantine table
-- [ ] **Phase 26: Caching** — `cachetools.TTLCache` với version-aware keys, single-flight lock, invalidation hooks, pre-warm, janitor job
+- [x] **Phase 26: Caching** — `cachetools.TTLCache` với version-aware keys, single-flight lock, invalidation hooks, pre-warm, janitor job
 - [ ] **Phase 27: Pipeline Performance** — `asyncio.Semaphore(8)` crawler, token-bucket + circuit breaker, tenacity retries, pool tuning, fire-and-forget Telegram
 - [ ] **Phase 28: Database Optimization** — `CREATE INDEX CONCURRENTLY` migrations, batch upserts, `pg_stat_statements` baseline, runbook
 
@@ -150,7 +150,7 @@
   3. Concurrent 100 requests vào cùng cold key chỉ trigger 1 backend computation (single-flight via `asyncio.Lock`) — verified bằng counter `cache_compute_total` chỉ tăng 1
   4. Sau `run_daily_pipeline`, cache cho hot keys (ranking + market summary) đã pre-warm — first request từ user log `cache=hit` không phải `miss`
   5. `/metrics` expose `cache_hits_total`, `cache_misses_total`, `cache_evictions_total` với label `namespace`; `cache_janitor` job chạy mỗi 60s và log số entries swept
-**Plans**: 26-01 ✅ (CACHE-04 — cache core + single-flight + Wave-0 fixtures + canonical cache_compute_total; SC #3 ✅ closed); 26-02 ✅ (CACHE-07 — telemetry + middleware); 26-03 ✅ (CACHE-02 — version-key resolver; SC #2 ✅ closed); 26-04 ✅ (CACHE-01 — /scores/top + /market/summary cached + build_market_summary helper extracted; SC #1 ✅ verbatim closed, p95 = 2.36 ms / 2.01 ms — 21×–25× under 50 ms gate); 26-05/06 pending
+**Plans**: 26-01 ✅ (CACHE-04 — cache core + single-flight + Wave-0 fixtures + canonical cache_compute_total; SC #3 ✅ closed); 26-02 ✅ (CACHE-07 — telemetry + middleware); 26-03 ✅ (CACHE-02 — version-key resolver; SC #2 ✅ closed); 26-04 ✅ (CACHE-01 — /scores/top + /market/summary cached + build_market_summary helper extracted; SC #1 ✅ verbatim closed, p95 = 2.36 ms / 2.01 ms — 21×–25× under 50 ms gate); 26-05 ✅ (CACHE-03 + CACHE-05 — invalidate hooks + prewarm + indicator cache wrapper; SC #4 ✅ verbatim closed, indicator hit reduction 99.7%); 26-06 ✅ (CACHE-06 — cache_janitor APScheduler 60s sweep + 26-01 reason='expire' Rule-1 fix; SC #5 ✅ verbatim closed). **Phase 26 COMPLETE — all 7 requirements + 5 SCs ✅.**
 
 ### Phase 27: Pipeline Performance
 **Goal**: Toàn bộ pipeline (crawl + analyze + score + report cho ~400 mã) hoàn thành nhanh hơn baseline ≥ 3× nhờ concurrent crawl, không trigger vnstock soft-ban, không exhaust DB pool, không block event loop bằng pandas-ta.
@@ -206,7 +206,7 @@
 | 23. Metrics Primitives & /metrics | v1.5 | 0/? | Not started | - |
 | 24. Instrumentation & Health | v1.5 | 6/6 | Complete | 2026-04-29 |
 | 25. Data Quality | v1.5 | 8/8 | Complete ✅ | All 5 SCs ✅; 25-08 closed SC #5 (data_freshness block on /health/data) |
-| 26. Caching | v1.6 | 3/6 | In Progress | 26-01 ✅ CACHE-04 + SC #3; 26-02 ✅ CACHE-07; 26-03 ✅ CACHE-02 + SC #2 closed; 26-04 feat-only (SUMMARY pending); 26-05/06 next |
+| 26. Caching | v1.6 | 6/6 | Complete ✅ | All 7 reqs + 5 SCs ✅; 26-06 closed SC #5 (cache_janitor 60s + reason='expire' Rule-1 fix) |
 | 27. Pipeline Performance | v1.5 | 0/? | Not started | - |
 | 28. Database Optimization | v1.5 | 0/? | Not started | - |
 

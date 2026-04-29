@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.5
-milestone_name: Performance & Data Quality
+milestone: v1.6
+milestone_name: Performance Caching
 status: completed
-stopped_at: Completed 26-05-PLAN.md
-last_updated: "2026-04-29T09:56:56.824Z"
-last_activity: "2026-04-29 — 26-05 Wave 3: 3 commits, 7 files changed, 14/14 new tests GREEN, full project 544 passed (excl. pre-existing Phase-24 fail), ruff clean on 26-05 changes. CACHE-03 ✅ + CACHE-05 ✅; ROADMAP SC #4 ✅ verbatim closed."
+stopped_at: Completed 26-06-PLAN.md — Phase 26 CLOSED
+last_updated: "2026-04-29T10:30:00.000Z"
+last_activity: "2026-04-29 — 26-06 Wave 4: 2 commits (45e0ce6 RED, 81d929e GREEN), 5 files changed, 4/4 new tests GREEN, full project 606 passed (excl. 1 pre-existing Phase-24 fail), ruff clean. CACHE-06 ✅; ROADMAP SC #5 ✅ verbatim closed. Phase 26 COMPLETE — 6/6 plans, 7/7 reqs, 5/5 SCs."
 progress:
   total_phases: 8
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 30
-  completed_plans: 29
-  percent: 97
+  completed_plans: 30
+  percent: 100
 ---
 
 # Project State
@@ -21,11 +21,17 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-28)
 
 **Core value:** Agent tự động phân tích và xếp hạng cổ phiếu HOSE — cho tôi danh sách gợi ý đáng mua kèm lý do rõ ràng, cập nhật hàng ngày, không tốn phí API.
-**Current focus:** v1.6 Performance Caching — **Phase 26 IN PROGRESS** (5/6 plans complete). 26-01 ✅ closes CACHE-04 + ROADMAP SC #3; 26-02 ✅ closes CACHE-07; 26-03 ✅ closes CACHE-02 + ROADMAP SC #2; 26-04 ✅ closes CACHE-01 + ROADMAP SC #1; 26-05 ✅ closes CACHE-03 + CACHE-05 + ROADMAP SC #4. Next: 26-06 (janitor).
+**Current focus:** v1.6 Performance Caching — **Phase 26 COMPLETE ✅** (6/6 plans, 7/7 requirements, 5/5 ROADMAP SCs). 26-01 ✅ CACHE-04 + SC #3; 26-02 ✅ CACHE-07; 26-03 ✅ CACHE-02 + SC #2; 26-04 ✅ CACHE-01 + SC #1; 26-05 ✅ CACHE-03 + CACHE-05 + SC #4; 26-06 ✅ CACHE-06 + SC #5. Next: Phase 27 (Pipeline Performance) per ROADMAP dependency F→E.
 
 ## Current Position
 
-Phase: 26 — Caching (IN PROGRESS — 5/6 plans complete; ROADMAP SC #1 ✅ + SC #2 ✅ + SC #3 ✅ + SC #4 ✅ closed)
+Phase: 26 — Caching (COMPLETE ✅ — 6/6 plans; ALL 5 ROADMAP SCs verbatim closed)
+Plan: 06 (complete) — cache_janitor APScheduler 60s sweep + Rule-1 fix to 26-01 InstrumentedTTLCache (reason='expire' was never emitted because TTLCache.expire bypasses popitem). SC #5 verbatim closed.
+Status: 26-06 complete — `cache.janitor.cache_janitor()` async sweep registered in `setup_scheduler()` with `IntervalTrigger(seconds=settings.cache_janitor_interval_seconds)` (default 60s, D-02), `id='cache_janitor'`, `max_instances=1`, `coalesce=True` (T-26-06-03 mitigation). Sweep iterates `_caches` registry, captures `cache_evictions_total{cache_name, reason='expire'}` counter delta around `cache.expire()`, logs `cache.janitor.sweep` at INFO with per-namespace `swept={ns: count}` + `total`. Per-namespace try/except (T-26-06-02). **Rule 1 latent-bug fix in 26-01:** `cachetools.TTLCache.expire()` uses `Cache.__delitem__` internally — never routes through `popitem` — so `reason='expire'` had been permanently zero since 26-01. Override `InstrumentedTTLCache.expire()` to walk the returned `expired = [(k, v), ...]` list and increment the counter once per entry; `popitem()` retains `reason='evict'` for LRU overflow, now guarded by `if not self._in_expire:` to defensively prevent double-counting. Sweep-count derivation in janitor uses the same counter delta (since `len(TTLCache)` itself triggers expiration and would zero the `before` reading — second Rule-1 inline catch). 4 new RED→GREEN tests in `tests/test_cache/test_janitor.py`: sweep evicts expired entries, return dict covers all 5 namespaces, reason='expire' counter increments via janitor sweep, scheduler registers `cache_janitor` with 60s IntervalTrigger + max_instances=1 + coalesce=True. Full project: **606 passed** (37 cache + 569 other; 1 pre-existing Phase-24 migration test deselected). `uvx ruff check` clean on all 5 changed files. ROADMAP.md + REQUIREMENTS.md updated: Phase 26 milestone checkbox `[x]`, progress row `6/6 Complete ✅`, CACHE-03/05/06/07 traceability rows filled (predecessors had left them at TBD/Pending). 2 commits with Copilot co-author trailer: 45e0ce6 (test 26-06 RED), 81d929e (feat 26-06 GREEN + Rule-1 fix).
+Last activity: 2026-04-29 — 26-06 Wave 4 (final): 2 commits, 5 files changed, 4/4 new tests GREEN, full project 606 passed, ruff clean. CACHE-06 ✅; ROADMAP SC #5 ✅ verbatim closed. **Phase 26 CLOSED — 6/6 plans, 7/7 reqs, 5/5 SCs.**
+
+Progress: [██████████] 100%
+
 Plan: 05 (complete) — pipeline invalidate hooks (D-04) + prewarm_hot_keys (D-05) + indicator cache wrapper (D-06). SC #4 verbatim closed.
 Status: 26-05 complete — `automation_service.py` gains 4 eager-invalidate hooks (`indicators` after analysis, `scores:ranking`+`scores:symbol` after scoring, `market:summary`+`pipeline:latest_run_id` after sector-rotation) — each wrapped in its own try/except so invalidation failures never abort the pipeline (D-04). New `cache/prewarm.py` exposes `async prewarm_hot_keys(session_factory, *, ranking_limit=50)` which routes both pre-warm computes through `get_or_compute` (Q-3 — same single-flight choke-point as the routes; no double-compute), failures bump `cache_prewarm_errors_total{cache_name=...}` and never re-raise (P-5). Pre-warm hook installed between sector-rotation block and `_send_notifications` (D-05). `analysis_service.py` gains `cached_analyze_technical_single(symbol, ohlcv_df, run_id)` async wrapper keyed by `indicators:{symbol}:run={run_id}` (D-06 — no `{indicator_name}` segment per Q-B; pandas-ta returns all 11 indicators in one bundled call). W2 caller contract enforced: `run_id` is REQUIRED (no default) and MUST be hoisted ONCE before any per-symbol loop — `run_full` and `run_single` both hoist via `resolve_latest_run_id(get_session_factory())` with fallback to `None` on resolution failure (cache bypass parity with route-level T-26-04-04). 14 new RED→GREEN tests across 3 files: `test_invalidation_integration.py` (6), `test_prewarm.py` (3, 1 `requires_pg`), `test_indicator_cache.py` (5 incl. W2 signature gate via `inspect.signature` + coarse-grained Q-4 timing test). Indicator cache speedup measured: 50-symbol fanout, miss=107.53 ms, hit=0.29 ms — **99.7% reduction**, comfortably exceeds SC #4 ">50% drop" threshold. Pre-existing `test_pipeline_isolation::test_analyze_step_isolation` mock signature widened to accept `run_id` kwarg (Rule 1 — direct caused by W2 hoist). 33/33 cache tests pass; 544/544 full suite excl. pre-existing Phase-24 migration test. 3 commits with Copilot co-author trailer: e11e0f1 (test 26-05 RED scaffolds), 6cafc4c (feat 26-05 invalidate hooks + prewarm), d3deb19 (feat 26-05 indicator cache wrapper + W2 hoist).
 Last activity: 2026-04-29 — 26-05 Wave 3: 3 commits, 7 files changed, 14/14 new tests GREEN, full project 544 passed (excl. pre-existing Phase-24 fail), ruff clean on 26-05 changes. CACHE-03 ✅ + CACHE-05 ✅; ROADMAP SC #4 ✅ verbatim closed.
