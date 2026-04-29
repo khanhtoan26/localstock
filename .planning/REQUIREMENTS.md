@@ -29,9 +29,9 @@
 
 - [x] **OBS-07
 **: `/metrics` endpoint expose Prometheus-format metrics qua `prometheus-fastapi-instrumentator`
-- [ ] **OBS-08**: Module-level metric primitives định nghĩa: `http_*`, `op_*`, `cache_*`, `db_query_*`, `pipeline_step_*`, `dq_*`
-- [ ] **OBS-09**: Label cardinality budget tuân thủ ≤50 series per metric — `symbol` KHÔNG xuất hiện làm label (chỉ trong logs)
-- [ ] **OBS-10**: Idempotent registry init — không lỗi `Duplicated timeseries` khi chạy test suite
+- [x] **OBS-08**: Module-level metric primitives định nghĩa: `http_*`, `op_*`, `cache_*`, `db_query_*`, `pipeline_step_*`, `dq_*`
+- [x] **OBS-09**: Label cardinality budget tuân thủ ≤50 series per metric — `symbol` KHÔNG xuất hiện làm label (chỉ trong logs)
+- [x] **OBS-10**: Idempotent registry init — không lỗi `Duplicated timeseries` khi chạy test suite
 
 ### Observability — Instrumentation & Health (Phase C)
 
@@ -126,10 +126,10 @@
 | OBS-04 | Phase 22 | 22-00, 22-03 | Complete |
 | OBS-05 | Phase 22 | 22-00, 22-01 | Complete |
 | OBS-06 | Phase 22 | 22-00, 22-05, 22-06 | Complete |
-| OBS-07 | Phase 23 | TBD | Pending |
-| OBS-08 | Phase 23 | TBD | Pending |
-| OBS-09 | Phase 23 | TBD | Pending |
-| OBS-10 | Phase 23 | TBD | Pending |
+| OBS-07 | Phase 23 | 23-02 | Complete |
+| OBS-08 | Phase 23 | 23-01 | Complete |
+| OBS-09 | Phase 23 | 23-01 | Complete |
+| OBS-10 | Phase 23 | 23-01 | Complete |
 | OBS-11 | Phase 24 | TBD | Pending |
 | OBS-12 | Phase 24 | TBD | Pending |
 | OBS-13 | Phase 24 | TBD | Pending |

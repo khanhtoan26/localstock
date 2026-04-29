@@ -67,7 +67,7 @@
 <summary>🚧 v1.5 Performance & Data Quality (Phases 22-28) — IN PROGRESS</summary>
 
 - [ ] **Phase 22: Logging Foundation** — Structured JSON logs với request_id/run_id correlation, secret redaction, CI lint gate
-- [ ] **Phase 23: Metrics Primitives & /metrics** — Prometheus registry + endpoint, label-cardinality budget, idempotent init
+- [x] **Phase 23: Metrics Primitives & /metrics** — Prometheus registry + endpoint, label-cardinality budget, idempotent init
 - [ ] **Phase 24: Instrumentation & Health** — `@observe`/`@timed_query` decorators, slow-query log, /health/{live,ready,pipeline,data}, scheduler error listener
 - [ ] **Phase 25: Data Quality** — Pandera Tier 1 validators, NaN/Inf JSONB sanitizer, per-stock isolation, stats persistence, quarantine table
 - [ ] **Phase 26: Caching** — `cachetools.TTLCache` với version-aware keys, single-flight lock, invalidation hooks, pre-warm, janitor job
