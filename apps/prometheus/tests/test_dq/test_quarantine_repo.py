@@ -9,45 +9,30 @@ The repo stub raises NotImplementedError, so the unit tests fail at the
 from __future__ import annotations
 
 import pytest
+import pytest_asyncio
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-from localstock.config import get_settings
 from localstock.dq.quarantine_repo import QuarantineRepository
 
 
 pytestmark = [pytest.mark.requires_pg, pytest.mark.asyncio]
 
 
-async def _make_session():
-    settings = get_settings()
-    eng = create_async_engine(
-        settings.database_url,
-        connect_args={"prepared_statement_cache_size": 0, "statement_cache_size": 0},
+# Test-local data cleanup wrapping the project-wide `db_session` fixture
+# (Phase 26 / 26-01 Task 0 — promoted db_session to tests/conftest.py).
+# The shared fixture is a plain async session with rollback teardown; the
+# tests below call `session.commit()` to materialise rows, so we own the
+# pre/post `DELETE` of our test symbols here.
+@pytest_asyncio.fixture(autouse=True)
+async def _clean_quarantine_test_rows(db_session):
+    sql = text(
+        "DELETE FROM quarantine_rows WHERE symbol IN ('BAD','OLD','NEW','NAN')"
     )
-    sessionmaker = async_sessionmaker(eng, expire_on_commit=False)
-    return eng, sessionmaker()
-
-
-@pytest.fixture
-async def db_session():
-    eng, session = await _make_session()
-    # Clean any prior rows for deterministic asserts.
-    await session.execute(
-        text("DELETE FROM quarantine_rows WHERE symbol IN ('BAD','OLD','NEW','NAN')")
-    )
-    await session.commit()
-    try:
-        yield session
-    finally:
-        await session.execute(
-            text(
-                "DELETE FROM quarantine_rows WHERE symbol IN ('BAD','OLD','NEW','NAN')"
-            )
-        )
-        await session.commit()
-        await session.close()
-        await eng.dispose()
+    await db_session.execute(sql)
+    await db_session.commit()
+    yield
+    await db_session.execute(sql)
+    await db_session.commit()
 
 
 async def test_insert_persists_row(db_session) -> None:

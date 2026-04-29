@@ -9,9 +9,13 @@ os.environ.setdefault("PYTEST_CURRENT_TEST", "init")
 
 from datetime import date
 
+import httpx
 import pandas as pd
 import pytest
+import pytest_asyncio
+from httpx import ASGITransport
 from loguru import logger
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -106,3 +110,55 @@ def sample_financial_data():
             }
         ),
     }
+
+
+# === Phase 26 / Wave-0 — project-wide async DB + HTTP fixtures (B2 fix) ===
+# Lifted from tests/test_dq/test_quarantine_repo.py:22-50 so plans
+# 26-03/04/05 (cache versioning, perf benchmarks, prewarm integration) can
+# discover the same fixture names. Gated by `pytest.mark.requires_pg` at
+# the consumer test level — tests skip cleanly if PG is unavailable.
+
+
+@pytest_asyncio.fixture
+async def db_session():
+    """Project-wide async DB session, transactional rollback for isolation.
+
+    Yields an `AsyncSession` bound to a fresh `create_async_engine`. The
+    final `rollback()` discards any uncommitted state. Tests that call
+    `session.commit()` to materialise rows MUST clean up their own
+    test-data afterwards (this fixture is a session, not a sandbox).
+    """
+    from localstock.config import get_settings
+
+    settings = get_settings()
+    eng = create_async_engine(
+        settings.database_url,
+        connect_args={
+            "prepared_statement_cache_size": 0,
+            "statement_cache_size": 0,
+        },
+    )
+    sessionmaker = async_sessionmaker(eng, expire_on_commit=False)
+    session = sessionmaker()
+    try:
+        yield session
+    finally:
+        await session.rollback()
+        await session.close()
+        await eng.dispose()
+
+
+@pytest_asyncio.fixture
+async def async_client():
+    """Async HTTP client bound to the FastAPI app via ASGI transport.
+
+    Used by Phase 26 perf + integration tests
+    (test_perf_ranking, test_perf_market, test_route_caching_integration).
+    """
+    from localstock.api.app import create_app  # late import — app
+    # construction touches DI / Instrumentator side-effects.
+
+    app = create_app()
+    transport = ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        yield client
