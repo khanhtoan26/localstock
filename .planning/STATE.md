@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Performance & Data Quality
 status: Phase 24 fully closed (OBS-11, OBS-12, OBS-13, OBS-14, OBS-15, OBS-16, OBS-17). All 6 plans + Wave 0 scaffolds shipped.
-stopped_at: Completed 25-01-PLAN.md (Wave 0 scaffolds — pandera + dq/ + alembic 25a0b1c2d3e4 + 30 RED tests)
-last_updated: "2026-04-29T06:29:32.753Z"
-last_activity: 2026-04-29 — 24-06 complete; Pipeline._step_timer wires per-stage timing into run_full; OBS-17 closed end-to-end (schema 24-02 + population 24-06)
+stopped_at: Completed 25-02-PLAN.md (Wave 1 — DQ-04 sanitize_jsonb wired across 5 repos; SC #2 closed end-to-end)
+last_updated: "2026-04-29T07:15:00.000Z"
+last_activity: 2026-04-29 — 25-02 complete; sanitize_jsonb canonical helper + 5 repo writes hardened; ROADMAP SC #2 verified against Postgres
 progress:
   total_phases: 8
   completed_phases: 3
   total_plans: 24
-  completed_plans: 17
+  completed_plans: 18
   percent: 71
 ---
 
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-04-28)
 
 ## Current Position
 
-Phase: 25 — Data Quality (🚧 in progress; Wave 0 complete)
-Plan: 01 (complete) — Wave 0 scaffolds shipped; 25-02..25-08 unblocked.
-Status: 25-01 complete — pandera installed, dq/ package skeleton + Alembic 25a0b1c2d3e4 + Settings DQ fields + dq_violations_total Counter + 30 RED tests landed. Phase 24 closed previously.
-Last activity: 2026-04-29 — 25-01 Wave 0 scaffolds: 7 commits, 24 files, 30 RED tests collected with zero ModuleNotFoundError on localstock.dq.*
+Phase: 25 — Data Quality (🚧 in progress; Wave 1 plan A complete)
+Plan: 02 (complete) — DQ-04 JSONB write-boundary sanitizer landed; 25-03 still in flight.
+Status: 25-02 complete — sanitize_jsonb canonical impl + 5 repos wired (financial/report/score/notification/job) + services/pipeline.py inlined _clean_nan removed + Postgres-backed integration test asserts content_json contains no 'NaN' or 'Infinity'. ROADMAP Success Criterion #2 closed verbatim.
+Last activity: 2026-04-29 — 25-02 Wave 1 plan A: 2 commits, 8 files, 6/6 tests GREEN, full suite 537 passed (1 pre-existing Phase 24 migration failure unchanged).
 
 Progress: [███████░░░] 71%
 
@@ -55,6 +55,7 @@ Full decision history from v1.0–v1.4 archived in `.planning/milestones/`.
 - 24-05: dedup keyed by `(job_id, error_type)` with `threading.Lock` + 15-min window — distinct keys NOT deduped together (D-06). Telegram dispatch is `asyncio.create_task` fire-and-forget with done-callback to suppress task exceptions. `@observe('crawl.<subsystem>.fetch')` applied to PriceCrawler/FinanceCrawler/CompanyCrawler/EventCrawler entry points only — minimal CONTEXT D-01 scope. Phase 23 D-08 boundary explicitly lifted for 24-05 implementation files (documented in 24-05-SUMMARY.md)
 - 24-06: `Pipeline._step_timer(step_name, run)` is the documented D-08 exception in `services/pipeline.py` — atomic column write (`setattr(run, f'{step_name}_duration_ms', ms)`) + histogram emission via `REGISTRY._names_to_collectors` lookup. `try/yield/except(set fail outcome, raise)/finally(record + observe)` ordering guarantees column write on exception path (Pitfall 7). Q-3 wrap granularity: crawl=Steps 1-7, analyze=`_apply_price_adjustments` only; score/report explicitly None until AutomationService integration (future phase)
 - 25-01: Wave 0 scaffolds shipped — pandera installed, dq/ package + Alembic 25a0b1c2d3e4 + Settings + Counter + 30 RED tests landed
+- 25-02: sanitize_jsonb is the single source of truth for JSONB NaN/Inf scrubbing — wired at first line of every JSONB-bound repo write (financial/report/score/notification/job). Inline `_clean_nan` in services/pipeline.py REMOVED. Recipe handles dict/list/tuple recursion + numpy.float64 (via float-subclass isinstance) + bool short-circuit. scheduler.py:156 errors-dict NOT wrapped (owned by 25-03; literal dict has no float content). DQ-04 + ROADMAP SC #2 closed.
 
 ### Watch Out For (from research)
 
