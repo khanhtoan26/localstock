@@ -88,3 +88,4 @@ def _safe_inc(metric_name: str, **labels: str) -> None:
 # its body without circular-import issues at module-load time.
 from localstock.cache.version import resolve_latest_run_id  # noqa: E402,F401
 from localstock.cache.prewarm import prewarm_hot_keys  # noqa: E402,F401
+from localstock.cache.janitor import cache_janitor  # noqa: E402,F401

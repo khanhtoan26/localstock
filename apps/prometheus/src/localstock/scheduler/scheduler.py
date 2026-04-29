@@ -117,6 +117,21 @@ def setup_scheduler() -> AsyncIOScheduler:
         coalesce=True,
     )
 
+    # === Phase 26 / CACHE-06 (D-08) — cache TTL janitor ===
+    from localstock.cache.janitor import cache_janitor
+
+    scheduler.add_job(
+        cache_janitor,
+        trigger=IntervalTrigger(
+            seconds=settings.cache_janitor_interval_seconds
+        ),
+        id="cache_janitor",
+        name="Cache TTL sweep (cachetools.expire)",
+        replace_existing=True,
+        max_instances=1,
+        coalesce=True,
+    )
+
     logger.info(
         "scheduler.configured",
         hour=settings.scheduler_run_hour,

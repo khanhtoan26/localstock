@@ -17,11 +17,18 @@ from localstock.observability.metrics import get_metrics
 
 
 class InstrumentedTTLCache(TTLCache):
-    """TTLCache that increments cache_evictions_total on each ``popitem``.
+    """TTLCache that increments cache_evictions_total on each eviction.
 
-    Distinguishes ``reason='expire'`` (popped from inside the overridden
-    ``expire()``) vs ``reason='evict'`` (popped from ``__setitem__``
-    overflow) via a one-shot ``_in_expire`` flag. RESEARCH §1 Q-2.
+    - ``reason='expire'`` is emitted from the overridden ``expire()`` for
+      each ``(key, value)`` returned (TTLCache uses ``Cache.__delitem__``
+      internally, NOT ``popitem``, so we cannot rely on the popitem hook
+      for TTL expirations — this was the latent bug that 26-06 surfaced).
+    - ``reason='evict'`` is emitted from the overridden ``popitem`` for
+      LRU overflow during ``__setitem__``.
+
+    The ``_in_expire`` flag suppresses the popitem path when expire()
+    is the caller (defensive — current cachetools doesn't go through
+    popitem during expire, but a future version might).
     """
 
     def __init__(self, maxsize: int, ttl: int, namespace: str) -> None:
@@ -32,19 +39,31 @@ class InstrumentedTTLCache(TTLCache):
     def expire(self, time: float | None = None):  # type: ignore[override]
         self._in_expire = True
         try:
-            return super().expire(time)
+            expired = super().expire(time)
         finally:
             self._in_expire = False
+        if expired:
+            try:
+                counter = get_metrics()["cache_evictions_total"]
+                for _ in expired:
+                    counter.labels(
+                        cache_name=self._namespace, reason="expire",
+                    ).inc()
+            except Exception:
+                # Metric failure must never break cache ops.
+                pass
+        return expired
 
     def popitem(self):  # type: ignore[override]
         key, value = super().popitem()
         try:
-            reason = "expire" if self._in_expire else "evict"
-            get_metrics()["cache_evictions_total"].labels(
-                cache_name=self._namespace, reason=reason,
-            ).inc()
+            # If we're inside expire(), the popitem path would double-count
+            # (defensive; current cachetools doesn't use popitem in expire).
+            if not self._in_expire:
+                get_metrics()["cache_evictions_total"].labels(
+                    cache_name=self._namespace, reason="evict",
+                ).inc()
         except Exception:
-            # Metric failure must never break cache ops.
             pass
         return key, value
 
