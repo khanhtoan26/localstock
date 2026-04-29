@@ -54,7 +54,7 @@
 **: Shadow mode mặc định 14 ngày cho Tier 2 rules trước khi cho phép promote sang Tier 1 (operational policy documented)
 - [ ] **DQ-04
 **: NaN/Inf sanitizer ở JSONB write boundary — `df.replace([±inf], NaN).where(notna(), None)` áp dụng trước mọi insert vào JSONB column
-- [ ] **DQ-05
+- [x] **DQ-05
 **: Per-stock try/except isolation trong pipeline — một mã fail KHÔNG kill batch (`return_exceptions=True`)
 - [ ] **DQ-06
 **: `PipelineRun.stats` JSONB column ghi succeeded/failed/skipped count + danh sách failed symbol
@@ -150,7 +150,7 @@
 | DQ-02  | Phase 25 | TBD | Pending |
 | DQ-03  | Phase 25 | TBD | Pending |
 | DQ-04  | Phase 25 | TBD | Pending |
-| DQ-05  | Phase 25 | TBD | Pending |
+| DQ-05  | Phase 25 | 25-06-PLAN.md | Complete |
 | DQ-06  | Phase 25 | TBD | Pending |
 | DQ-07  | Phase 25 | TBD | Pending |
 | DQ-08  | Phase 25 | TBD | Pending |

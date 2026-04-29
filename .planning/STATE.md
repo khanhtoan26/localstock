@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Performance & Data Quality
-status: Phase 25 Wave 3 in progress — 25-05 complete (DQ-01 OHLCV reject-to-quarantine landed; ROADMAP SC #1 ✅ closed).
-stopped_at: Completed 25-05-PLAN.md (Wave 3 — DQ-01 Tier-1 OHLCV reject-to-quarantine; SC #1 ✅)
-last_updated: "2026-04-29T07:30:00.000Z"
-last_activity: 2026-04-29 — 25-05 complete; OHLCVSchema (Tier 1 strict) + partition_valid_invalid runner + Pipeline._crawl_prices reject-to-quarantine wiring landed; bad rows divert to quarantine_rows{tier='strict'} and increment localstock_dq_violations_total{rule, tier='strict'} per rule; 4/4 RED→GREEN + 1 requires_pg integration test passing; ROADMAP SC #1 verbatim ✅ closed
+status: Phase 25 Wave 4 complete — 25-06 landed (DQ-05 per-symbol error isolation; ROADMAP SC #3 ✅ closed).
+stopped_at: Completed 25-06-PLAN.md (Wave 4 — DQ-05 per-symbol try/except isolation across services + crawlers; SC #3 ✅)
+last_updated: "2026-04-29T07:50:00.000Z"
+last_activity: 2026-04-29 — 25-06 complete; per-symbol try/except isolation landed across analysis_service / scoring_service / sentiment_service / admin_service / report_service / finance_crawler. New per-service `_failed_symbols` buffers + `get_failed_symbols(reset=True)` drain pattern; AutomationService caller-side aggregation contract documented in pipeline.run_full. pipeline.py failed_symbols dedup tightened to (symbol, step) tuple per CONTEXT D-03 step-level granularity. Pitfall A guardrail test (test_no_gather_in_per_symbol_loops) inspects 5 service modules and fails CI if any non-comment line contains both asyncio.gather and symbol — bounded concurrency deferred to Phase 27. RESEARCH Open Q4 closed: report_service.py:137 IS a per-symbol loop and is now isolated with structured aggregation. 4/4 RED→GREEN tests using AsyncMock-session harness (no Postgres dep). ROADMAP SC #3 verbatim ✅ closed.
 progress:
   total_phases: 8
   completed_phases: 3
   total_plans: 24
-  completed_plans: 21
-  percent: 79
+  completed_plans: 22
+  percent: 92
 ---
 
 # Project State
@@ -21,23 +21,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-28)
 
 **Core value:** Agent tự động phân tích và xếp hạng cổ phiếu HOSE — cho tôi danh sách gợi ý đáng mua kèm lý do rõ ràng, cập nhật hàng ngày, không tốn phí API.
-**Current focus:** v1.5 Performance & Data Quality — Phase 22 Logging Foundation (entry point per A→B→C→D→E→F→G build order)
+**Current focus:** v1.5 Performance & Data Quality — Phase 25 Wave 4 complete; Wave 5 (25-07 Tier 2 dispatcher + 25-08 freshness probe) remains.
 
 ## Current Position
 
-Phase: 25 — Data Quality (🚧 in progress; Wave 3 in progress)
-Plan: 05 (complete) — DQ-01 OHLCV Tier-1 reject-to-quarantine landed; ROADMAP SC #1 verbatim ✅ closed.
-Status: 25-05 complete — `OHLCVSchema` (pandera DataFrameSchema, Tier 1 strict) declares symbol regex / date dtype no-coerce (Pitfall E) / OHLC>0 / volume>=0 + composite checks (future_date element-wise, nan_ratio_exceeded ≤5% frame-level, malformed_date) + unique=[symbol,date] + strict=True. `partition_valid_invalid(df, schema)` runs lazy validation, classifies failures into per-row + frame-level rule maps via `_normalize_rule` (CONTEXT D-01 vocabulary: non_positive_<col>, future_date, nan_ratio_exceeded, duplicate_pk, malformed_date, bad_symbol_format), returns (valid_df, invalid_rows, failure_cases). `Pipeline._crawl_prices` builds a validation-shaped frame (rename time→date, inject symbol col), partitions, routes invalid rows to `QuarantineRepository.insert(source='ohlcv', tier='strict', rule, reason)`, increments `localstock_dq_violations_total{rule, tier='strict'}` per rule, then drops bad indices from the original time-keyed frame before `upsert_prices`. `_coerce_payload` (Rule 1 fix) converts pd.Timestamp/datetime/numpy scalars at the json.dumps boundary. 4 RED tests + 1 requires_pg integration test all GREEN.
-Last activity: 2026-04-29 — 25-05 Wave 3: 2 commits, 4 files modified, 4/4 RED→GREEN + 1 integration test passing, ruff clean. ROADMAP SC #1 ✅ closed.
+Phase: 25 — Data Quality (🚧 in progress; Wave 4 complete)
+Plan: 06 (complete) — DQ-05 per-symbol error isolation landed; ROADMAP SC #3 verbatim ✅ closed.
+Status: 25-06 complete — Per-symbol serial `for symbol in symbols: try/except` isolation applied (NOT asyncio.gather — CONTEXT D-03 LOCKED, Pitfall A guardrail). Each AnalysisService/ScoringService/SentimentService/ReportService maintains `self._failed_symbols: list[dict] = []` buffer + `get_failed_symbols(reset: bool = True)` drain method; entries shape `{symbol, step, error: _truncate_error(e)}`. Audit list closed: 4 previously-unwrapped loops now in try/except (analysis_service:456,474; scoring_service:176; sentiment_service:145), 5 admin_service loops adapted to structured logging + `_truncate_error` in result dicts (steps: admin.crawl, admin.report, admin.pipeline.crawl/analyze/report), report_service per-symbol loop (RESEARCH Open Q4) confirmed isolated and now buffers as step='report'. finance_crawler:109 verified isolated with audit comment. Pipeline.run_full failed_symbols aggregation dedup tightened to (symbol, step) tuple — one symbol can fail in multiple steps (CONTEXT D-03 step-level granularity); separate failed_symbol_set for the count. AutomationService caller-side aggregation contract documented (Pipeline.run_full only handles crawl-step today per Q-3 scope; analyze/score/sentiment/report buffers drained by AutomationService when wired). 4 GREEN tests via AsyncMock-session harness: test_one_bad_symbol_completes_batch (SC #3 verbatim — 1 BAD + 2 GOOD → status=completed, succeeded=2, failed=1), test_failed_symbols_step_recorded (keyset {symbol,step,error}), test_analyze_step_isolation (AnalysisService run_full with one symbol raising in technical AND fundamental — counters increment, buffer captures BAD/analyze with `_truncate_error` formatting), test_no_gather_in_per_symbol_loops (Pitfall A guardrail across 5 service modules).
+Last activity: 2026-04-29 — 25-06 Wave 4: 3 commits, 8 files modified, 4/4 GREEN tests, ruff clean (pre-existing warnings only). ROADMAP SC #3 ✅ closed jointly with 25-04 DQ-06.
 
-Progress: [████████░░] 87%
+Progress: [█████████░] 92%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 53 (v1.0: 23, v1.1: 12, v1.2: 8, v1.3: 14, v1.4: 11)
-- Total plans created: 53
+- Total plans completed: 54 (v1.0: 23, v1.1: 12, v1.2: 8, v1.3: 14, v1.4: 11)
+- Total plans created: 54
 
 ## Accumulated Context
 
@@ -59,6 +59,7 @@ Full decision history from v1.0–v1.4 archived in `.planning/milestones/`.
 - 25-03: QuarantineRepository.cleanup uses Python-side `datetime.now(UTC) - timedelta(days)` cutoff bound parameter (not SQL `now() - interval`) so the boundary is testable with frozen-time fixtures. APScheduler `dq_quarantine_cleanup` registered at hour=3 minute=15 Asia/Ho_Chi_Minh with max_instances=1 + coalesce=True — Pitfall F mandate: away from 15:46 daily pipeline, single instance, stale fires coalesced. Test asserts `job.trigger.timezone` attribute (not `str(job.trigger)`, which omits tz). Producer (DQ-01 reject-to-quarantine) deferred to 25-05.
 - 25-04: `Pipeline._write_stats(run, *, succeeded, failed, skipped, failed_symbols)` is the single write-point for `PipelineRun.stats` JSONB; dual-writes scalars `symbols_total/success/failed` per CONTEXT D-07 LOCKED through v1.5 (drop in v1.6). Module-level `_truncate_error(exc)` formats `'{ExcClass}: {str(exc)[:MAX_ERROR_CHARS]}...'` — class prefix sits OUTSIDE the 200-char cap; only `str(exc)` captured, no traceback (T-25-04-01). `failed_symbols` shape locked as `[{"symbol", "step", "error"}, ...]` for 25-06 consumption. run_full's except branch also calls `_write_stats` (succeeded=0, failed=len(symbols)) so `status="failed"` rows are never NULL-stats. Stats dict funneled through `sanitize_jsonb` before assignment (T-25-04-03 defence-in-depth). Tests use AsyncMock-session harness from sibling test_pipeline_step_timing.py — no live PG needed because stats write is in-memory attribute assignment.
 - 25-05: `OHLCVSchema` is the Tier 1 strict pandera DataFrameSchema for OHLCV ingest — symbol regex `^[A-Z0-9]{3,5}$`, date dtype `datetime64[ns]` with NO coerce (Pitfall E — caller pre-coerces with `pd.to_datetime` + explicit `malformed_date` Check), OHLC > 0, volume ≥ 0, composite future_date (element-wise) + nan_ratio_exceeded (frame-level scalar, ≤ 5% per column) + unique=[symbol,date] + strict=True. `partition_valid_invalid(df, schema)` runs `schema.validate(df, lazy=True)`, catches `pae.SchemaErrors`, builds (per-row + frame-level) rule maps; frame-level failures invalidate every row in the per-symbol batch. `_normalize_rule` is the canonical pandera-check-name → CONTEXT D-01 vocabulary mapper (`negative_price`/`non_positive_<col>`, `future_date`, `nan_ratio_exceeded`, `malformed_date`, `duplicate_pk`, `bad_symbol_format`). `_coerce_payload` (Rule 1 fix) handles pd.Timestamp / datetime / numpy scalars at the QuarantineRepository.insert → json.dumps boundary; sanitize_jsonb keeps NaN/Inf scrubbing (DQ-04 belt-and-suspenders). `Pipeline._crawl_prices` builds a validation-shaped frame (rename time→date, inject symbol col) for OHLCVSchema then drops bad indices from the original time-keyed frame before upsert_prices — separation prevents Tier 1 schema from leaking into upsert contract. Tier 1 metric increment uses `REGISTRY._names_to_collectors` lookup (Phase 23 D-08 boundary, also used by 24-06 step-timer). ROADMAP SC #1 verbatim ✅ closed.
+- 25-06: Per-symbol serial `for symbol in symbols: try/except` isolation across analysis_service / scoring_service / sentiment_service / admin_service / report_service / finance_crawler — NO `asyncio.gather` over per-symbol generators (CONTEXT D-03 LOCKED, Pitfall A — bounded concurrency deferred to Phase 27). Each AnalysisService/ScoringService/SentimentService/ReportService maintains `self._failed_symbols: list[dict] = []` buffer + `get_failed_symbols(reset: bool = True) -> list[dict]` drain method; entries shape `{symbol, step, error: _truncate_error(e)}`. AutomationService caller-side aggregation contract: Pipeline.run_full only aggregates crawl-step failures (Q-3 scope); analyze/score/sentiment/report buffers drained by AutomationService when wired. Pipeline.run_full failed_symbols dedup tightened to `(symbol, step)` tuple (was symbol-only) per CONTEXT D-03 step-level granularity — separate `failed_symbol_set: set[str]` for the failed-counter tally. RESEARCH Open Q4 closed: report_service.py:137 (`for score in scores:` loop with `symbol = score.symbol`) IS a per-symbol loop and is now isolated with structured aggregation (step='report'). Pitfall A guardrail (test_no_gather_in_per_symbol_loops) inspects 5 service modules with comment-line skipping and fails CI if any non-comment line contains both `asyncio.gather` and `symbol`. Tests use AsyncMock-session harness (no Postgres dependency) — 4 GREEN: SC #3 verbatim (1 BAD + 2 GOOD → status=completed/succeeded=2/failed=1), keyset assertion, AnalysisService run_full with raising tech+fund, Pitfall A guardrail. ROADMAP SC #3 verbatim ✅ closed jointly with 25-04 DQ-06.
 
 ### Watch Out For (from research)
 
