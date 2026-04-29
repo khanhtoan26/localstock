@@ -64,7 +64,16 @@ def test_table_class_classification(stmt: str, expected: str) -> None:
 
 def _has_pg() -> bool:
     url = os.environ.get("DATABASE_URL", "")
-    return "postgres" in url.lower()
+    if "postgres" in url.lower():
+        return True
+    # Fall back to Settings (which reads .env) — the .env is the source of
+    # truth in dev; os.environ may be empty when pytest didn't load it.
+    try:
+        from localstock.config import get_settings
+
+        return "postgres" in get_settings().database_url.lower()
+    except Exception:
+        return False
 
 
 pytestmark_pg = pytest.mark.skipif(not _has_pg(), reason="DATABASE_URL is not Postgres")
