@@ -49,6 +49,14 @@ def init_metrics(registry: CollectorRegistry | None = None) -> dict[str, Any]:
         across calls so callers can do ``init_metrics(reg)["http_requests_total"]``.
     """
     target = registry  # None means prometheus_client default REGISTRY
+    if target is None:
+        # NOTE: prometheus_client treats ``registry=None`` as "do not register"
+        # (its default kwarg is ``REGISTRY``, not ``None``). Without this fix,
+        # ``init_metrics()`` creates orphan collectors detached from the default
+        # registry — invisible to ``/metrics`` and to the @observe decorator
+        # lookup. Resolve to the actual default REGISTRY so production callers
+        # get registered metrics. (Phase 24-01 Rule-3 fix; Phase 23 latent bug.)
+        target = _get_default_registry()
 
     def _register(factory, name: str):
         """Create-or-fetch helper. Catches duplicate-name ValueError."""
