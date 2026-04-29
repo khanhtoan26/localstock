@@ -19,7 +19,12 @@ from localstock.cache.registry import get_cache
 from localstock.cache.single_flight import get_lock
 from localstock.observability.metrics import get_metrics
 
-__all__ = ["get_or_compute", "invalidate_namespace", "cache_outcome_var"]
+__all__ = [
+    "get_or_compute",
+    "invalidate_namespace",
+    "cache_outcome_var",
+    "resolve_latest_run_id",
+]
 
 
 async def get_or_compute(
@@ -75,3 +80,9 @@ def _safe_inc(metric_name: str, **labels: str) -> None:
         get_metrics()[metric_name].labels(**labels).inc()
     except Exception as e:  # noqa: BLE001
         logger.debug("cache.metric.missing", metric=metric_name, error=str(e))
+
+
+# Re-export the version-key resolver. Imported AFTER ``get_or_compute`` is
+# defined so ``cache.version`` can resolve the public callable lazily inside
+# its body without circular-import issues at module-load time.
+from localstock.cache.version import resolve_latest_run_id  # noqa: E402,F401
