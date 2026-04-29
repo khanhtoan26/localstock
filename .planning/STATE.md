@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Performance & Data Quality
-status: Phase 24 fully closed (OBS-11, OBS-12, OBS-13, OBS-14, OBS-15, OBS-16, OBS-17). All 6 plans + Wave 0 scaffolds shipped.
-stopped_at: Completed 25-03-PLAN.md (Wave 1 — DQ-08 QuarantineRepository + 03:15 retention cron; operational half of D-02 closed)
-last_updated: "2026-04-29T06:42:00.000Z"
-last_activity: 2026-04-29 — 25-03 complete; QuarantineRepository.insert/cleanup_older_than + APScheduler dq_quarantine_cleanup cron (CronTrigger 03:15 Asia/Ho_Chi_Minh, max_instances=1, coalesce=True) wired through @observe('dq.quarantine.cleanup'); 4 RED→GREEN
+status: Phase 25 Wave 2 in progress — 25-04 complete (DQ-06 PipelineRun.stats dual-write landed).
+stopped_at: Completed 25-04-PLAN.md (Wave 2 — DQ-06 stats JSONB dual-write through CONTEXT D-07)
+last_updated: "2026-04-29T07:15:00.000Z"
+last_activity: 2026-04-29 — 25-04 complete; Pipeline._write_stats + _truncate_error landed; run_full success AND except branches both populate PipelineRun.stats JSONB while dual-writing symbols_total/success/failed scalars (D-07 LOCKED through v1.5); 3/3 RED→GREEN + 3 supplementary tests, ruff clean
 progress:
   total_phases: 8
   completed_phases: 3
   total_plans: 24
-  completed_plans: 19
-  percent: 71
+  completed_plans: 20
+  percent: 75
 ---
 
 # Project State
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-04-28)
 
 ## Current Position
 
-Phase: 25 — Data Quality (🚧 in progress; Wave 1 complete)
-Plan: 03 (complete) — DQ-08 QuarantineRepository + 30-day retention cron landed.
-Status: 25-03 complete — QuarantineRepository.insert (with sanitize_jsonb belt-and-suspenders) + cleanup_older_than(days=30) over quarantine_rows; APScheduler dq_quarantine_cleanup CronTrigger hour=3 minute=15 Asia/Ho_Chi_Minh max_instances=1 coalesce=True (Pitfall F), decorated with @observe('dq.quarantine.cleanup'). Operational half of CONTEXT D-02 closed; producer wiring lands in 25-05.
-Last activity: 2026-04-29 — 25-03 Wave 1 plan B: 2 commits, 3 files, 4/4 RED→GREEN, ruff clean.
+Phase: 25 — Data Quality (🚧 in progress; Wave 2 in progress)
+Plan: 04 (complete) — DQ-06 PipelineRun.stats dual-write landed.
+Status: 25-04 complete — Pipeline._write_stats writes structured stats JSONB ({succeeded, failed, skipped, failed_symbols}) AND dual-writes legacy scalar columns (symbols_total/success/failed) per CONTEXT D-07 LOCKED through v1.5. Module-level _truncate_error('{ExcClass}: {str(exc)[:200]}...') bounds error strings (T-25-04-01: only str(exc), no traceback) and is exported for 25-06 isolation wrappers. run_full's except branch also calls _write_stats so status='failed' rows are never NULL-stats. ROADMAP SC #3 stats-persistence half closed; non-aborting half deferred to 25-06.
+Last activity: 2026-04-29 — 25-04 Wave 2 plan A: 3 commits, 2 files modified, 3/3 originally-RED tests GREEN + 3 supplementary tests, ruff clean, 24/24 service-suite tests passing.
 
-Progress: [████████░░] 79%
+Progress: [████████░░] 83%
 
 ## Performance Metrics
 
@@ -57,6 +57,7 @@ Full decision history from v1.0–v1.4 archived in `.planning/milestones/`.
 - 25-01: Wave 0 scaffolds shipped — pandera installed, dq/ package + Alembic 25a0b1c2d3e4 + Settings + Counter + 30 RED tests landed
 - 25-02: sanitize_jsonb is the single source of truth for JSONB NaN/Inf scrubbing — wired at first line of every JSONB-bound repo write (financial/report/score/notification/job). Inline `_clean_nan` in services/pipeline.py REMOVED. Recipe handles dict/list/tuple recursion + numpy.float64 (via float-subclass isinstance) + bool short-circuit. scheduler.py:156 errors-dict NOT wrapped (owned by 25-03; literal dict has no float content). DQ-04 + ROADMAP SC #2 closed.
 - 25-03: QuarantineRepository.cleanup uses Python-side `datetime.now(UTC) - timedelta(days)` cutoff bound parameter (not SQL `now() - interval`) so the boundary is testable with frozen-time fixtures. APScheduler `dq_quarantine_cleanup` registered at hour=3 minute=15 Asia/Ho_Chi_Minh with max_instances=1 + coalesce=True — Pitfall F mandate: away from 15:46 daily pipeline, single instance, stale fires coalesced. Test asserts `job.trigger.timezone` attribute (not `str(job.trigger)`, which omits tz). Producer (DQ-01 reject-to-quarantine) deferred to 25-05.
+- 25-04: `Pipeline._write_stats(run, *, succeeded, failed, skipped, failed_symbols)` is the single write-point for `PipelineRun.stats` JSONB; dual-writes scalars `symbols_total/success/failed` per CONTEXT D-07 LOCKED through v1.5 (drop in v1.6). Module-level `_truncate_error(exc)` formats `'{ExcClass}: {str(exc)[:MAX_ERROR_CHARS]}...'` — class prefix sits OUTSIDE the 200-char cap; only `str(exc)` captured, no traceback (T-25-04-01). `failed_symbols` shape locked as `[{"symbol", "step", "error"}, ...]` for 25-06 consumption. run_full's except branch also calls `_write_stats` (succeeded=0, failed=len(symbols)) so `status="failed"` rows are never NULL-stats. Stats dict funneled through `sanitize_jsonb` before assignment (T-25-04-03 defence-in-depth). Tests use AsyncMock-session harness from sibling test_pipeline_step_timing.py — no live PG needed because stats write is in-memory attribute assignment.
 
 ### Watch Out For (from research)
 
