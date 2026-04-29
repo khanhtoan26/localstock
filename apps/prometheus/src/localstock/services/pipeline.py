@@ -272,15 +272,25 @@ class Pipeline:
                     run.score_duration_ms = None
                     run.report_duration_ms = None
 
-                    # Update run status — Phase 25 / DQ-06 dual-write path.
-                    # NOTE: 25-06 will replace this set-construction with a
-                    # structured failed_symbols list aggregated from per-step
-                    # isolation wrappers. For 25-04 we adapt the existing
-                    # tuple shape (symbol, error_str) to the new
-                    # {symbol, step, error} shape using best-effort step
-                    # inference (all four crawlers => step="crawl").
+                    # Update run status — Phase 25 / DQ-06 + DQ-05 dual-write path.
+                    # DQ-05 (D-03) AGGREGATION CONTRACT:
+                    #   The four per-step ``failed`` lists below come from
+                    #   crawler / pipeline isolated loops. Analysis / scoring /
+                    #   sentiment / report services maintain their OWN
+                    #   per-symbol ``_failed_symbols`` buffers (drained via
+                    #   ``svc.get_failed_symbols(reset=True)``) — those are
+                    #   aggregated by ``AutomationService`` (caller side) which
+                    #   constructs the full PipelineRun.stats payload across
+                    #   stages. ``Pipeline.run_full`` itself only invokes
+                    #   crawl + ``_apply_price_adjustments`` (Q-3 scope), so
+                    #   the failed-symbol aggregation here is crawl-only.
+                    # Each crawl-step failure becomes a ``{symbol, step, error}``
+                    # entry; deduped on (symbol, step) — one symbol failing in
+                    # multiple steps records once per step (CONTEXT D-03
+                    # step-level granularity).
                     all_failed_items: list[dict] = []
-                    seen: set[str] = set()
+                    seen_pairs: set[tuple[str, str]] = set()
+                    failed_symbol_set: set[str] = set()
                     for step_name, step_failed in (
                         ("crawl", price_failed),
                         ("crawl", fin_failed),
@@ -288,9 +298,11 @@ class Pipeline:
                         ("crawl", event_failed),
                     ):
                         for sym, err in step_failed:
-                            if sym in seen:
+                            key = (sym, step_name)
+                            if key in seen_pairs:
                                 continue
-                            seen.add(sym)
+                            seen_pairs.add(key)
+                            failed_symbol_set.add(sym)
                             all_failed_items.append(
                                 {
                                     "symbol": sym,
@@ -300,8 +312,8 @@ class Pipeline:
                             )
                     self._write_stats(
                         run,
-                        succeeded=len(symbols) - len(seen),
-                        failed=len(seen),
+                        succeeded=len(symbols) - len(failed_symbol_set),
+                        failed=len(failed_symbol_set),
                         skipped=0,
                         failed_symbols=all_failed_items,
                     )

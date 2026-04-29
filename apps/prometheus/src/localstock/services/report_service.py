@@ -40,6 +40,7 @@ from localstock.reports.generator import (
 )
 from localstock.reports.t3 import predict_3day_trend
 from localstock.services.sentiment_service import SentimentService
+from localstock.services.pipeline import _truncate_error
 
 # Map Vietnamese recommendation to DB enum
 RECOMMENDATION_MAP = {
@@ -73,6 +74,22 @@ class ReportService:
         self.sentiment_service = SentimentService(session)
         self.sentiment_repo = SentimentRepository(session)
         self.ollama = OllamaClient()
+        # Phase 25 / DQ-05 (D-03) — per-symbol failure buffer drained by the
+        # caller (AutomationService / orchestrator) into PipelineRun.stats.
+        # RESEARCH Open Q4 (25-06): the per-symbol loop in run_full
+        # (`for score in scores:` ~line 137) IS isolated; this buffer
+        # captures the (symbol, step, error) trio for aggregation.
+        self._failed_symbols: list[dict] = []
+
+    def get_failed_symbols(self, reset: bool = True) -> list[dict]:
+        """Return (and optionally clear) the per-symbol failure buffer.
+
+        Phase 25 / DQ-05 (D-03) — entries shape ``{symbol, step, error}``.
+        """
+        out = list(self._failed_symbols)
+        if reset:
+            self._failed_symbols.clear()
+        return out
 
     async def run_full(self, top_n: int = 20) -> dict:
         """Generate AI reports for top-ranked stocks.
@@ -344,7 +361,18 @@ class ReportService:
             except Exception as e:
                 summary["reports_failed"] += 1
                 summary["errors"].append(f"report:{symbol}:{e}")
-                logger.warning("report.generation_failed", symbol=symbol, error=str(e))
+                logger.warning(
+                    "report.generation_failed",
+                    symbol=symbol,
+                    step="report",
+                    exception_class=type(e).__name__,
+                    message=str(e)[:200],
+                )
+                self._failed_symbols.append({
+                    "symbol": symbol,
+                    "step": "report",
+                    "error": _truncate_error(e),
+                })
 
         summary["completed_at"] = datetime.now(UTC).isoformat()
         logger.info(

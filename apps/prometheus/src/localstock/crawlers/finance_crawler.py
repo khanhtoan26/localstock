@@ -106,6 +106,9 @@ class FinanceCrawler(BaseCrawler):
         results: dict[str, dict[str, pd.DataFrame]] = {}
         failed: list[tuple[str, str]] = []
 
+        # DQ-05 (D-03): verified isolated — per-symbol try/except wraps
+        # fetch() and the outer batch returns (results, failed). RESEARCH
+        # §Audit List 2026-04-29 (25-06).
         for symbol in symbols:
             try:
                 reports = await self.fetch(symbol, **kwargs)

@@ -14,6 +14,7 @@ from loguru import logger
 
 from localstock.db.database import get_session_factory
 from localstock.db.repositories.job_repo import JobRepository
+from localstock.services.pipeline import _truncate_error
 
 
 # Module-level lock to prevent concurrent admin operations
@@ -117,8 +118,14 @@ class AdminService:
                             result = await pipeline.run_single(symbol)
                             results[symbol] = result
                         except Exception as e:
-                            results[symbol] = {"error": str(e)}
-                            logger.warning("admin.crawl.symbol_failed", symbol=symbol, error=str(e))
+                            results[symbol] = {"error": _truncate_error(e)}
+                            logger.warning(
+                                "admin.crawl.symbol_failed",
+                                symbol=symbol,
+                                step="admin.crawl",
+                                exception_class=type(e).__name__,
+                                message=str(e)[:200],
+                            )
                 await self._update_job(job_id, "completed", result=results)
             except Exception as e:
                 logger.exception("admin.crawl.job_failed", job_id=job_id)
@@ -169,8 +176,14 @@ class AdminService:
                             r = await service.generate_for_symbol(symbol)
                             results[symbol] = r
                     except Exception as e:
-                        results[symbol] = {"error": str(e)}
-                        logger.warning("admin.report.symbol_failed", symbol=symbol, error=str(e))
+                        results[symbol] = {"error": _truncate_error(e)}
+                        logger.warning(
+                            "admin.report.symbol_failed",
+                            symbol=symbol,
+                            step="admin.report",
+                            exception_class=type(e).__name__,
+                            message=str(e)[:200],
+                        )
                 await self._update_job(job_id, "completed", result=results)
             except Exception as e:
                 logger.exception("admin.report.job_failed", job_id=job_id)
@@ -193,8 +206,14 @@ class AdminService:
                             result = await pipeline.run_single(symbol)
                             results["crawl"][symbol] = result
                         except Exception as e:
-                            results["crawl"][symbol] = {"error": str(e)}
-                            logger.warning("admin.pipeline.crawl_failed", symbol=symbol, error=str(e))
+                            results["crawl"][symbol] = {"error": _truncate_error(e)}
+                            logger.warning(
+                                "admin.pipeline.crawl_failed",
+                                symbol=symbol,
+                                step="admin.pipeline.crawl",
+                                exception_class=type(e).__name__,
+                                message=str(e)[:200],
+                            )
                 logger.info("admin.pipeline.crawl_done", symbols=len(target))
 
                 # Step 2: Analyze
@@ -209,8 +228,14 @@ class AdminService:
                                 r = await service.run_single(symbol)
                                 results["analyze"][symbol] = r
                             except Exception as e:
-                                results["analyze"][symbol] = {"error": str(e)}
-                                logger.warning("admin.pipeline.analyze_failed", symbol=symbol, error=str(e))
+                                results["analyze"][symbol] = {"error": _truncate_error(e)}
+                                logger.warning(
+                                    "admin.pipeline.analyze_failed",
+                                    symbol=symbol,
+                                    step="admin.pipeline.analyze",
+                                    exception_class=type(e).__name__,
+                                    message=str(e)[:200],
+                                )
                     else:
                         results["analyze"] = await service.run_full()
                 logger.info("Pipeline analyze done")
@@ -233,8 +258,14 @@ class AdminService:
                             r = await service.generate_for_symbol(symbol)
                             results["report"][symbol] = r
                     except Exception as e:
-                        results["report"][symbol] = {"error": str(e)}
-                        logger.warning("admin.pipeline.report_failed", symbol=symbol, error=str(e))
+                        results["report"][symbol] = {"error": _truncate_error(e)}
+                        logger.warning(
+                            "admin.pipeline.report_failed",
+                            symbol=symbol,
+                            step="admin.pipeline.report",
+                            exception_class=type(e).__name__,
+                            message=str(e)[:200],
+                        )
                 logger.info("admin.pipeline.report_done", symbols=len(target_symbols))
 
                 await self._update_job(job_id, "completed", result=results)
