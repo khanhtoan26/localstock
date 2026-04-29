@@ -12,6 +12,7 @@ from loguru import logger
 from localstock.config import get_settings
 from localstock.crawlers import suppress_vnstock_output
 from localstock.crawlers.base import BaseCrawler
+from localstock.observability.decorators import observe
 
 
 class PriceCrawler(BaseCrawler):
@@ -28,6 +29,7 @@ class PriceCrawler(BaseCrawler):
         settings = get_settings()
         super().__init__(delay_seconds=delay_seconds if delay_seconds is not None else settings.crawl_delay_seconds)
 
+    @observe("crawl.ohlcv.fetch")
     async def fetch(self, symbol: str, **kwargs) -> pd.DataFrame:
         """Fetch OHLCV data for a single symbol from vnstock.
 

@@ -15,6 +15,7 @@ from loguru import logger
 from localstock.config import get_settings
 from localstock.crawlers import suppress_vnstock_output
 from localstock.crawlers.base import BaseCrawler
+from localstock.observability.decorators import observe
 
 
 class CompanyCrawler(BaseCrawler):
@@ -35,6 +36,7 @@ class CompanyCrawler(BaseCrawler):
             else settings.crawl_delay_seconds,
         )
 
+    @observe("crawl.company.fetch")
     async def fetch(self, symbol: str, **kwargs) -> pd.DataFrame:
         """Fetch company overview for a single symbol from vnstock.
 

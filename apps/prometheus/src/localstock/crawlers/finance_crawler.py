@@ -16,6 +16,7 @@ from loguru import logger
 
 from localstock.crawlers import suppress_vnstock_output
 from localstock.crawlers.base import BaseCrawler
+from localstock.observability.decorators import observe
 
 
 class FinanceCrawler(BaseCrawler):
@@ -36,6 +37,7 @@ class FinanceCrawler(BaseCrawler):
     def __init__(self, delay_seconds: float = 1.0):
         super().__init__(delay_seconds=delay_seconds)
 
+    @observe("crawl.financial.fetch")
     async def fetch(self, symbol: str, **kwargs) -> dict[str, pd.DataFrame]:
         """Fetch all financial statements for a symbol.
 

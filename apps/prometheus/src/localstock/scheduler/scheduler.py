@@ -14,6 +14,7 @@ from fastapi import FastAPI
 from loguru import logger
 
 from localstock.config import get_settings
+from localstock.observability.decorators import observe
 
 # Module-level scheduler instance (configured in setup_scheduler, started in lifespan)
 scheduler = AsyncIOScheduler(timezone="Asia/Ho_Chi_Minh")
@@ -30,6 +31,7 @@ def setup_scheduler() -> AsyncIOScheduler:
 
     settings = get_settings()
 
+    @observe("scheduler.daily.run")
     async def daily_job():
         """Scheduled daily pipeline execution."""
         logger.info("scheduler.daily.start")

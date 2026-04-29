@@ -15,6 +15,7 @@ from loguru import logger
 
 from localstock.crawlers import suppress_vnstock_output
 from localstock.crawlers.base import BaseCrawler
+from localstock.observability.decorators import observe
 
 
 class EventCrawler(BaseCrawler):
@@ -38,6 +39,7 @@ class EventCrawler(BaseCrawler):
     def __init__(self, delay_seconds: float = 1.0):
         super().__init__(delay_seconds=delay_seconds)
 
+    @observe("crawl.event.fetch")
     async def fetch(self, symbol: str, **kwargs) -> pd.DataFrame:
         """Fetch corporate events for a symbol from vnstock.
 
