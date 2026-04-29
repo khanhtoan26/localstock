@@ -38,7 +38,8 @@
 - [ ] **OBS-11**: `@observe("domain.subsystem.action")` decorator (timing + log + Prometheus histogram) áp dụng lên service methods + scheduler jobs
 - [ ] **OBS-12**: `@timed_query` decorator + SQLAlchemy `before/after_cursor_execute` events ghi DB query duration
 - [ ] **OBS-13**: Slow query log (queries > 250 ms) emit log + counter
-- [ ] **OBS-14**: `/health/live`, `/health/ready`, `/health/pipeline`, `/health/data` tách từ endpoint `/health` hiện tại
+- [x] **OBS-14
+**: `/health/live`, `/health/ready`, `/health/pipeline`, `/health/data` tách từ endpoint `/health` hiện tại
 - [ ] **OBS-15**: `health_self_probe` scheduler job (30s) populate gauges: DB pool size, `last_pipeline_age_seconds`, last successful crawl count
 - [ ] **OBS-16**: APScheduler `EVENT_JOB_ERROR` listener emit counter + Telegram alert khi scheduled job fail
 - [ ] **OBS-17**: Per-stage timing trên `PipelineRun` table: crawl/analyze/score/report durations persisted
