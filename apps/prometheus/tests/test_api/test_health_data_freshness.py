@@ -61,3 +61,40 @@ async def test_threshold_override(monkeypatch) -> None:
     sess.execute.return_value = result
     body = await health_data(session=sess)
     assert body["data_freshness"]["status"] == "fresh"
+
+
+@pytest.mark.asyncio
+async def test_sc5_health_data_response_shape() -> None:
+    """ROADMAP Success Criterion #5 verbatim — /health/data response shape.
+
+    Asserts the dual contract:
+      1. Phase 24 back-compat (D-05): top-level keys ``max_price_date``,
+         ``trading_days_lag``, ``stale`` MUST remain present.
+      2. DQ-07: ``data_freshness`` block exposes the 5 documented keys
+         and ``status`` is one of {fresh, stale, unknown}.
+    """
+    from localstock.api.routes.health import health_data
+
+    sess = AsyncMock()
+    result = MagicMock()
+    result.scalar_one_or_none.return_value = date.today()
+    sess.execute.return_value = result
+    body = await health_data(session=sess)
+
+    # Phase 24 contract preserved verbatim (CONTEXT D-05).
+    for k in ("max_price_date", "trading_days_lag", "stale"):
+        assert k in body, f"Phase 24 contract broken: missing {k}"
+
+    # DQ-07 / SC #5 — new freshness block.
+    assert "data_freshness" in body
+    df = body["data_freshness"]
+    for k in (
+        "last_trading_day",
+        "max_data_date",
+        "sessions_behind",
+        "status",
+        "threshold_sessions",
+    ):
+        assert k in df, f"DQ-07 missing key: {k}"
+    assert df["status"] in ("fresh", "stale", "unknown")
+    assert isinstance(df["threshold_sessions"], int)
