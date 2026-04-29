@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Performance & Data Quality
 status: completed
-stopped_at: Completed 24-06-PLAN.md (pipeline _step_timer + per-stage durations — OBS-17). Phase 24 complete.
+stopped_at: Completed 24-06-PLAN.md (pipeline _step_timer + per-stage durations — OBS-17). Phase 24 complete. 25-CONTEXT.md authored (8 decisions). Trade-plan-missing bug fixed (94b6579, 028fb87).
 last_updated: "2026-04-29T05:00:00Z"
-last_activity: 2026-04-29 — 24-06 complete; Pipeline._step_timer async ctx mgr wraps run_full crawl + analyze stages; PipelineRun.{crawl,analyze}_duration_ms populated, score/report None placeholders; localstock_op_duration_seconds emitted with (pipeline,step,name,outcome) labels (OBS-17 closed). Phase 24 100% complete.
+last_activity: 2026-04-29 — 24-06 complete; Pipeline._step_timer async ctx mgr wraps run_full crawl + analyze stages; PipelineRun.{crawl,analyze}_duration_ms populated, score/report None placeholders; localstock_op_duration_seconds emitted with (pipeline,step,name,outcome) labels (OBS-17 closed). Phase 24 100% complete. Trade-plan bug (enforce_price_ordering) fixed + verified live on HPG. Phase 25 CONTEXT.md ready for /gsd-plan-phase 25.
 progress:
   total_phases: 8
   completed_phases: 2
