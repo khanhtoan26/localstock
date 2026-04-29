@@ -124,7 +124,7 @@ async def test_analyze_step_isolation() -> None:
     svc.map_stock_industries = AsyncMock(return_value=None)
     svc._compute_all_industry_averages = AsyncMock(return_value=None)
 
-    async def _tech(symbol: str) -> None:
+    async def _tech(symbol: str, run_id: int | None = None) -> None:
         if symbol == "BAD":
             raise RuntimeError("simulated technical failure")
 

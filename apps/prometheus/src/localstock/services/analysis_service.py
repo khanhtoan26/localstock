@@ -31,6 +31,8 @@ from localstock.analysis.trend import (
     detect_trend,
     find_support_resistance,
 )
+from localstock.cache import get_or_compute, resolve_latest_run_id
+from localstock.db.database import get_session_factory
 from localstock.db.models import FinancialStatement, Stock, StockPrice
 from localstock.db.repositories.indicator_repo import IndicatorRepository
 from localstock.db.repositories.industry_repo import IndustryRepository
@@ -138,9 +140,20 @@ class AnalysisService:
         await self.map_stock_industries(symbols)
 
         # Step 4: Technical analysis
+        # Phase 26 / W2 — hoist run_id ONCE before the per-symbol loop.
+        # The cache key for indicators is versioned by `run_id`; resolving
+        # inside the loop would pay a 400× lock-acquire / contextvar-set
+        # cost across HOSE. Resolution failures are logged and degrade to
+        # `run_id=None` (cache bypass — parity with route behaviour).
+        try:
+            run_id = await resolve_latest_run_id(get_session_factory())
+        except Exception:
+            logger.exception("analysis.cache.resolve_run_id_failed")
+            run_id = None
+
         for symbol in symbols:
             try:
-                await self._run_technical(symbol)
+                await self._run_technical(symbol, run_id=run_id)
                 summary["technical_success"] += 1
             except Exception as e:
                 summary["technical_failed"] += 1
@@ -206,8 +219,16 @@ class AnalysisService:
         """
         result = {"symbol": symbol, "status": "completed", "errors": []}
 
+        # W2 — resolve run_id once for the (single-symbol) cache key. On
+        # resolution failure, fall back to bypass (run_id=None).
         try:
-            await self._run_technical(symbol)
+            run_id = await resolve_latest_run_id(get_session_factory())
+        except Exception:
+            logger.exception("analysis.cache.resolve_run_id_failed")
+            run_id = None
+
+        try:
+            await self._run_technical(symbol, run_id=run_id)
             result["technical"] = "ok"
         except Exception as e:
             result["errors"].append(f"technical: {e}")
@@ -368,6 +389,48 @@ class AnalysisService:
             sr_data=sr_data,
         )
 
+    async def cached_analyze_technical_single(
+        self,
+        symbol: str,
+        ohlcv_df: pd.DataFrame,
+        run_id: int | None,
+    ) -> dict:
+        """D-06 — cache ``analyze_technical_single`` per (symbol, run_id).
+
+        Cache key: ``indicators:{symbol}:run={run_id}`` (CONTEXT D-06
+        ratified key shape — no ``{indicator_name}`` segment per
+        RESEARCH Q-B since pandas-ta computes all 11 indicators in one
+        bundled call). Value is the dict returned by
+        ``analyze_technical_single``, which is already pickle/JSON-safe
+        (RESEARCH P-7).
+
+        **Caller contract (W2):** ``run_id`` MUST be resolved by the
+        CALLER once, before any per-symbol loop, and passed in as a
+        parameter. This wrapper does NOT call ``resolve_latest_run_id`` —
+        ``run_id`` is a loop invariant for a single analysis pass.
+        Resolving per-call would pay a 400× lock-acquire / contextvar-set
+        cost across HOSE.
+
+        When ``run_id is None`` (no completed pipeline run yet) the cache
+        is bypassed — parity with the route bypass in 26-04.
+        """
+        if run_id is None:
+            return self.analyze_technical_single(symbol, ohlcv_df)
+
+        async def _compute() -> dict:
+            # Sync CPU-bound call inside async compute_fn is fine; the
+            # caller is already inside the event loop. Indicator math is
+            # ~50-100ms per symbol — acceptable single-threaded. If
+            # profiling later shows event-loop blocking, wrap with
+            # ``await asyncio.to_thread(self.analyze_technical_single, ...)``.
+            return self.analyze_technical_single(symbol, ohlcv_df)
+
+        return await get_or_compute(
+            namespace="indicators",
+            key=f"{symbol}:run={run_id}",
+            compute_fn=_compute,
+        )
+
     def analyze_fundamental_single(
         self,
         symbol: str,
@@ -430,8 +493,14 @@ class AnalysisService:
             growth_yoy=growth_yoy,
         )
 
-    async def _run_technical(self, symbol: str) -> None:
-        """Run technical analysis for one symbol and store results."""
+    async def _run_technical(self, symbol: str, run_id: int | None = None) -> None:
+        """Run technical analysis for one symbol and store results.
+
+        ``run_id`` is the loop-invariant pipeline-run id used to compose
+        the indicator cache key (D-06). Caller MUST resolve it ONCE
+        before the per-symbol loop (W2 — see ``run_full``). When
+        ``run_id is None`` the cache is bypassed.
+        """
         prices = await self.price_repo.get_prices(symbol)
         if not prices:
             logger.debug("analysis.technical.no_price_data", symbol=symbol)
@@ -449,7 +518,7 @@ class AnalysisService:
             for p in prices
         ])
 
-        row = self.analyze_technical_single(symbol, ohlcv_df)
+        row = await self.cached_analyze_technical_single(symbol, ohlcv_df, run_id)
         if row:
             await self.indicator_repo.bulk_upsert([row])
 
