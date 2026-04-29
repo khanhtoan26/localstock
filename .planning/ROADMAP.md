@@ -141,11 +141,11 @@
 - [x] 25-08-PLAN.md — DQ-07 /health/data stale extension (closes SC #5)
 
 ### Phase 26: Caching
-**Goal**: Hot read-paths (`/api/scores/ranking`, `/api/market/summary`, indicator computations) trả về < 50 ms p95 từ cache, invalidate đúng lúc pipeline ghi xong, không stampede khi cache cold — phải có invalidation hooks trước Phase 27 (research §"E before F").
+**Goal**: Hot read-paths (`/api/scores/top`, `/api/market/summary`, indicator computations) trả về < 50 ms p95 từ cache, invalidate đúng lúc pipeline ghi xong, không stampede khi cache cold — phải có invalidation hooks trước Phase 27 (research §"E before F").
 **Depends on**: Phase 24 (Instrumentation) — cache hit/miss metrics cần registry; coexist với Phase 25 shadow-mode
 **Requirements**: CACHE-01, CACHE-02, CACHE-03, CACHE-04, CACHE-05, CACHE-06, CACHE-07
 **Success Criteria** (what must be TRUE):
-  1. `/api/scores/ranking` lần thứ 2 (cùng `pipeline_run_id`) trả về < 50 ms p95 với header/log `cache=hit`; lần đầu sau pipeline write `cache=miss`
+  1. `/api/scores/top` lần thứ 2 (cùng `pipeline_run_id`) trả về < 50 ms p95 với header/log `cache=hit`; lần đầu sau pipeline write `cache=miss`
   2. Cache key cho scoring outputs include `pipeline_run_id` — verified bằng test: ghi pipeline mới → key cũ không bao giờ trả stale data, không cần đợi TTL
   3. Concurrent 100 requests vào cùng cold key chỉ trigger 1 backend computation (single-flight via `asyncio.Lock`) — verified bằng counter `cache_compute_total` chỉ tăng 1
   4. Sau `run_daily_pipeline`, cache cho hot keys (ranking + market summary) đã pre-warm — first request từ user log `cache=hit` không phải `miss`

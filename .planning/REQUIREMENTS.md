@@ -65,7 +65,7 @@
 
 ### Caching (Phase E)
 
-- [ ] **CACHE-01**: In-process `cachetools.TTLCache` áp dụng cho `/api/scores/ranking` + `/api/market/summary` + service-layer indicator computations
+- [ ] **CACHE-01**: In-process `cachetools.TTLCache` áp dụng cho `/api/scores/top` + `/api/market/summary` + service-layer indicator computations
 - [ ] **CACHE-02**: Cache key bao gồm `pipeline_run_id` (hoặc `latest_ohlcv_date`) — không bao giờ chỉ TTL cho scoring outputs
 - [ ] **CACHE-03**: `cache.invalidate_namespace(...)` gọi từ `automation_service.py` sau mỗi write phase
 - [x] **CACHE-04**: Single-flight wrapper (`asyncio.Lock` per key) — chống cold-start stampede
