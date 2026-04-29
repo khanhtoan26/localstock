@@ -133,6 +133,8 @@ class PipelineRun(Base):
     analyze_duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     score_duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
     report_duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # Phase 25 / DQ-06 — D-07 stats JSONB; dual-written from 25-04 helper.
+    stats: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
 
 class TechnicalIndicator(Base):
@@ -487,4 +489,25 @@ class AdminJob(Base):
     __table_args__ = (
         Index("ix_admin_jobs_status", "status"),
         Index("ix_admin_jobs_created_at", "created_at"),
+    )
+
+
+class QuarantineRow(Base):
+    """Phase 25 / DQ-08 — rejected rows from Tier 1 validation (D-02).
+
+    Polymorphic across sources (ohlcv, financials, indicators). Retention
+    cron lives in apps/prometheus/src/localstock/scheduler (25-03).
+    """
+
+    __tablename__ = "quarantine_rows"
+
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    source: Mapped[str] = mapped_column(String(32), index=True)
+    symbol: Mapped[str | None] = mapped_column(String(16), nullable=True, index=True)
+    payload: Mapped[dict | list] = mapped_column(JSON)
+    reason: Mapped[str] = mapped_column(Text)
+    rule: Mapped[str] = mapped_column(String(64))
+    tier: Mapped[str] = mapped_column(String(16))
+    quarantined_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=text("now()")
     )
