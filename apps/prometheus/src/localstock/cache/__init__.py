@@ -24,6 +24,7 @@ __all__ = [
     "invalidate_namespace",
     "cache_outcome_var",
     "resolve_latest_run_id",
+    "prewarm_hot_keys",
 ]
 
 
@@ -86,3 +87,4 @@ def _safe_inc(metric_name: str, **labels: str) -> None:
 # defined so ``cache.version`` can resolve the public callable lazily inside
 # its body without circular-import issues at module-load time.
 from localstock.cache.version import resolve_latest_run_id  # noqa: E402,F401
+from localstock.cache.prewarm import prewarm_hot_keys  # noqa: E402,F401

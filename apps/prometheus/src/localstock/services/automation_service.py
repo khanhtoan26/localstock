@@ -14,6 +14,8 @@ from datetime import UTC, date, datetime
 
 from loguru import logger
 
+from localstock.cache import invalidate_namespace
+from localstock.cache.prewarm import prewarm_hot_keys
 from localstock.config import get_settings
 from localstock.db.database import get_session_factory
 from localstock.db.repositories.notification_repo import NotificationRepository
@@ -104,6 +106,15 @@ class AutomationService:
                     anal_result = await analysis.run_full()
                     summary["steps"]["analysis"] = anal_result
                     logger.info("Step 2/6: Analysis complete")
+                    # Phase 26 / CACHE-03 (D-04) — eager invalidation of
+                    # cached indicators after a successful analysis pass.
+                    try:
+                        invalidate_namespace("indicators")
+                    except Exception:
+                        logger.exception(
+                            "automation.cache.invalidate_failed",
+                            phase="analysis",
+                        )
             except Exception as e:
                 summary["steps"]["analysis"] = {"error": str(e)}
                 logger.exception("automation.step.failed", step=2, step_name="analysis")
@@ -137,6 +148,16 @@ class AutomationService:
                     score_result = await scoring.run_full()
                     summary["steps"]["scoring"] = score_result
                     logger.info("Step 5/6: Scoring complete")
+                    # Phase 26 / CACHE-03 (D-04) — eager invalidation of
+                    # ranking + per-symbol score caches after scoring run.
+                    try:
+                        invalidate_namespace("scores:ranking")
+                        invalidate_namespace("scores:symbol")
+                    except Exception:
+                        logger.exception(
+                            "automation.cache.invalidate_failed",
+                            phase="scoring",
+                        )
             except Exception as e:
                 summary["steps"]["scoring"] = {"error": str(e)}
                 logger.exception("automation.step.failed", step=5, step_name="scoring")
@@ -170,8 +191,28 @@ class AutomationService:
                     rotation = await sector.get_rotation_summary()
                     summary["sector_rotation"] = rotation
                     logger.info("Sector rotation computed")
+                    # Phase 26 / CACHE-03 (D-04) — eager invalidation of
+                    # market-summary + version-key caches after rotation.
+                    try:
+                        invalidate_namespace("market:summary")
+                        invalidate_namespace("pipeline:latest_run_id")
+                    except Exception:
+                        logger.exception(
+                            "automation.cache.invalidate_failed",
+                            phase="sector_rotation",
+                        )
             except Exception:
                 logger.exception("automation.sector_rotation.failed")
+
+            # Phase 26 / CACHE-05 (D-05) — pre-warm hot read keys so the
+            # first user request after a successful pipeline run logs
+            # `cache=hit` (closes ROADMAP SC #4). Best-effort: errors are
+            # logged + counted via cache_prewarm_errors_total but NEVER
+            # propagate (P-5).
+            try:
+                await prewarm_hot_keys(self.session_factory)
+            except Exception:
+                logger.exception("automation.cache.prewarm_failed")
 
             # Send notifications
             await self._send_notifications(summary)
