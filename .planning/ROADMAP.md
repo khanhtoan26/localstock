@@ -69,7 +69,7 @@
 - [ ] **Phase 22: Logging Foundation** — Structured JSON logs với request_id/run_id correlation, secret redaction, CI lint gate
 - [x] **Phase 23: Metrics Primitives & /metrics** — Prometheus registry + endpoint, label-cardinality budget, idempotent init
 - [x] **Phase 24: Instrumentation & Health** — `@observe`/`@timed_query` decorators, slow-query log, /health/{live,ready,pipeline,data}, scheduler error listener
-- [ ] **Phase 25: Data Quality** — Pandera Tier 1 validators, NaN/Inf JSONB sanitizer, per-stock isolation, stats persistence, quarantine table
+- [x] **Phase 25: Data Quality** — Pandera Tier 1 validators, NaN/Inf JSONB sanitizer, per-stock isolation, stats persistence, quarantine table
 - [ ] **Phase 26: Caching** — `cachetools.TTLCache` với version-aware keys, single-flight lock, invalidation hooks, pre-warm, janitor job
 - [ ] **Phase 27: Pipeline Performance** — `asyncio.Semaphore(8)` crawler, token-bucket + circuit breaker, tenacity retries, pool tuning, fire-and-forget Telegram
 - [ ] **Phase 28: Database Optimization** — `CREATE INDEX CONCURRENTLY` migrations, batch upserts, `pg_stat_statements` baseline, runbook
@@ -138,7 +138,7 @@
 - [x] 25-05-PLAN.md — DQ-01 OHLCVSchema + reject-to-quarantine in _crawl_prices (closes SC #1)
 - [x] 25-06-PLAN.md — DQ-05 per-symbol try/except across services (closes SC #3)
 - [x] 25-07-PLAN.md — DQ-02 + DQ-03 Tier 2 dispatcher + shadow-mode promotion runbook (closes SC #4)
-- [ ] 25-08-PLAN.md — DQ-07 /health/data stale extension (closes SC #5)
+- [x] 25-08-PLAN.md — DQ-07 /health/data stale extension (closes SC #5)
 
 ### Phase 26: Caching
 **Goal**: Hot read-paths (`/api/scores/ranking`, `/api/market/summary`, indicator computations) trả về < 50 ms p95 từ cache, invalidate đúng lúc pipeline ghi xong, không stampede khi cache cold — phải có invalidation hooks trước Phase 27 (research §"E before F").
@@ -205,7 +205,7 @@
 | 22. Logging Foundation | v1.5 | 0/? | Not started | - |
 | 23. Metrics Primitives & /metrics | v1.5 | 0/? | Not started | - |
 | 24. Instrumentation & Health | v1.5 | 6/6 | Complete | 2026-04-29 |
-| 25. Data Quality | v1.5 | 7/8 | In progress | 25-07 complete (Wave 5 partial, SC #4 ✅); 25-08 next |
+| 25. Data Quality | v1.5 | 8/8 | Complete ✅ | All 5 SCs ✅; 25-08 closed SC #5 (data_freshness block on /health/data) |
 | 26. Caching | v1.5 | 0/? | Not started | - |
 | 27. Pipeline Performance | v1.5 | 0/? | Not started | - |
 | 28. Database Optimization | v1.5 | 0/? | Not started | - |

@@ -58,7 +58,7 @@
 **: Per-stock try/except isolation trong pipeline — một mã fail KHÔNG kill batch (`return_exceptions=True`)
 - [ ] **DQ-06
 **: `PipelineRun.stats` JSONB column ghi succeeded/failed/skipped count + danh sách failed symbol
-- [ ] **DQ-07
+- [x] **DQ-07
 **: Stale-data detection — `/health/data` so sánh `MAX(date)` với trading-calendar; flag nếu lệch > 1 phiên
 - [ ] **DQ-08
 **: Quarantine table cho rejected rows — không silently drop, có thể inspect/replay sau
@@ -152,7 +152,7 @@
 | DQ-04  | Phase 25 | TBD | Pending |
 | DQ-05  | Phase 25 | 25-06-PLAN.md | Complete |
 | DQ-06  | Phase 25 | TBD | Pending |
-| DQ-07  | Phase 25 | TBD | Pending |
+| DQ-07  | Phase 25 | 25-08-PLAN.md | Done |
 | DQ-08  | Phase 25 | TBD | Pending |
 | CACHE-01 | Phase 26 | TBD | Pending |
 | CACHE-02 | Phase 26 | TBD | Pending |
